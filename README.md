@@ -1,6 +1,6 @@
 # Music App — Plataforma Profesional de Partituras e Interpretación Musical
 
-Bienvenido al repositorio oficial del proyecto **Music App**, liderado por **Daniel Olmos** (dirección artística y de producto) en colaboración con **DmnCrt88** (Project Management y coordinación de desarrollo).
+Bienvenido al repositorio oficial del proyecto **Music App**, liderado por **Daniel Olmos** (dirección artística y de producto) en colaboración con **DmnCrtSWL** (Project Management y coordinación de desarrollo).
 
 ---
 
@@ -29,4 +29,4 @@ El objetivo es combinar en una experiencia limpia, intuitiva y confiable en esce
 ## 👥 Equipo
 
 - **Daniel Olmos** (`@olmosguitarra-alt`) — Product Owner, Dirección Artística y Validación Musical.
-- **Primo / Project Manager** (`@DmnCrt88`) — Project Management, Arquitectura y Coordinación Técnica.
+- **Primo / Project Manager** (`@DmnCrtSWL`) — Project Management, Arquitectura y Coordinación Técnica.

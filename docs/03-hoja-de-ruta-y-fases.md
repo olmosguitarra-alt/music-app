@@ -1,6 +1,6 @@
 # Hoja de Ruta y Fases del Proyecto (Roadmap)
 
-Este documento traduce la visión de **Daniel Olmos** en un plan de desarrollo por etapas, pensado para que **Daniel** (Producto y Validación Musical) y **DmnCrt88** (Project Management) puedan priorizar entregas funcionales, probarlas en la **TCL NXTPAPER 14** y en **iPad**, y controlar la complejidad técnica.
+Este documento traduce la visión de **Daniel Olmos** en un plan de desarrollo por etapas, pensado para que **Daniel** (Producto y Validación Musical) y **DmnCrtSWL** (Project Management) puedan priorizar entregas funcionales, probarlas en la **TCL NXTPAPER 14** y en **iPad**, y controlar la complejidad técnica.
 
 ---
 
@@ -87,8 +87,8 @@ flowchart LR
 
 ---
 
-## Próximos Pasos para Revisión (Daniel + DmnCrt88)
+## Próximos Pasos para Revisión (Daniel + DmnCrtSWL)
 
 1. **Revisión de alcance del MVP (Fase 1)**: Confirmar si están de acuerdo con el corte de la Fase 1.
 2. **Prototipo interactivo de interfaz**: Construir una maqueta visual interactiva (pensada para las proporciones de la **TCL NXTPAPER 14**) donde Daniel pueda ver y probar cómo se sentiría la nueva Biblioteca y el nuevo Lector comparado con sus capturas de MobileSheets.
-3. **Elección de tecnología multiplataforma (Android + iPadOS)**: Evaluar con `@DmnCrt88` la pila tecnológica más conveniente (por ejemplo, **Flutter** o **React Native / Web híbrida con motor nativo**) para garantizar 60–120 fps al pasar páginas en Android (TCL NXTPAPER 14) y iPad desde una misma base de código.
+3. **Elección de tecnología multiplataforma (Android + iPadOS)**: Evaluar con `@DmnCrtSWL` la pila tecnológica más conveniente (por ejemplo, **Flutter** o **React Native / Web híbrida con motor nativo**) para garantizar 60–120 fps al pasar páginas en Android (TCL NXTPAPER 14) y iPad desde una misma base de código.

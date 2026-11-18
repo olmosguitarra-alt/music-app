@@ -12,7 +12,7 @@ Desde 2013 soy Director Artístico del Festival Internacional de Guitarra de Mor
 
 Mi experiencia artística se centra en la guitarra clásica, la interpretación solista y de cámara, el repertorio para guitarra y orquesta, la enseñanza musical y la dirección artística de festivales. Mi carrera combina interpretación, docencia, gestión cultural y trabajo con instituciones y públicos internacionales.
 
-> **Criterio de comunicación en el proyecto:** La trayectoria principal de Daniel es musical y artística, con uso tecnológico moderado, acompañado en la gestión técnica por su primo (`@DmnCrt88`), Project Manager en desarrollo de software. Todas las decisiones técnicas deben explicarse con claridad, enfocándose en el impacto práctico para el músico, el diseño y el alcance del proyecto.
+> **Criterio de comunicación en el proyecto:** La trayectoria principal de Daniel es musical y artística, con uso tecnológico moderado, acompañado en la gestión técnica por su primo (`@DmnCrtSWL`), Project Manager en desarrollo de software. Todas las decisiones técnicas deben explicarse con claridad, enfocándose en el impacto práctico para el músico, el diseño y el alcance del proyecto.
 
 ---
 
