@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <title>Atril — Con BachGPT (8-bit Assistant)</title>
-  <link rel="stylesheet" href="styles.css?v=6" />
+  <link rel="stylesheet" href="styles.css?v=7" />
   <!-- Motores Oficiales para Renderizar (PDF.js) y Particionar/Editar PDFs Reales (pdf-lib) -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf-lib/1.17.1/pdf-lib.min.js"></script>
@@ -420,6 +420,9 @@
           </div>
           <span class="bach-status-sub" id="bachCurrentWorkLabel">Consultando: Sonata BWV 1034</span>
         </div>
+        <button class="bach-voice-toggle active" id="bachVoiceToggleBtn" onclick="toggleBachVoiceOutput()" title="Activar/Desactivar voz alemanizada de BachGPT">
+          🔊 Voz
+        </button>
         <button class="btn-circle-ghost" onclick="toggleBachGptChat(false)" title="Cerrar chat">✕</button>
       </div>
 
@@ -440,9 +443,12 @@
         <button class="bach-chip" onclick="askBachTopic('links')">▶ YouTube &amp; Ediciones</button>
       </div>
 
-      <!-- Barra de entrada para platicar libremente con BachGPT -->
+      <!-- Barra de entrada con Micrófono de Voz para platicar sin soltar la guitarra -->
       <div class="bach-chat-input-bar">
-        <input type="text" id="bachUserInput" placeholder="Pregúntale al Maestro Bach..." onkeydown="if(event.key==='Enter') sendUserMessageToBach()" />
+        <button class="bach-mic-btn" id="bachMicBtn" onclick="toggleBachSpeechRecognition()" title="Hablar por voz con BachGPT">
+          🎙️
+        </button>
+        <input type="text" id="bachUserInput" placeholder="Habla con 🎙️ o escribe al Maestro..." onkeydown="if(event.key==='Enter') sendUserMessageToBach()" />
         <button class="bach-send-btn" onclick="sendUserMessageToBach()" aria-label="Enviar">➤</button>
       </div>
     </aside>
@@ -455,6 +461,6 @@
 
   </div>
 
-  <script src="app.js?v=6"></script>
+  <script src="app.js?v=7"></script>
 </body>
 </html>

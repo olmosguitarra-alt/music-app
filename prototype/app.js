@@ -776,17 +776,18 @@ function buildListRowHtml(s) {
 }
 
 // ==========================================================================
-// BACHGPT: CHATBOT FLOTANTE CON RETRATO EN ARTE DE 8 BITS DE J. S. BACH
+// BACHGPT: CHATBOT FLOTANTE 8 BITS CON ENTRADA POR VOZ Y VOZ ALEMANIZADA
 // ==========================================================================
 let bachSelectedWorkId = 1;
 let bachGreetingInitialized = false;
+let bachVoiceEnabled = true;
+let bachSpeechRecognition = null;
+let isBachListeningMic = false;
+let bachMouthAnimTimer = null;
 
-// Generador de Retrato en Pixel Art de 8 Bits de J. S. Bach (SVG crispEdges)
-function build8BitBachSvg() {
-  // Matriz 16x16 de pixel art:
-  // . = transparente, W = peluca blanca, G = sombra gris peluca, S = piel rostro,
-  // D = sombra piel, E = ojos/cejas, M = boca/expresión, C = casaca barroca roja/vino,
-  // B = botones dorados, R = chorrera/cuello blanco
+// Generador de Retrato en Pixel Art de 8 Bits de J. S. Bach (con animación de boca al hablar)
+function build8BitBachSvg(mouthOpen = false) {
+  const mouthRow = mouthOpen ? "WWGGSSSEEESSGGWW" : "WWGGSSSMMMSSGGWW";
   const grid = [
     "....WWWWWWWW....",
     "..WWWWWWWWWWWW..",
@@ -797,7 +798,7 @@ function build8BitBachSvg() {
     "WWWGSEESSSSEESWW",
     "WWWGSSSSSSSSGWWW",
     "WWGGSSSDDSSSGGWW",
-    "WWGGSSSMMMSSGGWW",
+    mouthRow,
     "WWWGGSSSSSSGGWWW",
     ".WWW.RRRRRR.WWW.",
     "..W.CRRRRRRC.W..",
@@ -807,15 +808,15 @@ function build8BitBachSvg() {
   ];
 
   const palette = {
-    W: "#f8fafc", // Peluca empolvada blanca
-    G: "#cbd5e1", // Rizos grises de la peluca
-    S: "#f3c69f", // Piel
-    D: "#d99f72", // Sombra nariz/pómulos
-    E: "#1e1b18", // Ojos
-    M: "#9a5b42", // Boca
-    R: "#ffffff", // Chorrera barroca
-    C: "#7c2d12", // Casaca barroca vino/terracota
-    B: "#facc15"  // Botones de oro
+    W: "#f8fafc",
+    G: "#cbd5e1",
+    S: "#f3c69f",
+    D: "#d99f72",
+    E: "#1e1b18",
+    M: "#9a5b42",
+    R: "#ffffff",
+    C: "#7c2d12",
+    B: "#facc15"
   };
 
   let rects = "";
@@ -832,12 +833,184 @@ function build8BitBachSvg() {
   return `<svg viewBox="0 0 16 16" width="100%" height="100%" shape-rendering="crispEdges" xmlns="http://www.w3.org/2000/svg">${rects}</svg>`;
 }
 
+function setBach8BitTalkingAnimation(isTalking) {
+  const fabIcon = document.getElementById("bachFabIcon");
+  const headerAvatar = document.getElementById("bachHeaderAvatar");
+  if (bachMouthAnimTimer) {
+    clearInterval(bachMouthAnimTimer);
+    bachMouthAnimTimer = null;
+  }
+  if (!isTalking) {
+    const closedSvg = build8BitBachSvg(false);
+    if (fabIcon) fabIcon.innerHTML = closedSvg;
+    if (headerAvatar) headerAvatar.innerHTML = closedSvg;
+    return;
+  }
+  let openState = false;
+  bachMouthAnimTimer = setInterval(() => {
+    openState = !openState;
+    const frameSvg = build8BitBachSvg(openState);
+    if (fabIcon) fabIcon.innerHTML = frameSvg;
+    if (headerAvatar) headerAvatar.innerHTML = frameSvg;
+  }, 170);
+}
+
+// SINTETIZADOR DE VOZ DE BACHGPT: Español con inflexión y fonética alemanizada
+function germanizeSpanishTextForSpeech(cleanText) {
+  // Limpiamos etiquetas HTML y emojis para la lectura hablada
+  let txt = cleanText
+    .replace(/<button[\s\S]*?<\/button>/gi, "")
+    .replace(/<a[\s\S]*?<\/a>/gi, "")
+    .replace(/<[^>]+>/g, " ")
+    .replace(/[📜🎼🎸▶🏛️✦💬🔊🎙️↗]/g, "")
+    .replace(/BWV/g, "B V V")
+    .replace(/\s+/g, " ")
+    .trim();
+
+  // Matices fonéticos sutiles para que una voz en español suene con cadencia germana
+  // (ej. "v" labiodental / "f" suave, "z/ce/ci" sibilante, "j/ge" aspirada suave y muletillas de Leipzig)
+  txt = txt
+    .replace(/\bBueno\b/gi, "Also")
+    .replace(/\bHola\b/gi, "Guten Tag")
+    .replace(/\bamigo\b/gi, "mein Freund")
+    .replace(/\bquerido colega\b/gi, "mein lieber Kollege")
+    .replace(/\bexcelente\b/gi, "vunderbar, excelente")
+    .replace(/\bsí\b/gi, "ja")
+    .replace(/\bclaro\b/gi, "natürlich")
+    .replace(/\bguitarra\b/gi, "guitarrra");
+
+  return txt;
+}
+
+function speakAsBachGpt(htmlMessage) {
+  if (!bachVoiceEnabled || !("speechSynthesis" in window)) return;
+  try {
+    window.speechSynthesis.cancel();
+    const spokenText = germanizeSpanishTextForSpeech(htmlMessage);
+    if (!spokenText) return;
+
+    const utter = new SpeechSynthesisUtterance(spokenText);
+    const voices = window.speechSynthesis.getVoices() || [];
+
+    // Estrategia de selección de voz:
+    // 1. Si hay una voz alemana multilingüe (ej. Google Deutsch / Microsoft Conrad / Stefan) que lee caracteres latinos con acento alemán real, o
+    // 2. Una voz masculina en español con tono grave (pitch 0.84) y cadencia pausada de Kapellmeister (rate 0.92)
+    const germanVoice = voices.find((v) => v.lang && v.lang.toLowerCase().startsWith("de"));
+    const spanishMaleVoice =
+      voices.find((v) => v.lang && v.lang.toLowerCase().startsWith("es") && /male|pablo|jorge|raul|diego|carlos|alvaro/i.test(v.name)) ||
+      voices.find((v) => v.lang && v.lang.toLowerCase().startsWith("es"));
+
+    if (spanishMaleVoice) {
+      utter.voice = spanishMaleVoice;
+      utter.lang = spanishMaleVoice.lang;
+    } else if (germanVoice) {
+      utter.voice = germanVoice;
+      utter.lang = "es-ES";
+    } else {
+      utter.lang = "es-MX";
+    }
+
+    // Timbre grave barroco y cadencia articulada alemana
+    utter.pitch = 0.82;
+    utter.rate = 0.93;
+
+    utter.onstart = () => setBach8BitTalkingAnimation(true);
+    utter.onend = () => setBach8BitTalkingAnimation(false);
+    utter.onerror = () => setBach8BitTalkingAnimation(false);
+
+    window.speechSynthesis.speak(utter);
+  } catch (e) {
+    console.warn("Speech synthesis warning:", e);
+  }
+}
+
+function toggleBachVoiceOutput() {
+  bachVoiceEnabled = !bachVoiceEnabled;
+  const btn = document.getElementById("bachVoiceToggleBtn");
+  if (btn) {
+    btn.classList.toggle("active", bachVoiceEnabled);
+    btn.textContent = bachVoiceEnabled ? "🔊 Voz" : "🔇 Muda";
+  }
+  if (!bachVoiceEnabled && "speechSynthesis" in window) {
+    window.speechSynthesis.cancel();
+    setBach8BitTalkingAnimation(false);
+  } else if (bachVoiceEnabled) {
+    speakAsBachGpt("¡Ja, mein Freund! Mi voz de Kapellmeister está lista.");
+  }
+}
+
+// ENTRADA POR VOZ DEL USUARIO (Web Speech Recognition API en Español)
+function toggleBachSpeechRecognition() {
+  const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
+  const micBtn = document.getElementById("bachMicBtn");
+  const input = document.getElementById("bachUserInput");
+
+  if (!SpeechRec) {
+    appendBachMessage(
+      "Ach, mein Freund! Este navegador no tiene habilitado el micrófono directo, pero puedes usar el botón de micrófono del teclado de tu tablet Android o escribirme aquí."
+    );
+    return;
+  }
+
+  if (isBachListeningMic && bachSpeechRecognition) {
+    bachSpeechRecognition.stop();
+    return;
+  }
+
+  // Detener voz de Bach mientras escucha al músico
+  if ("speechSynthesis" in window) {
+    window.speechSynthesis.cancel();
+    setBach8BitTalkingAnimation(false);
+  }
+
+  bachSpeechRecognition = new SpeechRec();
+  bachSpeechRecognition.lang = "es-MX";
+  bachSpeechRecognition.interimResults = true;
+  bachSpeechRecognition.continuous = false;
+
+  bachSpeechRecognition.onstart = () => {
+    isBachListeningMic = true;
+    if (micBtn) micBtn.classList.add("listening");
+    if (input) input.placeholder = "🎙️ Escuchando tu voz... habla ahora";
+  };
+
+  bachSpeechRecognition.onresult = (event) => {
+    let transcript = "";
+    for (let i = event.resultIndex; i < event.results.length; i++) {
+      transcript += event.results[i][0].transcript;
+    }
+    if (input) input.value = transcript;
+  };
+
+  bachSpeechRecognition.onend = () => {
+    isBachListeningMic = false;
+    if (micBtn) micBtn.classList.remove("listening");
+    if (input) {
+      input.placeholder = "Habla con 🎙️ o escribe al Maestro...";
+      if (input.value.trim().length > 0) {
+        sendUserMessageToBach();
+      }
+    }
+  };
+
+  bachSpeechRecognition.onerror = () => {
+    isBachListeningMic = false;
+    if (micBtn) micBtn.classList.remove("listening");
+    if (input) input.placeholder = "Habla con 🎙️ o escribe al Maestro...";
+  };
+
+  bachSpeechRecognition.start();
+}
+
 function initBachGptWidget() {
   const fabIcon = document.getElementById("bachFabIcon");
   const headerAvatar = document.getElementById("bachHeaderAvatar");
-  const svg8Bit = build8BitBachSvg();
+  const svg8Bit = build8BitBachSvg(false);
   if (fabIcon) fabIcon.innerHTML = svg8Bit;
   if (headerAvatar) headerAvatar.innerHTML = svg8Bit;
+  if ("speechSynthesis" in window) {
+    window.speechSynthesis.getVoices();
+  }
   populateBachWorkSelect();
 }
 
@@ -861,11 +1034,15 @@ function toggleBachGptChat(forceState) {
       bachGreetingInitialized = true;
       const work = scores.find((s) => s.id === Number(bachSelectedWorkId)) || scores[0];
       appendBachMessage(
-        `¡Guten Tag, querido colega! Soy <strong>BachGPT</strong>, tu Kapellmeister de 8 bits. Veo que tenemos en el atril <em>"${work.clean || work.title}"</em>. ¿Quieres que platiquemos sobre su historia, su arquitectura contrapuntística, sugerencias de digitación o te comparto grabaciones en YouTube?`
+        `¡Guten Tag, mein lieber Kollege! Soy <strong>BachGPT</strong>, tu Kapellmeister desde Leipzig. Veo que tenemos en el atril <em>"${work.clean || work.title}"</em>. ¡Ja, wunderbar! Puedes hablarme tocando el micrófono 🎙️ o preguntar sobre su historia, contrapunto, digitación o videos en YouTube.`
       );
     }
   } else {
     win.classList.add("hidden");
+    if ("speechSynthesis" in window) {
+      window.speechSynthesis.cancel();
+      setBach8BitTalkingAnimation(false);
+    }
   }
 }
 
@@ -884,7 +1061,7 @@ function changeBachConversationWork(scoreId) {
   if (lbl) lbl.textContent = `Consultando: ${work.clean || work.title}`;
 
   appendBachMessage(
-    `¡Ah, excelente elección! Hemos puesto en el facistol <strong>${work.clean || work.title}</strong> de <em>${work.composer}</em> (${work.period}, ${work.group}). Toca uno de los temas de abajo o pregúntame lo que desees sobre esta partitura.`
+    `¡Ah, ja, natürlich! Hemos puesto en el facistol <strong>${work.clean || work.title}</strong> de <em>${work.composer}</em> (${work.period}). Toca el micrófono 🎙️ o elige un tema aquí abajo, mein Freund.`
   );
 }
 
@@ -898,17 +1075,20 @@ function appendUserMessage(text) {
   box.scrollTop = box.scrollHeight;
 }
 
-function appendBachMessage(htmlContent) {
+function appendBachMessage(htmlContent, shouldSpeak = true) {
   const box = document.getElementById("bachChatMessages");
   if (!box) return;
   const wrap = document.createElement("div");
   wrap.className = "bach-msg-row";
   wrap.innerHTML = `
-    <div class="bach-mini-8bit">${build8BitBachSvg()}</div>
+    <div class="bach-mini-8bit">${build8BitBachSvg(false)}</div>
     <div class="chat-bubble bach-bubble">${htmlContent}</div>
   `;
   box.appendChild(wrap);
   box.scrollTop = box.scrollHeight;
+  if (shouldSpeak) {
+    speakAsBachGpt(htmlContent);
+  }
 }
 
 function askBachTopic(topic) {
@@ -919,21 +1099,21 @@ function askBachTopic(topic) {
     appendUserMessage(`Maestro Bach, cuéntame la historia de "${title}".`);
     setTimeout(() => {
       appendBachMessage(
-        `<strong>📜 Crónica Histórica:</strong><br>${work.aiData.history}<br><small style="opacity:0.75">Periodo: ${work.period} • Autor: ${work.composer}</small>`
+        `<strong>📜 Crónica Histórica:</strong><br>¡Ja, escucha bien, mein Freund! ${work.aiData.history}<br><small style="opacity:0.75">Periodo: ${work.period} • Autor: ${work.composer}</small>`
       );
     }, 220);
   } else if (topic === "theory") {
     appendUserMessage(`¿Cómo está construida teórica y formalmente "${title}"?`);
     setTimeout(() => {
       appendBachMessage(
-        `<strong>🎼 Arquitectura y Teoría:</strong><br>${work.aiData.theory}<br><small style="opacity:0.75">Dotación: ${work.group} • Extensión: ${work.pages}</small>`
+        `<strong>🎼 Arquitectura y Contrapunto:</strong><br>¡Ach, la arquitectura musical es sagrada! ${work.aiData.theory}<br><small style="opacity:0.75">Dotación: ${work.group} • Extensión: ${work.pages}</small>`
       );
     }, 220);
   } else if (topic === "performance") {
     appendUserMessage(`¿Qué consejos de digitación e interpretación me das para "${title}"?`);
     setTimeout(() => {
       appendBachMessage(
-        `<strong>🎸 Consejo en el Atril:</strong><br>${work.aiData.performance}<br>
+        `<strong>🎸 Consejo del Kapellmeister:</strong><br>En el atril, mein Kollege: ${work.aiData.performance}<br>
         <button class="bach-inline-btn" onclick="openScoreById(${work.id}, 'study'); toggleBachGptChat(false);">
           ✎ Abrir partitura en Modo Estudio para anotar
         </button>`
@@ -949,7 +1129,7 @@ function askBachTopic(topic) {
       .join("");
     setTimeout(() => {
       appendBachMessage(
-        `<strong>▶ Grabaciones de Referencia y Fuentes Web:</strong><br>Aquí tienes enlaces directos para escuchar y comparar versiones de <em>${title}</em>:<div class="bach-links-stack">${linksHtml}</div>`
+        `<strong>▶ Grabaciones de Referencia y Fuentes Web:</strong><br>¡Ja, wunderbar! Aquí tienes enlaces directos para escuchar versiones de <em>${title}</em>:<div class="bach-links-stack">${linksHtml}</div>`
       );
     }, 220);
   }
@@ -967,22 +1147,24 @@ function sendUserMessageToBach() {
   const lower = text.toLowerCase();
 
   setTimeout(() => {
-    if (lower.includes("youtube") || lower.includes("video") || lower.includes("escuchar") || lower.includes("grabacion")) {
+    if (lower.includes("youtube") || lower.includes("video") || lower.includes("escuchar") || lower.includes("grabacion") || lower.includes("version")) {
       askBachTopic("links");
-    } else if (lower.includes("historia") || lower.includes("origen") || lower.includes("año") || lower.includes("compuso")) {
+    } else if (lower.includes("historia") || lower.includes("origen") || lower.includes("año") || lower.includes("compuso") || lower.includes("cuando")) {
       askBachTopic("history");
-    } else if (lower.includes("armonia") || lower.includes("teoria") || lower.includes("forma") || lower.includes("analisis")) {
+    } else if (lower.includes("armonia") || lower.includes("teoria") || lower.includes("forma") || lower.includes("analisis") || lower.includes("tonalidad")) {
       askBachTopic("theory");
+    } else if (lower.includes("digitacion") || lower.includes("tocar") || lower.includes("interpretar") || lower.includes("consejo") || lower.includes("tecnica")) {
+      askBachTopic("performance");
     } else {
       const searchUrl = `https://www.youtube.com/results?search_query=${encodeURIComponent(work.composer.split("(")[0] + " " + title + " " + text)}`;
       appendBachMessage(
-        `¡Interesante pregunta sobre <strong>${title}</strong>! Como solía decir en Leipzig: la claridad del contrapunto y la naturalidad del fraseo lo gobiernan todo. En esta obra de <em>${work.composer}</em> (${work.period}), te sugiero cuidar la independencia de las voces y verificar tu digitación en el <strong>Modo Estudio</strong>.<br>
+        `¡Ah, ja, muy buena observación sobre <strong>${title}</strong>, mein Freund! Como siempre digo en Santo Tomás de Leipzig: la claridad de las voces y el pulso interior lo gobiernan todo. En esta obra de <em>${work.composer}</em> (${work.period}), cuida cada articulación y anota tus digitaciones en el <strong>Modo Estudio</strong>.<br>
         <div class="bach-links-stack">
           <a href="${searchUrl}" target="_blank" rel="noopener noreferrer" class="bach-chat-link">▶ Buscar "${text}" sobre ${title} en YouTube ↗</a>
         </div>`
       );
     }
-  }, 280);
+  }, 260);
 }
 
 function cleanLibraryWithAI() {
