@@ -1,14 +1,14 @@
 /* ==========================================================================
    CONCEPTS × STAFFPAD × LINEARITY CURVE DESIGN SYSTEM
-   OPTIMIZADO PARA HOJA PARADA (VERTICAL) EN TCL NXTPAPER 14
+   ADAPTATIVO INTELIGENTE: TABLET GRANDE (TCL NXTPAPER 14 / iPad) + CELULAR
    ========================================================================== */
 
 /* 1. PALETA LUTIER & ÉBANO (Maderas nobles, cristal ahumado y bronce champaña) */
 body.palette-luthier {
   --bg-canvas: #161311;
-  --glass-bg: rgba(34, 29, 25, 0.78);
+  --glass-bg: rgba(34, 29, 25, 0.82);
   --glass-border: rgba(226, 208, 180, 0.16);
-  --card-bg: rgba(40, 34, 29, 0.85);
+  --card-bg: rgba(40, 34, 29, 0.88);
   --text-primary: #f5efe6;
   --text-secondary: #a69b8d;
 
@@ -22,9 +22,9 @@ body.palette-luthier {
 /* 2. PALETA HENLE URTEXT (Azul pizarra alemán, cristal azulado y crema Urtext) */
 body.palette-henle {
   --bg-canvas: #141b24;
-  --glass-bg: rgba(26, 35, 46, 0.78);
+  --glass-bg: rgba(26, 35, 46, 0.82);
   --glass-border: rgba(185, 208, 235, 0.16);
-  --card-bg: rgba(32, 42, 56, 0.85);
+  --card-bg: rgba(32, 42, 56, 0.88);
   --text-primary: #f0f4f8;
   --text-secondary: #8fa1b5;
 
@@ -38,9 +38,9 @@ body.palette-henle {
 /* 3. PALETA LINO CLARO (Estilo Concepts Paper Canvas: todo luminoso y orgánico) */
 body.palette-linen {
   --bg-canvas: #dfd8ca;
-  --glass-bg: rgba(248, 245, 238, 0.84);
-  --glass-border: rgba(40, 36, 30, 0.11);
-  --card-bg: rgba(252, 250, 245, 0.92);
+  --glass-bg: rgba(248, 245, 238, 0.88);
+  --glass-border: rgba(40, 36, 30, 0.12);
+  --card-bg: rgba(252, 250, 245, 0.94);
   --text-primary: #201e1a;
   --text-secondary: #6e675b;
 
@@ -54,9 +54,9 @@ body.palette-linen {
 /* 4. PALETA GRAFITO STUDIO (Estilo Linearity Curve Dark Pro) */
 body.palette-velvet {
   --bg-canvas: #18191c;
-  --glass-bg: rgba(32, 34, 38, 0.8);
+  --glass-bg: rgba(32, 34, 38, 0.84);
   --glass-border: rgba(255, 255, 255, 0.12);
-  --card-bg: rgba(38, 40, 45, 0.88);
+  --card-bg: rgba(38, 40, 45, 0.9);
   --text-primary: #eef0f4;
   --text-secondary: #9499a3;
 
@@ -86,7 +86,6 @@ body {
   transition: background-color 0.25s ease, color 0.25s ease;
 }
 
-/* Iconos vectoriales finos estilo Linearity Curve & Concepts */
 .v-ico {
   width: 17px;
   height: 17px;
@@ -103,15 +102,15 @@ body {
    ========================================================================== */
 .floating-hud-top {
   position: fixed;
-  top: 14px;
-  left: 18px;
-  right: 18px;
+  top: max(12px, env(safe-area-inset-top));
+  left: 16px;
+  right: 16px;
   display: flex;
   align-items: center;
   justify-content: space-between;
   pointer-events: none;
   z-index: 60;
-  gap: 12px;
+  gap: 10px;
 }
 
 .glass-pill {
@@ -127,11 +126,15 @@ body {
 }
 
 .hud-status {
-  padding: 8px 16px;
-  gap: 9px;
+  padding: 8px 15px;
+  gap: 8px;
   font-size: 13px;
   font-weight: 600;
   letter-spacing: 0.2px;
+  max-width: 240px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .status-dot {
@@ -139,9 +142,9 @@ body {
   height: 7px;
   border-radius: 50%;
   background: var(--accent);
+  flex-shrink: 0;
 }
 
-/* Control segmentado central (Linearity Curve style) */
 .mode-segmented {
   padding: 4px;
   gap: 3px;
@@ -151,7 +154,7 @@ body {
   background: transparent;
   border: none;
   color: var(--text-secondary);
-  padding: 7px 16px;
+  padding: 7px 15px;
   border-radius: 999px;
   font-size: 13.5px;
   font-weight: 600;
@@ -159,6 +162,7 @@ body {
   align-items: center;
   gap: 7px;
   cursor: pointer;
+  white-space: nowrap;
   transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
@@ -173,10 +177,10 @@ body {
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.15);
 }
 
-/* Esferas de paleta visual (Concepts style) */
 .hud-palettes {
   padding: 6px 10px;
   gap: 8px;
+  flex-shrink: 0;
 }
 
 .theme-orb {
@@ -200,7 +204,7 @@ body {
 }
 
 /* ==========================================================================
-   VISTAS DE LIENZO (100% PANTALLA)
+   VISTAS DE LIENZO
    ========================================================================== */
 .canvas-view {
   display: none;
@@ -215,16 +219,16 @@ body {
 }
 
 /* ==========================================================================
-   1. MODO BIBLIOTECA (Folios Verticales estilo StaffPad + Linearity)
+   1. MODO BIBLIOTECA
    ========================================================================== */
 .library-stage {
-  max-width: 920px;
+  max-width: 960px;
   width: 100%;
   margin: 0 auto;
-  padding: 78px 24px 36px;
+  padding: 74px 22px 36px;
   display: flex;
   flex-direction: column;
-  gap: 18px;
+  gap: 16px;
   height: 100%;
   overflow-y: auto;
 }
@@ -240,11 +244,11 @@ body {
   background: var(--card-bg);
   border: 0.5px solid var(--glass-border);
   border-radius: 14px;
-  padding: 0 16px;
+  padding: 0 14px;
   display: flex;
   align-items: center;
   gap: 10px;
-  height: 46px;
+  height: 44px;
 }
 
 .glass-search input {
@@ -261,43 +265,41 @@ body {
 }
 
 .glass-cta-btn {
-  height: 46px;
+  height: 44px;
   background: var(--accent);
   color: var(--accent-ink);
   border: none;
-  padding: 0 18px;
+  padding: 0 16px;
   border-radius: 14px;
   font-size: 13.5px;
   font-weight: 700;
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 7px;
   cursor: pointer;
-  transition: transform 0.15s ease;
-}
-
-.glass-cta-btn:active {
-  transform: scale(0.97);
+  white-space: nowrap;
 }
 
 .lib-pills-row {
   display: flex;
   gap: 8px;
   overflow-x: auto;
-  padding-bottom: 2px;
+  padding-bottom: 4px;
+  scrollbar-width: none;
 }
+
+.lib-pills-row::-webkit-scrollbar { display: none; }
 
 .filter-token {
   background: var(--card-bg);
   border: 0.5px solid var(--glass-border);
   color: var(--text-secondary);
-  padding: 7px 16px;
+  padding: 7px 15px;
   border-radius: 999px;
   font-size: 13px;
   font-weight: 600;
   cursor: pointer;
   white-space: nowrap;
-  transition: all 0.15s ease;
 }
 
 .filter-token.active {
@@ -306,21 +308,20 @@ body {
   font-weight: 700;
 }
 
-/* Cuadrícula de Folios en proporción de Hoja Parada (StaffPad Library look) */
 .folio-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
-  gap: 16px;
+  grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+  gap: 14px;
 }
 
 .folio-card {
   background: var(--card-bg);
   border: 0.5px solid var(--glass-border);
   border-radius: 16px;
-  padding: 14px;
+  padding: 13px;
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 10px;
   cursor: pointer;
   transition: transform 0.18s ease, border-color 0.18s ease;
 }
@@ -330,17 +331,15 @@ body {
   border-color: var(--accent);
 }
 
-/* Miniatura de hoja de partitura vertical dentro de la tarjeta */
 .folio-preview-sheet {
   background: var(--paper-bg);
   color: var(--paper-ink);
-  height: 148px;
+  height: 138px;
   border-radius: 10px;
-  padding: 12px 14px;
+  padding: 11px 13px;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
-  position: relative;
   box-shadow: inset 0 0 0 0.5px rgba(0, 0, 0, 0.12);
 }
 
@@ -348,12 +347,12 @@ body {
   text-align: center;
   font-family: "Georgia", serif;
   border-bottom: 0.5px solid var(--paper-line);
-  padding-bottom: 5px;
+  padding-bottom: 4px;
 }
 
 .folio-preview-head strong {
   font-size: 11px;
-  letter-spacing: 0.8px;
+  letter-spacing: 0.6px;
   display: block;
   white-space: nowrap;
   overflow: hidden;
@@ -369,7 +368,7 @@ body {
 .mini-staves {
   display: flex;
   flex-direction: column;
-  gap: 11px;
+  gap: 10px;
   opacity: 0.45;
 }
 
@@ -384,19 +383,19 @@ body {
   content: "♩ ♪ ♬ ♩  ♪ ♩";
   position: absolute;
   top: -7px;
-  left: 8px;
-  font-size: 11px;
-  letter-spacing: 3px;
+  left: 6px;
+  font-size: 10.5px;
+  letter-spacing: 2.5px;
 }
 
 .folio-card-body {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 3px;
 }
 
 .folio-card-title {
-  font-size: 14.5px;
+  font-size: 14px;
   font-weight: 700;
   color: var(--text-primary);
   line-height: 1.3;
@@ -410,14 +409,14 @@ body {
   font-size: 10px;
   background: rgba(190, 75, 55, 0.22);
   color: #e59382;
-  padding: 2px 7px;
+  padding: 2px 6px;
   border-radius: 5px;
   font-weight: 600;
   white-space: nowrap;
 }
 
 .folio-card-sub {
-  font-size: 12.5px;
+  font-size: 12px;
   color: var(--text-secondary);
 }
 
@@ -454,12 +453,7 @@ body {
   justify-content: center;
 }
 
-.mini-action-btn:hover {
-  background: var(--accent);
-  color: var(--accent-ink);
-}
-
-/* Modal Taller PDF estilo Linearity Curve */
+/* Modal Taller PDF */
 .modal-backdrop {
   position: fixed;
   inset: 0;
@@ -469,6 +463,7 @@ body {
   align-items: center;
   justify-content: center;
   z-index: 100;
+  padding: 16px;
 }
 
 .modal-backdrop.hidden { display: none; }
@@ -478,12 +473,12 @@ body {
   backdrop-filter: blur(24px);
   border: 0.5px solid var(--glass-border);
   border-radius: 22px;
-  padding: 22px;
-  width: 90%;
-  max-width: 520px;
+  padding: 20px;
+  width: 100%;
+  max-width: 500px;
   display: flex;
   flex-direction: column;
-  gap: 18px;
+  gap: 16px;
   box-shadow: 0 24px 64px rgba(0, 0, 0, 0.5);
 }
 
@@ -494,16 +489,13 @@ body {
 }
 
 .insp-eyebrow {
-  font-size: 10.5px;
+  font-size: 10px;
   font-weight: 700;
   letter-spacing: 0.9px;
   color: var(--accent);
 }
 
-.insp-head h3 {
-  font-size: 17px;
-  margin-top: 2px;
-}
+.insp-head h3 { font-size: 16px; margin-top: 2px; }
 
 .btn-circle-ghost {
   width: 32px;
@@ -518,15 +510,15 @@ body {
 .folio-strip {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
-  gap: 10px;
+  gap: 8px;
 }
 
 .folio-page-thumb {
   background: var(--paper-bg);
   color: var(--paper-ink);
-  height: 112px;
+  height: 104px;
   border-radius: 10px;
-  padding: 10px;
+  padding: 8px;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -535,13 +527,11 @@ body {
   border: 2px solid transparent;
 }
 
-.folio-page-thumb.active {
-  border-color: var(--accent);
-}
+.folio-page-thumb.active { border-color: var(--accent); }
 
 .mini-staff-lines {
   width: 100%;
-  height: 36px;
+  height: 32px;
   background: repeating-linear-gradient(
     to bottom,
     rgba(0,0,0,0.25) 0px,
@@ -551,33 +541,26 @@ body {
   );
 }
 
-.folio-page-thumb span {
-  font-size: 13px;
-  font-weight: 700;
-}
-
-.folio-page-thumb small {
-  font-size: 10.5px;
-  opacity: 0.7;
-}
+.folio-page-thumb span { font-size: 12px; font-weight: 700; }
+.folio-page-thumb small { font-size: 10px; opacity: 0.7; }
 
 .linearity-action-bar {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
-  gap: 10px;
+  gap: 8px;
 }
 
 .lin-btn {
   background: var(--card-bg);
   border: 0.5px solid var(--glass-border);
   color: var(--text-primary);
-  padding: 12px 14px;
+  padding: 11px 12px;
   border-radius: 12px;
-  font-size: 13.5px;
+  font-size: 13px;
   font-weight: 600;
   display: flex;
   align-items: center;
-  gap: 9px;
+  gap: 8px;
   cursor: pointer;
 }
 
@@ -588,7 +571,7 @@ body {
 
 .insp-feedback {
   text-align: center;
-  font-size: 13px;
+  font-size: 12.5px;
   font-weight: 600;
   color: var(--accent);
   min-height: 18px;
@@ -604,7 +587,7 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 68px 20px 20px; /* Espacio limpio para la píldora flotante superior */
+  padding: 66px 20px 20px;
   position: relative;
   overflow: hidden;
 }
@@ -617,7 +600,7 @@ body {
   color: var(--paper-ink);
   border-radius: 12px;
   box-shadow: 0 18px 52px rgba(0, 0, 0, 0.38), inset 0 0 0 0.5px rgba(0, 0, 0, 0.12);
-  padding: 18px 28px 14px;
+  padding: 18px 26px 14px;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
@@ -633,12 +616,13 @@ body {
   padding-bottom: 8px;
   font-family: "Georgia", serif;
   flex-shrink: 0;
+  gap: 8px;
 }
 
 .folio-title { text-align: center; }
-.folio-title h2 { font-size: 19px; letter-spacing: 1.4px; font-weight: 700; }
+.folio-title h2 { font-size: 18.5px; letter-spacing: 1.2px; font-weight: 700; }
 .folio-title span { font-size: 12px; font-style: italic; opacity: 0.8; }
-.folio-meta { font-size: 11.5px; font-style: italic; opacity: 0.72; }
+.folio-meta { font-size: 11.5px; font-style: italic; opacity: 0.72; white-space: nowrap; }
 
 .badge-engraving {
   font-family: -apple-system, sans-serif;
@@ -656,7 +640,6 @@ body {
   overflow: hidden;
 }
 
-/* Textura sutil de cuadrícula rítmica estilo StaffPad en el Editor */
 .staffpad-grid-bg {
   background-image: radial-gradient(rgba(0, 0, 0, 0.08) 1px, transparent 1px);
   background-size: 22px 22px;
@@ -671,6 +654,7 @@ body {
   height: 100%;
   cursor: crosshair;
   z-index: 10;
+  touch-action: none;
 }
 
 .mold-layer {
@@ -686,12 +670,13 @@ body {
   font-family: "Georgia", serif;
   font-style: italic;
   font-weight: 700;
-  font-size: 18px;
+  font-size: 17.5px;
   padding: 2px 8px;
   border-radius: 6px;
-  background: rgba(255, 255, 255, 0.5);
+  background: rgba(255, 255, 255, 0.52);
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
   animation: moldMorph 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+  white-space: nowrap;
 }
 
 @keyframes moldMorph {
@@ -711,7 +696,7 @@ body {
 }
 
 /* ==========================================================================
-   RIEL LATERAL DE HERRAMIENTAS (Estilo Concepts + Linearity Curve Left Rail)
+   RIEL DE HERRAMIENTAS (En Tablet: Izquierda | En Celular: Dock Inferior)
    ========================================================================== */
 .concepts-tool-rail {
   position: fixed;
@@ -745,6 +730,7 @@ body {
   justify-content: center;
   gap: 3px;
   cursor: pointer;
+  flex-shrink: 0;
   transition: all 0.16s ease;
 }
 
@@ -776,6 +762,7 @@ body {
   height: 0.5px;
   background: var(--glass-border);
   margin: 2px 0;
+  flex-shrink: 0;
 }
 
 .rail-inks {
@@ -783,6 +770,7 @@ body {
   flex-direction: column;
   gap: 7px;
   padding: 4px 0;
+  flex-shrink: 0;
 }
 
 .ink-well {
@@ -803,7 +791,7 @@ body {
   border-color: var(--accent);
 }
 
-/* Popover de Sellos acoplado al riel lateral (Linearity Inspector Popover) */
+/* Popover de Sellos */
 .concepts-popover {
   position: fixed;
   left: 84px;
@@ -811,6 +799,7 @@ body {
   transform: translateY(-50%);
   background: var(--glass-bg);
   backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
   border: 0.5px solid var(--glass-border);
   border-radius: 20px;
   padding: 14px;
@@ -874,17 +863,22 @@ body {
 }
 
 /* ==========================================================================
-   BARRA FLOTANTE INFERIOR (CONCIERTO & STAFF EDITOR — StaffPad Ribbon)
+   BARRA FLOTANTE INFERIOR (CONCIERTO & STAFF EDITOR)
    ========================================================================== */
 .floating-bottom-bar {
   position: fixed;
-  bottom: 16px;
+  bottom: max(14px, env(safe-area-inset-bottom));
   left: 50%;
   transform: translateX(-50%);
   padding: 6px 10px;
   gap: 8px;
   z-index: 50;
+  max-width: calc(100vw - 20px);
+  overflow-x: auto;
+  scrollbar-width: none;
 }
+
+.floating-bottom-bar::-webkit-scrollbar { display: none; }
 
 .bar-icon-btn {
   width: 38px;
@@ -897,10 +891,7 @@ body {
   align-items: center;
   justify-content: center;
   cursor: pointer;
-}
-
-.bar-icon-btn:hover {
-  background: rgba(128, 128, 128, 0.15);
+  flex-shrink: 0;
 }
 
 .bar-pill-cta {
@@ -915,6 +906,8 @@ body {
   align-items: center;
   gap: 8px;
   cursor: pointer;
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 
 .bar-pill-cta.listening {
@@ -938,31 +931,29 @@ body {
   font-size: 12.5px;
   font-weight: 600;
   cursor: pointer;
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 
-/* StaffPad Editor Dock */
 .sp-group {
   display: flex;
-  gap: 3px;
+  gap: 2px;
+  flex-shrink: 0;
 }
 
 .sp-note-btn {
-  width: 38px;
-  height: 38px;
+  width: 36px;
+  height: 36px;
   border-radius: 50%;
   background: transparent;
   border: none;
   color: var(--text-primary);
-  font-size: 20px;
+  font-size: 19px;
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  transition: all 0.15s ease;
-}
-
-.sp-note-btn:hover {
-  background: rgba(128, 128, 128, 0.15);
+  flex-shrink: 0;
 }
 
 .sp-note-btn.active {
@@ -975,23 +966,176 @@ body {
   height: 22px;
   background: var(--glass-border);
   margin: 0 2px;
+  flex-shrink: 0;
 }
 
-/* Zonas invisibles de cambio de página en Concierto */
 .invisible-page-zone {
   position: absolute;
   top: 12%;
   bottom: 12%;
-  width: 56px;
+  width: 48px;
   background: transparent;
   border: none;
   color: var(--text-secondary);
   opacity: 0.25;
-  font-size: 36px;
+  font-size: 34px;
   cursor: pointer;
   z-index: 20;
 }
 
-.invisible-page-zone.left { left: 8px; }
-.invisible-page-zone.right { right: 8px; }
-.invisible-page-zone:hover { opacity: 0.85; }
+.invisible-page-zone.left { left: 4px; }
+.invisible-page-zone.right { right: 4px; }
+
+/* ==========================================================================
+   OPTIMIZACIÓN RESPONSIVA PARA CELULARES Y TABLETS COMPACTAS (< 768px)
+   ========================================================================== */
+@media (max-width: 768px) {
+  /* 1. HUD Superior compacto en celular */
+  .floating-hud-top {
+    top: max(8px, env(safe-area-inset-top));
+    left: 8px;
+    right: 8px;
+    gap: 6px;
+  }
+
+  /* Ocultar píldora de título de obra en celular para dar todo el ancho a los 4 modos */
+  .hud-status {
+    display: none;
+  }
+
+  .mode-segmented {
+    flex: 1;
+    justify-content: space-between;
+    padding: 3px;
+  }
+
+  .seg-btn {
+    flex: 1;
+    justify-content: center;
+    padding: 7px 8px;
+    font-size: 12px;
+    gap: 4px;
+  }
+
+  .seg-btn .v-ico {
+    width: 15px;
+    height: 15px;
+  }
+
+  .hud-palettes {
+    padding: 5px 8px;
+    gap: 5px;
+  }
+
+  .theme-orb {
+    width: 18px;
+    height: 18px;
+  }
+
+  /* 2. Biblioteca en celular: folios más compactos y manejables con el pulgar */
+  .library-stage {
+    padding: 60px 12px 28px;
+    gap: 12px;
+  }
+
+  .folio-grid {
+    grid-template-columns: repeat(auto-fill, minmax(155px, 1fr));
+    gap: 10px;
+  }
+
+  .folio-preview-sheet {
+    height: 110px;
+    padding: 8px 10px;
+  }
+
+  /* 3. Lienzo de Partitura en celular: aprovecha el 98% del ancho y deja espacio al dock inferior */
+  .full-bleed-canvas {
+    padding: 56px 6px 76px;
+  }
+
+  .score-folio {
+    padding: 12px 12px 10px;
+    border-radius: 10px;
+  }
+
+  .folio-meta {
+    display: none;
+  }
+
+  .folio-header {
+    justify-content: center;
+    padding-bottom: 5px;
+  }
+
+  .folio-title h2 {
+    font-size: 15.5px;
+  }
+
+  .folio-title span {
+    font-size: 11px;
+  }
+
+  /* 4. El riel lateral de Concepts pasa automáticamente abajo en forma horizontal en Celular */
+  .concepts-tool-rail {
+    left: 50%;
+    top: auto;
+    bottom: max(10px, env(safe-area-inset-bottom));
+    transform: translateX(-50%);
+    flex-direction: row;
+    padding: 5px 8px;
+    border-radius: 999px;
+    max-width: calc(100vw - 16px);
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+
+  .concepts-tool-rail::-webkit-scrollbar { display: none; }
+
+  .rail-tool {
+    width: 46px;
+    height: 44px;
+    border-radius: 12px;
+  }
+
+  .rail-divider {
+    width: 0.5px;
+    height: 24px;
+    margin: 0 2px;
+  }
+
+  .rail-inks {
+    flex-direction: row;
+    gap: 6px;
+    padding: 0 4px;
+  }
+
+  /* 5. El popover de Sellos se abre como Bottom Sheet arriba del dock en Celular */
+  .concepts-popover {
+    left: 50%;
+    top: auto;
+    bottom: 72px;
+    transform: translateX(-50%);
+    width: calc(100vw - 20px);
+    max-width: 420px;
+  }
+
+  /* 6. Modal Taller PDF adaptado a pantalla móvil */
+  .folio-strip {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .folio-page-thumb {
+    height: 82px;
+  }
+}
+
+/* En teléfonos muy angostos (< 400px), mostrar ícono + etiqueta corta en los modos */
+@media (max-width: 400px) {
+  .seg-btn {
+    padding: 7px 5px;
+    font-size: 11px;
+  }
+  .seg-btn .v-ico {
+    display: none;
+  }
+}
