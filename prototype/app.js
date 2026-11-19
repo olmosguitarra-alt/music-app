@@ -23,10 +23,10 @@ function switchMode(mode) {
   if (mode === "editor") setTimeout(setupEditorCanvas, 50);
 }
 
-function setPaper(theme, btn) {
-  document.body.className = theme;
-  document.querySelectorAll(".paper-dot").forEach((d) => d.classList.remove("active"));
-  btn.classList.add("active");
+function setPalette(paletteClass, btn) {
+  document.body.className = paletteClass;
+  document.querySelectorAll(".pal-chip").forEach((c) => c.classList.remove("active"));
+  if (btn) btn.classList.add("active");
 }
 
 // 1. BIBLIOTECA MINIMALISTA
@@ -55,8 +55,8 @@ function renderLibrary() {
       </div>
       <div class="score-actions" onclick="event.stopPropagation()">
         <span class="tag-badge">${s.period}</span>
-        <button class="btn-icon-clean" onclick="openPdfModal('${s.title.replace(/'/g, "")}')" title="Taller PDF">✂️</button>
-        <button class="btn-icon-clean" onclick="switchMode('concert')" title="Abrir en Concierto">🎙️</button>
+        <button class="btn-icon-clean" onclick="openPdfModal('${s.title.replace(/'/g, "")}')" title="Taller PDF">✂</button>
+        <button class="btn-icon-clean" onclick="switchMode('concert')" title="Abrir en Concierto">◉</button>
       </div>
     </div>
   `
@@ -151,7 +151,7 @@ const stampProfiles = {
 };
 
 let studyTool = "pen";
-let inkColor = "#1d4ed8";
+let inkColor = "#23426e";
 let autoMold = true;
 let selectedStamp = null;
 let moldIndex = 0;
