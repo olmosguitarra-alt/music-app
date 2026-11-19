@@ -4,21 +4,19 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <title>Atril — Concepts × StaffPad × Linearity UI</title>
-  <link rel="stylesheet" href="styles.css?v=3" />
+  <link rel="stylesheet" href="styles.css?v=4" />
 </head>
 <body class="palette-luthier">
 
   <!-- =================================================================== -->
-  <!-- HUD SUPERIOR FLOTANTE (Estilo Concepts & StaffPad: Cero barra fija) -->
+  <!-- HUD SUPERIOR FLOTANTE (Estilo Concepts & StaffPad)                  -->
   <!-- =================================================================== -->
   <header class="floating-hud-top">
-    <!-- Píldora Izquierda: Estado / Obra activa -->
     <div class="glass-pill hud-status" id="hudContextPill">
       <span class="status-dot"></span>
       <span class="hud-piece-name" id="hudPieceTitle">J. S. Bach — BWV 1034</span>
     </div>
 
-    <!-- Píldora Central: Selector de los 4 Modos (Linearity Curve Segmented Control) -->
     <nav class="glass-pill mode-segmented" aria-label="Modos">
       <button class="seg-btn active" data-mode="library" onclick="switchMode('library')">
         <svg viewBox="0 0 24 24" class="v-ico"><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/></svg>
@@ -38,7 +36,6 @@
       </button>
     </nav>
 
-    <!-- Píldora Derecha: Paletas Editoriales (Concepts Canvas Themes) -->
     <div class="glass-pill hud-palettes" title="Ambiente visual">
       <button class="theme-orb orb-luthier active" onclick="setPalette('palette-luthier', this)" title="Lutier & Ébano"></button>
       <button class="theme-orb orb-henle" onclick="setPalette('palette-henle', this)" title="Henle Urtext"></button>
@@ -48,38 +45,120 @@
   </header>
 
   <!-- =================================================================== -->
-  <!-- 1. MODO BIBLIOTECA (Inspirado en StaffPad Library + Linearity)      -->
+  <!-- 1. MODO BIBLIOTECA AFINADO (Folio/Lista + Desplegable + Modo IA)    -->
   <!-- =================================================================== -->
   <main id="mode-library" class="canvas-view active">
     <div class="library-stage">
-      <!-- Barra flotante de búsqueda e IA -->
-      <div class="lib-top-controls">
+
+      <!-- BARRA SUPERIOR ÚNICA Y MINIMALISTA DE LA BIBLIOTECA -->
+      <div class="lib-command-bar">
+        <!-- Buscador limpio -->
         <div class="glass-search">
           <svg viewBox="0 0 24 24" class="v-ico"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
-          <input type="text" id="searchInput" placeholder="Buscar partitura, compositor, BWV, dotación..." oninput="renderLibrary()" />
+          <input type="text" id="searchInput" placeholder="Buscar obra, compositor, BWV..." oninput="renderLibrary()" />
         </div>
 
-        <button class="glass-cta-btn" id="aiBtn" onclick="cleanLibraryWithAI()">
-          <svg viewBox="0 0 24 24" class="v-ico"><path d="m12 3-1.9 5.8a2 2 0 0 1-1.3 1.3L3 12l5.8 1.9a2 2 0 0 1 1.3 1.3L12 21l1.9-5.8a2 2 0 0 1 1.3-1.3L21 12l-5.8-1.9a2 2 0 0 1-1.3-1.3Z"/></svg>
-          <span>Catalogar IA</span>
-        </button>
+        <!-- Botón Desplegable Minimalista de Clasificación + Modo IA -->
+        <div class="classify-dropdown-wrap">
+          <button class="glass-dropdown-trigger" id="classifyTriggerBtn" onclick="toggleClassifyMenu(event)">
+            <svg viewBox="0 0 24 24" class="v-ico"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>
+            <span id="currentClassifyLabel">Clasificar: Todo</span>
+            <svg viewBox="0 0 24 24" class="v-ico chevron"><polyline points="6 9 12 15 18 9"/></svg>
+          </button>
+
+          <!-- Menú Desplegable Flotante estilo Linearity Curve -->
+          <div class="glass-dropdown-menu hidden" id="classifyMenu" onclick="event.stopPropagation()">
+            <div class="menu-section-label">ORGANIZAR ARCHIVOS POR</div>
+            <button class="dd-item active" data-cls="all" onclick="selectClassification('all', 'Clasificar: Todo', this)">
+              <span>Todas las obras (A–Z)</span>
+              <small>6</small>
+            </button>
+            <button class="dd-item" data-cls="composer" onclick="selectClassification('composer', 'Por Compositor', this)">
+              <span>Compositor</span>
+              <small>4</small>
+            </button>
+            <button class="dd-item" data-cls="period" onclick="selectClassification('period', 'Por Periodo', this)">
+              <span>Periodo Histórico</span>
+              <small>2</small>
+            </button>
+            <button class="dd-item" data-cls="instrumentation" onclick="selectClassification('instrumentation', 'Por Dotación', this)">
+              <span>Dotación Instrumental</span>
+              <small>3</small>
+            </button>
+            <button class="dd-item" data-cls="programs" onclick="selectClassification('programs', 'Programas', this)">
+              <span>Programas de Concierto</span>
+              <small>3</small>
+            </button>
+
+            <div class="dd-divider"></div>
+
+            <!-- Opción Especial: Modo IA (Consultoría Histórica, Teórica e Interpretaciones) -->
+            <button class="dd-item ai-special" data-cls="ai-mode" onclick="selectClassification('ai-mode', '✦ Modo IA Musical', this)">
+              <div class="ai-dd-text">
+                <strong>✦ Modo IA Musicológico</strong>
+                <span>Historia, teoría, interpretación y YouTube</span>
+              </div>
+            </button>
+
+            <button class="dd-item subtle-action" onclick="cleanLibraryWithAI()">
+              <span>✦ Normalizar nombres de PDFs crudos</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Botón Discreto y Elegante para alternar Vista Folio (⊞) vs Vista Lista (☰) -->
+        <div class="view-toggle-pill" id="viewTogglePill" title="Alternar vista Folio / Lista">
+          <button class="vt-btn active" id="btnViewFolio" onclick="setLibraryViewMode('folio')" aria-label="Modo Folio con previsualización">
+            <svg viewBox="0 0 24 24" class="v-ico"><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="9" rx="1.5"/><rect x="3" y="15" width="7" height="6" rx="1.5"/><rect x="14" y="15" width="7" height="6" rx="1.5"/></svg>
+            <span class="vt-label">Folio</span>
+          </button>
+          <button class="vt-btn" id="btnViewList" onclick="setLibraryViewMode('list')" aria-label="Modo Lista con detalles">
+            <svg viewBox="0 0 24 24" class="v-ico"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
+            <span class="vt-label">Lista</span>
+          </button>
+        </div>
       </div>
 
-      <!-- Filtros limpios tipo Linearity Curve -->
-      <div class="lib-pills-row">
-        <button class="filter-token active" onclick="setFilter('all', this)">Biblioteca</button>
-        <button class="filter-token" onclick="setFilter('setlist', this)">Programas Concierto</button>
-        <button class="filter-token" onclick="setFilter('Barroco', this)">Barroco</button>
-        <button class="filter-token" onclick="setFilter('Siglo XX', this)">Siglo XX</button>
-        <button class="filter-token" onclick="setFilter('Guitarra Sola', this)">Guitarra Sola</button>
-        <button class="filter-token" onclick="setFilter('Orquesta / Cámara', this)">Dúo &amp; Orquesta</button>
+      <!-- CONTENEDOR PRINCIPAL DE ARCHIVOS (Cambia entre Modo Folio y Modo Lista agrupada) -->
+      <div id="libraryCatalogContainer">
+        <div class="folio-grid" id="scoreList"></div>
       </div>
 
-      <!-- Galería de Folios Verticales (Hoja Parada estilo StaffPad) -->
-      <div class="folio-grid" id="scoreList"></div>
+      <!-- =============================================================== -->
+      <!-- VISTA ESPECIAL: MODO IA MUSICOLÓGICO E INTERPRETATIVO           -->
+      <!-- =============================================================== -->
+      <section class="ai-musicology-stage hidden" id="aiMusicologyStage">
+        <div class="ai-stage-header">
+          <div class="ai-title-row">
+            <div>
+              <span class="ai-eyebrow">✦ CONSULTORÍA MUSICAL &amp; REPERTORIO</span>
+              <h3>Análisis Histórico, Teórico e Interpretaciones de Referencia</h3>
+            </div>
+            <button class="btn-back-catalog" onclick="exitAiModeToCatalog()">← Volver a Archivos</button>
+          </div>
+
+          <!-- Selector de Obra a Consultar + Pregunta Libre a la IA -->
+          <div class="ai-selector-bar">
+            <select id="aiWorkSelector" class="glass-select" onchange="renderAiMusicologyView(this.value)">
+              <!-- Llenado dinámicamente con las obras de la biblioteca -->
+            </select>
+            <div class="ai-prompt-box">
+              <input type="text" id="aiCustomPrompt" placeholder="Preguntar a la IA sobre digitación, ornamentación, tempo o edición..." onkeydown="if(event.key==='Enter') askCustomAiQuestion()" />
+              <button class="btn-ask-ai" onclick="askCustomAiQuestion()">Consultar</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Respuesta personalizada si el usuario hace una pregunta libre -->
+        <div class="ai-custom-answer hidden" id="aiCustomAnswerBox"></div>
+
+        <!-- Tarjetas de Consulta Profunda: Historia, Teoría, Interpretación y Links YouTube/Web -->
+        <div class="ai-knowledge-grid" id="aiKnowledgeGrid"></div>
+      </section>
+
     </div>
 
-    <!-- Inspector Flotante de Taller PDF (Estilo Linearity Curve Popover) -->
+    <!-- Inspector Flotante de Taller PDF -->
     <div class="modal-backdrop hidden" id="pdfModal" onclick="closePdfModal(event)">
       <div class="linearity-inspector-modal" onclick="event.stopPropagation()">
         <div class="insp-head">
@@ -140,7 +219,6 @@
   <!-- 2. MODO ESTUDIO (Lienzo 100% + Paleta Concepts + Linearity Curve)   -->
   <!-- =================================================================== -->
   <main id="mode-study" class="canvas-view">
-    <!-- Lienzo infinito vertical con la Hoja Parada a máxima escala -->
     <div class="full-bleed-canvas">
       <div class="score-folio" id="studySheet">
         <div class="folio-header">
@@ -165,22 +243,17 @@
       </div>
     </div>
 
-    <!-- BARRA LATERAL / FLOTANTE ESTILO CONCEPTS + LINEARITY CURVE -->
-    <!-- Acoplada al borde izquierdo para el pulgar, dejando toda la partitura libre -->
     <aside class="concepts-tool-rail">
-      <!-- Pluma estilográfica (Trazo libre) -->
       <button class="rail-tool active" id="btnPen" onclick="setStudyTool('pen')" title="Pluma de trazo libre">
         <svg viewBox="0 0 24 24" class="v-ico"><path d="M12 19l7-7 3 3-7 7-3-3z"/><path d="M18 13l-1.5-7.5L2 2l3.5 14.5L13 18l5-5z"/><path d="M2 2l7.586 7.586"/></svg>
         <span class="rail-label">Pluma</span>
       </button>
 
-      <!-- Marcador translúcido -->
       <button class="rail-tool" id="btnMarker" onclick="setStudyTool('marker')" title="Marcador de frases">
         <svg viewBox="0 0 24 24" class="v-ico"><path d="m9 11-6 6v3h9l3-3"/><path d="m22 12-4.6 4.6a2 2 0 0 1-2.8 0l-5.2-5.2a2 2 0 0 1 0-2.8L14 4"/></svg>
         <span class="rail-label">Marcador</span>
       </button>
 
-      <!-- Borrador vectorial -->
       <button class="rail-tool" id="btnEraser" onclick="setStudyTool('eraser')" title="Borrador">
         <svg viewBox="0 0 24 24" class="v-ico"><path d="m7 21-4.3-4.3c-1-1-1-2.5 0-3.4l9.6-9.6c1-1 2.5-1 3.4 0l5.6 5.6c1 1 1 2.5 0 3.4L13 21"/><path d="M22 21H7"/><path d="m5 11 9 9"/></svg>
         <span class="rail-label">Borrar</span>
@@ -188,13 +261,11 @@
 
       <div class="rail-divider"></div>
 
-      <!-- Conversor Trazo → Letra de Molde (StaffPad Recognition) -->
       <button class="rail-tool magic-active" id="btnMoldToggle" onclick="toggleAutoMold()" title="Convertir trazo manuscrito a texto de molde">
         <svg viewBox="0 0 24 24" class="v-ico"><path d="m12 3-1.9 5.8a2 2 0 0 1-1.3 1.3L3 12l5.8 1.9a2 2 0 0 1 1.3 1.3L12 21l1.9-5.8a2 2 0 0 1 1.3-1.3L21 12l-5.8-1.9a2 2 0 0 1-1.3-1.3Z"/></svg>
         <span class="rail-label">A Molde</span>
       </button>
 
-      <!-- Gaveta de Sellos por Instrumento -->
       <button class="rail-tool" id="btnStamps" onclick="toggleStampPopover()" title="Sellos de digitación y agógica">
         <svg viewBox="0 0 24 24" class="v-ico"><path d="M5 22h14"/><path d="M19.27 13.73A2.5 2.5 0 0 0 17.5 13h-11A2.5 2.5 0 0 0 4 15.5V17a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-1.5c0-.66-.26-1.3-.73-1.77Z"/><path d="M14 13V8.5C14 7 15 7 15 5a3 3 0 0 0-3-3c-1.66 0-3 1-3 3s1 2 1 3.5V13"/></svg>
         <span class="rail-label">Sellos</span>
@@ -202,7 +273,6 @@
 
       <div class="rail-divider"></div>
 
-      <!-- Puntos de Tinta (Estilo Concepts Color Wells) -->
       <div class="rail-inks">
         <button class="ink-well blue active" onclick="setInk('#23426e', this)" title="Tinta Azul Prusia"></button>
         <button class="ink-well red" onclick="setInk('#8c2f27', this)" title="Tinta Carmín"></button>
@@ -214,7 +284,6 @@
       </button>
     </aside>
 
-    <!-- Popover de Sellos Especializados (Estilo Linearity Curve Inspector) -->
     <div class="concepts-popover hidden" id="stampPopover">
       <div class="popover-segmented">
         <button class="p-seg active" onclick="switchStampTab('guitar', this)">Guitarra</button>
@@ -227,7 +296,7 @@
   </main>
 
   <!-- =================================================================== -->
-  <!-- 3. MODO CONCIERTO (Hoja Parada Pura + Cápsula Escucha StaffPad)     -->
+  <!-- 3. MODO CONCIERTO                                                   -->
   <!-- =================================================================== -->
   <main id="mode-concert" class="canvas-view">
     <div class="full-bleed-canvas">
@@ -256,7 +325,6 @@
       <button class="invisible-page-zone right" onclick="turnPage(1)" aria-label="Siguiente página">›</button>
     </div>
 
-    <!-- Cápsula Flotante Minimalista Inferior -->
     <div class="glass-pill floating-bottom-bar">
       <button class="bar-icon-btn" onclick="turnPage(-1)">
         <svg viewBox="0 0 24 24" class="v-ico"><polyline points="15 18 9 12 15 6"/></svg>
@@ -278,7 +346,7 @@
   </main>
 
   <!-- =================================================================== -->
-  <!-- 4. MODO STAFF EDITOR (Inspirado en StaffPad + Sibelius Touch)       -->
+  <!-- 4. MODO EDITOR (StaffPad + Sibelius Touch)                          -->
   <!-- =================================================================== -->
   <main id="mode-editor" class="canvas-view">
     <div class="full-bleed-canvas">
@@ -304,7 +372,6 @@
       </div>
     </div>
 
-    <!-- PALETA FLOTANTE DE NOTACIÓN (StaffPad Top/Bottom Ribbon + Linearity Precision) -->
     <div class="glass-pill floating-bottom-bar staffpad-dock">
       <div class="sp-group">
         <button class="sp-note-btn" onclick="pickDuration('𝅝', 'Redonda', this)">𝅝</button>
@@ -337,6 +404,6 @@
     </div>
   </main>
 
-  <script src="app.js?v=3"></script>
+  <script src="app.js?v=4"></script>
 </body>
 </html>

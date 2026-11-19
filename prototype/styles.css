@@ -219,24 +219,31 @@ body {
 }
 
 /* ==========================================================================
-   1. MODO BIBLIOTECA
+   1. MODO BIBLIOTECA AFINADO (Folio/Lista + Desplegable + Modo IA)
    ========================================================================== */
 .library-stage {
-  max-width: 960px;
+  max-width: 980px;
   width: 100%;
   margin: 0 auto;
-  padding: 74px 22px 36px;
+  padding: 74px 22px 44px;
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 18px;
   height: 100%;
   overflow-y: auto;
 }
 
-.lib-top-controls {
+.hidden {
+  display: none !important;
+}
+
+/* Barra única superior de la biblioteca */
+.lib-command-bar {
   display: flex;
   gap: 10px;
   align-items: center;
+  position: relative;
+  z-index: 35;
 }
 
 .glass-search {
@@ -249,6 +256,7 @@ body {
   align-items: center;
   gap: 10px;
   height: 44px;
+  min-width: 140px;
 }
 
 .glass-search input {
@@ -256,7 +264,7 @@ body {
   background: transparent;
   border: none;
   color: var(--text-primary);
-  font-size: 14.5px;
+  font-size: 14px;
   outline: none;
 }
 
@@ -264,54 +272,210 @@ body {
   color: var(--text-secondary);
 }
 
-.glass-cta-btn {
+/* Botón Desplegable Minimalista de Clasificación (Linearity Curve style) */
+.classify-dropdown-wrap {
+  position: relative;
+}
+
+.glass-dropdown-trigger {
   height: 44px;
-  background: var(--accent);
-  color: var(--accent-ink);
-  border: none;
-  padding: 0 16px;
-  border-radius: 14px;
-  font-size: 13.5px;
-  font-weight: 700;
-  display: flex;
-  align-items: center;
-  gap: 7px;
-  cursor: pointer;
-  white-space: nowrap;
-}
-
-.lib-pills-row {
-  display: flex;
-  gap: 8px;
-  overflow-x: auto;
-  padding-bottom: 4px;
-  scrollbar-width: none;
-}
-
-.lib-pills-row::-webkit-scrollbar { display: none; }
-
-.filter-token {
   background: var(--card-bg);
   border: 0.5px solid var(--glass-border);
-  color: var(--text-secondary);
-  padding: 7px 15px;
-  border-radius: 999px;
-  font-size: 13px;
+  color: var(--text-primary);
+  padding: 0 14px;
+  border-radius: 14px;
+  font-size: 13.5px;
   font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 8px;
   cursor: pointer;
   white-space: nowrap;
+  transition: border-color 0.15s ease;
 }
 
-.filter-token.active {
+.glass-dropdown-trigger:hover {
+  border-color: var(--accent);
+}
+
+.glass-dropdown-trigger .chevron {
+  width: 14px;
+  height: 14px;
+  opacity: 0.7;
+}
+
+.glass-dropdown-menu {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  width: 280px;
+  background: var(--glass-bg);
+  backdrop-filter: blur(24px) saturate(160%);
+  -webkit-backdrop-filter: blur(24px) saturate(160%);
+  border: 0.5px solid var(--glass-border);
+  border-radius: 18px;
+  padding: 8px;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.45);
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  z-index: 80;
+}
+
+.menu-section-label {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.8px;
+  color: var(--text-secondary);
+  padding: 6px 10px 4px;
+}
+
+.dd-item {
+  background: transparent;
+  border: none;
+  color: var(--text-primary);
+  padding: 9px 12px;
+  border-radius: 11px;
+  font-size: 13px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  text-align: left;
+  cursor: pointer;
+  transition: background-color 0.14s ease;
+}
+
+.dd-item small {
+  font-size: 11px;
+  color: var(--text-secondary);
+  background: rgba(128, 128, 128, 0.14);
+  padding: 2px 7px;
+  border-radius: 99px;
+}
+
+.dd-item:hover {
+  background: rgba(128, 128, 128, 0.14);
+}
+
+.dd-item.active {
+  background: var(--accent);
+  color: var(--accent-ink);
+}
+
+.dd-item.active small {
+  color: var(--accent-ink);
+  background: rgba(0, 0, 0, 0.12);
+}
+
+.dd-divider {
+  height: 0.5px;
+  background: var(--glass-border);
+  margin: 4px 6px;
+}
+
+.dd-item.ai-special {
+  background: rgba(207, 169, 114, 0.12);
+  border: 0.5px solid var(--accent);
+  padding: 10px 12px;
+}
+
+.ai-dd-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.ai-dd-text strong {
+  font-size: 13px;
+  color: var(--accent);
+}
+
+.dd-item.ai-special.active .ai-dd-text strong,
+.dd-item.ai-special.active .ai-dd-text span {
+  color: var(--accent-ink);
+}
+
+.ai-dd-text span {
+  font-size: 11px;
+  color: var(--text-secondary);
+  font-weight: 500;
+}
+
+.dd-item.subtle-action {
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
+/* Botón discreto y elegante para alternar Folio / Lista */
+.view-toggle-pill {
+  height: 44px;
+  background: var(--card-bg);
+  border: 0.5px solid var(--glass-border);
+  border-radius: 14px;
+  padding: 4px;
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  flex-shrink: 0;
+}
+
+.vt-btn {
+  height: 100%;
+  background: transparent;
+  border: none;
+  color: var(--text-secondary);
+  padding: 0 11px;
+  border-radius: 10px;
+  font-size: 12.5px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.vt-btn:hover {
+  color: var(--text-primary);
+}
+
+.vt-btn.active {
   background: var(--text-primary);
   color: var(--bg-canvas);
   font-weight: 700;
 }
 
+/* Encabezados de sección cuando se clasifica por Compositor, Periodo, Dotación o Programas */
+.lib-group-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 4px 8px;
+  border-bottom: 0.5px solid var(--glass-border);
+  margin-top: 8px;
+  margin-bottom: 10px;
+}
+
+.lib-group-header h4 {
+  font-family: "Georgia", serif;
+  font-size: 15.5px;
+  color: var(--accent);
+  letter-spacing: 0.3px;
+}
+
+.lib-group-count {
+  font-size: 11.5px;
+  color: var(--text-secondary);
+  font-weight: 600;
+}
+
+/* MODO FOLIO (Con previsualización y detalles) */
 .folio-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(235px, 1fr));
   gap: 14px;
+  margin-bottom: 12px;
 }
 
 .folio-card {
@@ -334,9 +498,9 @@ body {
 .folio-preview-sheet {
   background: var(--paper-bg);
   color: var(--paper-ink);
-  height: 138px;
+  height: 144px;
   border-radius: 10px;
-  padding: 11px 13px;
+  padding: 10px 13px;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
@@ -352,7 +516,7 @@ body {
 
 .folio-preview-head strong {
   font-size: 11px;
-  letter-spacing: 0.6px;
+  letter-spacing: 0.5px;
   display: block;
   white-space: nowrap;
   overflow: hidden;
@@ -362,7 +526,7 @@ body {
 .folio-preview-head small {
   font-size: 9.5px;
   font-style: italic;
-  opacity: 0.7;
+  opacity: 0.72;
 }
 
 .mini-staves {
@@ -386,6 +550,15 @@ body {
   left: 6px;
   font-size: 10.5px;
   letter-spacing: 2.5px;
+}
+
+.folio-preview-foot {
+  display: flex;
+  justify-content: space-between;
+  font-size: 9px;
+  opacity: 0.65;
+  border-top: 0.5px solid var(--paper-line);
+  padding-top: 3px;
 }
 
 .folio-card-body {
@@ -416,8 +589,15 @@ body {
 }
 
 .folio-card-sub {
-  font-size: 12px;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--accent);
+}
+
+.folio-card-detail {
+  font-size: 11.5px;
   color: var(--text-secondary);
+  line-height: 1.3;
 }
 
 .folio-card-foot {
@@ -426,6 +606,7 @@ body {
   justify-content: space-between;
   padding-top: 6px;
   border-top: 0.5px solid var(--glass-border);
+  margin-top: auto;
 }
 
 .period-tag {
@@ -451,6 +632,313 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
+}
+
+.mini-action-btn:hover {
+  background: var(--accent);
+  color: var(--accent-ink);
+}
+
+/* MODO LISTA CON DETALLES (Para ver mayor cantidad de archivos de un vistazo) */
+.editorial-list-table {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 12px;
+}
+
+.list-detail-row {
+  background: var(--card-bg);
+  border: 0.5px solid var(--glass-border);
+  border-radius: 12px;
+  padding: 11px 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  cursor: pointer;
+  transition: border-color 0.15s ease, transform 0.12s ease;
+}
+
+.list-detail-row:hover {
+  border-color: var(--accent);
+}
+
+.list-col-main {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.list-title-line {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.list-work-title {
+  font-size: 14px;
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.list-work-subtitle {
+  font-size: 12px;
+  color: var(--text-secondary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.list-col-meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.list-meta-pill {
+  background: rgba(128, 128, 128, 0.12);
+  color: var(--text-secondary);
+  padding: 3px 9px;
+  border-radius: 6px;
+  font-size: 11.5px;
+  font-weight: 600;
+}
+
+.list-meta-pages {
+  font-size: 11.5px;
+  color: var(--text-secondary);
+  min-width: 52px;
+  text-align: right;
+}
+
+.list-col-actions {
+  display: flex;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+/* ==========================================================================
+   MODO IA MUSICOLÓGICO E INTERPRETATIVO (Historia, Teoría, Interpretación y Links)
+   ========================================================================== */
+.ai-musicology-stage {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.ai-stage-header {
+  background: var(--card-bg);
+  border: 0.5px solid var(--glass-border);
+  border-radius: 18px;
+  padding: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.ai-title-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.ai-eyebrow {
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.9px;
+  color: var(--accent);
+}
+
+.ai-title-row h3 {
+  font-family: "Georgia", serif;
+  font-size: 18px;
+  margin-top: 3px;
+}
+
+.btn-back-catalog {
+  background: rgba(128, 128, 128, 0.14);
+  border: 0.5px solid var(--glass-border);
+  color: var(--text-primary);
+  padding: 8px 14px;
+  border-radius: 10px;
+  font-size: 12.5px;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.ai-selector-bar {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.glass-select {
+  background: var(--bg-canvas);
+  border: 0.5px solid var(--glass-border);
+  color: var(--text-primary);
+  padding: 10px 14px;
+  border-radius: 12px;
+  font-size: 13.5px;
+  font-weight: 600;
+  outline: none;
+  min-width: 240px;
+}
+
+.ai-prompt-box {
+  flex: 1;
+  display: flex;
+  gap: 8px;
+  min-width: 240px;
+}
+
+.ai-prompt-box input {
+  flex: 1;
+  background: var(--bg-canvas);
+  border: 0.5px solid var(--glass-border);
+  color: var(--text-primary);
+  padding: 10px 14px;
+  border-radius: 12px;
+  font-size: 13.5px;
+  outline: none;
+}
+
+.btn-ask-ai {
+  background: var(--accent);
+  color: var(--accent-ink);
+  border: none;
+  padding: 0 18px;
+  border-radius: 12px;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.ai-custom-answer {
+  background: var(--card-bg);
+  border: 1px solid var(--accent);
+  border-radius: 16px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  font-size: 13.5px;
+  line-height: 1.55;
+}
+
+.ai-answer-header {
+  display: flex;
+  justify-content: space-between;
+  color: var(--accent);
+  font-size: 12.5px;
+}
+
+.ai-knowledge-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(290px, 1fr));
+  gap: 14px;
+}
+
+.ai-info-card {
+  background: var(--card-bg);
+  border: 0.5px solid var(--glass-border);
+  border-radius: 16px;
+  padding: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.ai-card-head {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  border-bottom: 0.5px solid var(--glass-border);
+  padding-bottom: 8px;
+}
+
+.ai-card-tag {
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.7px;
+  color: var(--accent);
+}
+
+.ai-card-head h4 {
+  font-family: "Georgia", serif;
+  font-size: 16px;
+}
+
+.ai-info-card p {
+  font-size: 13.5px;
+  line-height: 1.55;
+  color: var(--text-primary);
+  opacity: 0.92;
+}
+
+.ai-card-meta {
+  margin-top: auto;
+  padding-top: 8px;
+  border-top: 0.5px solid var(--glass-border);
+  display: flex;
+  justify-content: space-between;
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
+.btn-open-study-from-ai {
+  width: 100%;
+  background: rgba(128, 128, 128, 0.14);
+  border: 0.5px solid var(--glass-border);
+  color: var(--text-primary);
+  padding: 10px;
+  border-radius: 10px;
+  font-size: 12.5px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.btn-open-study-from-ai:hover {
+  background: var(--accent);
+  color: var(--accent-ink);
+}
+
+.ai-links-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.ai-ext-link {
+  background: rgba(128, 128, 128, 0.12);
+  border: 0.5px solid var(--glass-border);
+  color: var(--text-primary);
+  text-decoration: none;
+  padding: 11px 14px;
+  border-radius: 11px;
+  font-size: 13px;
+  font-weight: 600;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  transition: border-color 0.15s ease, background-color 0.15s ease;
+}
+
+.ai-ext-link:hover {
+  border-color: var(--accent);
+  background: rgba(207, 169, 114, 0.15);
+}
+
+.ext-arrow {
+  color: var(--accent);
+  font-weight: 700;
 }
 
 /* Modal Taller PDF */
@@ -1050,6 +1538,46 @@ body {
   .library-stage {
     padding: 86px 12px 28px;
     gap: 12px;
+  }
+
+  .lib-command-bar {
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .glass-search {
+    flex: 1 1 100%;
+    height: 40px;
+  }
+
+  .classify-dropdown-wrap {
+    flex: 1;
+  }
+
+  .glass-dropdown-trigger {
+    width: 100%;
+    justify-content: space-between;
+    height: 40px;
+    padding: 0 11px;
+    font-size: 12.5px;
+  }
+
+  .glass-dropdown-menu {
+    left: 0;
+    right: auto;
+    width: min(280px, calc(100vw - 24px));
+  }
+
+  .view-toggle-pill {
+    height: 40px;
+  }
+
+  .vt-label {
+    display: none;
+  }
+
+  .list-col-meta {
+    display: none;
   }
 
   .folio-grid {

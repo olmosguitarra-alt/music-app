@@ -1,19 +1,143 @@
 /* ==========================================================================
-   CONCEPTS × STAFFPAD × LINEARITY CURVE INTERACTION ENGINE
+   CONCEPTS × STAFFPAD × LINEARITY CURVE INTERACTION ENGINE (v4)
+   BIBLIOTECA AFINADA: FOLIO/LISTA + DESPLEGABLE DE CLASIFICACIÓN + MODO IA
    ========================================================================== */
 
 const scores = [
-  { id: 1, title: "Sonata BWV 1034", subtitle: "Transcr. David Russell", composer: "J. S. Bach", period: "Barroco", group: "Guitarra Sola", setlist: true, raw: false },
-  { id: 2, title: "(Partition) Bach - Suite Inglesa Nº 2 BWV 807", clean: "Suite Inglesa Nº 2, BWV 807", subtitle: "En La menor", composer: "J. S. Bach", period: "Barroco", group: "Guitarra Sola", setlist: true, raw: true },
-  { id: 3, title: "0000040517.pdf (Págs. 01–03)", clean: "Concierto del Sur", subtitle: "I. Allegretto (Solista y Reducción)", composer: "Manuel M. Ponce", period: "Siglo XX", group: "Orquesta / Cámara", setlist: true, raw: true },
-  { id: 4, title: "! Brouwer, Leo - From testerdayu to Peny Lane", clean: "From Yesterday to Penny Lane", subtitle: "Guitarra y Orquesta", composer: "Leo Brouwer", period: "Siglo XX", group: "Orquesta / Cámara", setlist: false, raw: true },
-  { id: 5, title: "Sonata Mexicana", subtitle: "I. Allegro moderato", composer: "Manuel M. Ponce", period: "Siglo XX", group: "Guitarra Sola", setlist: true, raw: false },
-  { id: 6, title: "Tango Suite — I. Deciso", subtitle: "Dúo de Guitarras (Dúo Toño)", composer: "Astor Piazzolla", period: "Siglo XX", group: "Orquesta / Cámara", setlist: true, raw: false }
+  {
+    id: 1,
+    title: "Sonata en Mi menor, BWV 1034",
+    subtitle: "Transcr. David Russell (orig. Flauta y Continuo)",
+    composer: "J. S. Bach (1685–1750)",
+    period: "Barroco",
+    group: "Guitarra Sola",
+    program: "Bach Programa",
+    pages: "10 págs.",
+    tuning: "6ª en Re",
+    raw: false,
+    aiData: {
+      history: "Compuesta hacia 1724 en Leipzig (o posiblemente en Köthen) originalmente para flauta travesera y bajo continuo. La transcripción para guitarra clásica de David Russell traslada con maestría la escritura contrapuntística del continuo y la línea solista a un solo instrumento.",
+      theory: "Estructurada en 4 movimientos (Sonata da chiesa: Adagio ma non tanto – Allegro – Andante – Allegro). El primer movimiento en Mi menor emplea un motivo de siciliana ornamentada con un bajo caminante continuo; el tercer movimiento en Sol mayor ofrece un contraste lírico luminoso.",
+      performance: "Cuidar la independencia de planos sonoros entre el pulgar (que asume el rol del violoncello/continuo) y los dedos i-m-a (la flauta). En el Adagio inicial, las apoyaturas deben resolverse dentro del pulso con flexibilidad expresiva sin perder la nobleza del bajo.",
+      links: [
+        { label: "▶ YouTube: David Russell interpreta Bach BWV 1034", url: "https://www.youtube.com/results?search_query=David+Russell+Bach+BWV+1034+guitar" },
+        { label: "▶ YouTube: Comparativa en Flauta Traversa Barroca", url: "https://www.youtube.com/results?search_query=Bach+BWV+1034+baroque+flute" },
+        { label: "🏛️ IMSLP: Manuscrito y Ediciones Urtext BWV 1034", url: "https://imslp.org/wiki/Flute_Sonata_in_E_minor,_BWV_1034_(Bach,_Johann_Sebastian)" }
+      ]
+    }
+  },
+  {
+    id: 2,
+    title: "(Partition) Bach - Suite Inglesa Nº 2 BWV 807",
+    clean: "Suite Inglesa Nº 2 en La menor, BWV 807",
+    subtitle: "Prélude, Allemande, Courante, Sarabande, Bourrées I/II, Gigue",
+    composer: "J. S. Bach (1685–1750)",
+    period: "Barroco",
+    group: "Guitarra Sola",
+    program: "Bach Programa",
+    pages: "14 págs.",
+    tuning: "Estándar",
+    raw: true,
+    aiData: {
+      history: "Las Suites Inglesas (BWV 806–811) fueron compuestas en Weimar alrededor de 1715. Representan la síntesis de Bach entre la danza cortesana francesa y el concierto italiano (*ritornello* en el extenso Preludio inicial).",
+      theory: "El Preludio está construido en una forma Da Capo monumental (A–B–A) impulsada por un motivo motor en semicorcheas. La Sarabande incluye *Les agréments de la même Sarabande* (versión ornamentada escrita por el propio Bach).",
+      performance: "En el Preludio, mantener la claridad articulatoria y reservar peso dinámico para las cadencias estructurales. Utilizar la versión ornamentada de Bach en la repetición de la Sarabande como modelo de improvisación barroca.",
+      links: [
+        { label: "▶ YouTube: Suite Inglesa BWV 807 en Guitarra / Dúo", url: "https://www.youtube.com/results?search_query=Bach+BWV+807+guitar" },
+        { label: "▶ YouTube: Versión en Clavecín (Gustav Leonhardt / Perahia)", url: "https://www.youtube.com/results?search_query=Bach+English+Suite+2+BWV+807" },
+        { label: "🏛️ IMSLP: Partitura Urtext BWV 807", url: "https://imslp.org/wiki/English_Suite_No.2_in_A_minor,_BWV_807_(Bach,_Johann_Sebastian)" }
+      ]
+    }
+  },
+  {
+    id: 3,
+    title: "0000040517.pdf (Págs. 01–03)",
+    clean: "Concierto del Sur (Guitarra y Orquesta)",
+    subtitle: "I. Allegretto — II. Andante — III. Allegro moderato e festivo",
+    composer: "Manuel M. Ponce (1882–1948)",
+    period: "Siglo XX",
+    group: "Guitarra y Orquesta",
+    program: "Programa Manuel Hernández",
+    pages: "18 págs.",
+    tuning: "Estándar",
+    raw: true,
+    aiData: {
+      history: "Dedicado a Andrés Segovia y estrenado en Montevideo en 1941 bajo la batuta del propio Manuel M. Ponce. Es una de las obras cumbre del repertorio concertante mexicano e iberoamericano para guitarra y orquesta.",
+      theory: "El I. Allegretto combina la forma sonata con giros modales e impresionistas y ritmos de raíz hispanoamericana. La gran Cadenza solista del primer movimiento articula los dos temas principales antes de la recapitulación.",
+      performance: "Obra emblemática en la trayectoria de Daniel Olmos (con la que debutó como solista con orquesta a los 17 años). Cuidar la proyección tímbrica (*sul ponticello* vs *metallico*) en los diálogos con maderas y cuerdas, y el pulso rítmico incisivo en el 3/4 + 6/8 del tercer movimiento.",
+      links: [
+        { label: "▶ YouTube: Manuel M. Ponce — Concierto del Sur (Interpretaciones)", url: "https://www.youtube.com/results?search_query=Manuel+M+Ponce+Concierto+del+Sur+guitarra" },
+        { label: "▶ YouTube: Andrés Segovia — Grabación Histórica Concierto del Sur", url: "https://www.youtube.com/results?search_query=Andres+Segovia+Concierto+del+Sur+Ponce" }
+      ]
+    }
+  },
+  {
+    id: 4,
+    title: "! Brouwer, Leo - From testerdayu to Peny Lane",
+    clean: "From Yesterday to Penny Lane",
+    subtitle: "7 Canciones de Lennon/McCartney para Guitarra y Orquesta",
+    composer: "Leo Brouwer (n. 1939)",
+    period: "Siglo XX",
+    group: "Guitarra y Orquesta",
+    program: "Programa Manuel Hernández",
+    pages: "22 págs.",
+    tuning: "Estándar",
+    raw: true,
+    aiData: {
+      history: "Compuesta en 1985 por el maestro cubano Leo Brouwer, fusiona el lirismo melódico de The Beatles con la orquestación neobarroca y contemporánea característica de la etapa hiperromántica de Brouwer.",
+      theory: "Cada canción adopta un tratamiento camerístico distinto: desde texturas tipo *Concerto Grosso* barroco en 'Eleanor Rigby' y 'Penny Lane' hasta armonías cuartales y colorísticas en 'Yesterday' y 'She's Leaving Home'.",
+      performance: "Equilibrar la cantabilidad popular de las melodías originales con el rigor rítmico de las figuraciones brouwerianas y los cambios súbitos de color.",
+      links: [
+        { label: "▶ YouTube: Leo Brouwer — From Yesterday to Penny Lane", url: "https://www.youtube.com/results?search_query=Leo+Brouwer+From+Yesterday+to+Penny+Lane" }
+      ]
+    }
+  },
+  {
+    id: 5,
+    title: "Sonata Mexicana",
+    subtitle: "I. Allegro moderato — II. Intermezzo — III. Allegretto — IV. Allegro vivo",
+    composer: "Manuel M. Ponce (1882–1948)",
+    period: "Siglo XX",
+    group: "Guitarra Sola",
+    program: "Programa Manuel Hernández",
+    pages: "10 págs.",
+    tuning: "Estándar",
+    raw: false,
+    aiData: {
+      history: "Compuesta en 1923 en México, fue la primera sonata que Ponce escribió para Andrés Segovia, marcando el inicio de una colaboración histórica que transformó el repertorio de la guitarra del siglo XX.",
+      theory: "Integra temas de inspiración folclórica mexicana dentro de una arquitectura clásica-impresionista influenciada por la estancia previa de Ponce y su admiración por la escuela francesa.",
+      performance: "Destacar el carácter íntimo y nostálgico del II. Intermezzo (Andantino affettuoso) y la agilidad rítmica de jarabe/danza en el Finale.",
+      links: [
+        { label: "▶ YouTube: Manuel M. Ponce — Sonata Mexicana (Interpretaciones)", url: "https://www.youtube.com/results?search_query=Manuel+Ponce+Sonata+Mexicana+guitar" }
+      ]
+    }
+  },
+  {
+    id: 6,
+    title: "Tango Suite — I. Deciso",
+    subtitle: "Original para Dúo de Guitarras",
+    composer: "Astor Piazzolla (1921–1992)",
+    period: "Siglo XX",
+    group: "Dúo / Cámara",
+    program: "Duo Toño",
+    pages: "12 págs.",
+    tuning: "Estándar",
+    raw: false,
+    aiData: {
+      history: "Escrita en 1984 específicamente para el célebre dúo de los hermanos Sérgio y Odair Assad. Es la única obra de gran formato escrita por Piazzolla para dos guitarras.",
+      theory: "Tres movimientos (Tango No. 1 Deciso – Tango No. 2 Andante – Tango No. 3 Allegro). Emplea la acentuación característica de milonga/nuevo tango (3+3+2), contrapunto fugado y efectos percusivos.",
+      performance: "Sincronización milimétrica entre Guitarra 1 y Guitarra 2 en los acentos en síncopa y los pasajes percusivos sobre la tapa y las cuerdas.",
+      links: [
+        { label: "▶ YouTube: Sérgio & Odair Assad — Piazzolla Tango Suite", url: "https://www.youtube.com/results?search_query=Assad+Brothers+Piazzolla+Tango+Suite" }
+      ]
+    }
+  }
 ];
 
-let currentFilter = "all";
+let libraryViewMode = "folio"; // 'folio' | 'list'
+let currentClassification = "all"; // 'all' | 'composer' | 'period' | 'instrumentation' | 'programs' | 'ai-mode'
 
-// CAMBIO ENTRE LOS 4 MODOS
+// CAMBIO ENTRE LOS 4 MODOS PRINCIPALES
 function switchMode(mode) {
   document.querySelectorAll(".seg-btn").forEach((b) => b.classList.toggle("active", b.dataset.mode === mode));
   document.querySelectorAll(".canvas-view").forEach((v) => v.classList.remove("active"));
@@ -23,30 +147,129 @@ function switchMode(mode) {
   if (mode === "editor") setTimeout(setupEditorCanvas, 40);
 }
 
-// CAMBIO DE PALETA VISUAL (Concepts Orbs)
+// CAMBIO DE PALETA VISUAL
 function setPalette(paletteClass, btn) {
   document.body.className = paletteClass;
   document.querySelectorAll(".theme-orb").forEach((c) => c.classList.remove("active"));
   if (btn) btn.classList.add("active");
 }
 
-// 1. BIBLIOTECA DE FOLIOS VERTICALES (StaffPad Library Style)
+// ==========================================================================
+// 1. BIBLIOTECA AFINADA: ALTERNAR FOLIO / LISTA + DESPLEGABLE + MODO IA
+// ==========================================================================
+
+function setLibraryViewMode(mode) {
+  libraryViewMode = mode;
+  document.getElementById("btnViewFolio").classList.toggle("active", mode === "folio");
+  document.getElementById("btnViewList").classList.toggle("active", mode === "list");
+
+  // Si estaba en Modo IA y toca Folio o Lista, regresa al catálogo en ese modo
+  if (currentClassification === "ai-mode") {
+    currentClassification = "all";
+    document.getElementById("currentClassifyLabel").textContent = "Clasificar: Todo";
+    document.getElementById("aiMusicologyStage").classList.add("hidden");
+    document.getElementById("libraryCatalogContainer").classList.remove("hidden");
+  }
+  renderLibrary();
+}
+
+function toggleClassifyMenu(e) {
+  if (e) e.stopPropagation();
+  const menu = document.getElementById("classifyMenu");
+  menu.classList.toggle("hidden");
+}
+
+window.addEventListener("click", () => {
+  const menu = document.getElementById("classifyMenu");
+  if (menu && !menu.classList.contains("hidden")) {
+    menu.classList.add("hidden");
+  }
+});
+
+function selectClassification(clsKey, labelText, btn) {
+  currentClassification = clsKey;
+  document.getElementById("currentClassifyLabel").textContent = labelText;
+  document.querySelectorAll(".dd-item").forEach((item) => item.classList.remove("active"));
+  if (btn) btn.classList.add("active");
+  document.getElementById("classifyMenu").classList.add("hidden");
+
+  const catalogEl = document.getElementById("libraryCatalogContainer");
+  const aiStageEl = document.getElementById("aiMusicologyStage");
+
+  if (clsKey === "ai-mode") {
+    catalogEl.classList.add("hidden");
+    aiStageEl.classList.remove("hidden");
+    populateAiWorkSelector();
+    renderAiMusicologyView(scores[0].id);
+  } else {
+    aiStageEl.classList.add("hidden");
+    catalogEl.classList.remove("hidden");
+    renderLibrary();
+  }
+}
+
+function exitAiModeToCatalog() {
+  const allBtn = document.querySelector('.dd-item[data-cls="all"]');
+  selectClassification("all", "Clasificar: Todo", allBtn);
+}
+
 function renderLibrary() {
-  const list = document.getElementById("scoreList");
+  const container = document.getElementById("libraryCatalogContainer");
   const q = (document.getElementById("searchInput").value || "").toLowerCase();
 
-  const items = scores.filter((s) => {
-    const matchText = s.title.toLowerCase().includes(q) || s.composer.toLowerCase().includes(q);
-    if (!matchText) return false;
-    if (currentFilter === "all") return true;
-    if (currentFilter === "setlist") return s.setlist;
-    return s.period === currentFilter || s.group === currentFilter;
+  const filtered = scores.filter((s) => {
+    return (
+      s.title.toLowerCase().includes(q) ||
+      (s.clean && s.clean.toLowerCase().includes(q)) ||
+      s.composer.toLowerCase().includes(q) ||
+      s.period.toLowerCase().includes(q) ||
+      s.group.toLowerCase().includes(q) ||
+      s.program.toLowerCase().includes(q)
+    );
   });
 
-  list.innerHTML = items
-    .map(
-      (s) => `
-    <article class="folio-card" onclick="openScoreInStudy('${s.title.replace(/'/g, "")}', '${s.composer}')">
+  // Agrupar según la clasificación elegida en el desplegable
+  const groups = {};
+  filtered.forEach((s) => {
+    let key = "Catálogo General (A–Z)";
+    if (currentClassification === "composer") key = s.composer;
+    else if (currentClassification === "period") key = `Periodo ${s.period}`;
+    else if (currentClassification === "instrumentation") key = `Dotación: ${s.group}`;
+    else if (currentClassification === "programs") key = `Programa: ${s.program}`;
+
+    if (!groups[key]) groups[key] = [];
+    groups[key].push(s);
+  });
+
+  const groupKeys = Object.keys(groups);
+  const showGroupHeaders = currentClassification !== "all";
+
+  let html = "";
+  groupKeys.forEach((gName) => {
+    const groupItems = groups[gName];
+    if (showGroupHeaders) {
+      html += `
+        <div class="lib-group-header">
+          <h4>${gName}</h4>
+          <span class="lib-group-count">${groupItems.length} ${groupItems.length === 1 ? "obra" : "obras"}</span>
+        </div>
+      `;
+    }
+
+    if (libraryViewMode === "folio") {
+      html += `<div class="folio-grid">${groupItems.map(buildFolioCardHtml).join("")}</div>`;
+    } else {
+      html += `<div class="editorial-list-table">${groupItems.map(buildListRowHtml).join("")}</div>`;
+    }
+  });
+
+  container.innerHTML = html;
+}
+
+function buildFolioCardHtml(s) {
+  const safeTitle = s.title.replace(/'/g, "");
+  return `
+    <article class="folio-card" onclick="openScoreInStudy('${safeTitle}', '${s.composer}')">
       <div class="folio-preview-sheet">
         <div class="folio-preview-head">
           <strong>${s.clean || s.title}</strong>
@@ -57,6 +280,10 @@ function renderLibrary() {
           <div class="mini-staff-bar"></div>
           <div class="mini-staff-bar"></div>
         </div>
+        <div class="folio-preview-foot">
+          <span>${s.tuning}</span>
+          <span>${s.pages}</span>
+        </div>
       </div>
 
       <div class="folio-card-body">
@@ -64,32 +291,159 @@ function renderLibrary() {
           <span>${s.title}</span>
           ${s.raw ? `<span class="raw-badge">PDF Crudo</span>` : ""}
         </div>
-        <span class="folio-card-sub">${s.composer} • ${s.group}</span>
+        <span class="folio-card-sub">${s.composer}</span>
+        <span class="folio-card-detail">${s.subtitle}</span>
       </div>
 
       <div class="folio-card-foot" onclick="event.stopPropagation()">
-        <span class="period-tag">${s.period}</span>
+        <span class="period-tag">${s.period} • ${s.group}</span>
         <div class="folio-quick-btns">
-          <button class="mini-action-btn" onclick="openPdfModal('${s.title.replace(/'/g, "")}')" title="Taller PDF">✂</button>
+          <button class="mini-action-btn" onclick="openAiForWork(${s.id})" title="Consultar IA Musicológica">✦</button>
+          <button class="mini-action-btn" onclick="openPdfModal('${safeTitle}')" title="Taller PDF">✂</button>
           <button class="mini-action-btn" onclick="switchMode('concert')" title="Modo Concierto">◉</button>
         </div>
       </div>
     </article>
-  `
+  `;
+}
+
+function buildListRowHtml(s) {
+  const safeTitle = s.title.replace(/'/g, "");
+  return `
+    <div class="list-detail-row" onclick="openScoreInStudy('${safeTitle}', '${s.composer}')">
+      <div class="list-col-main">
+        <div class="list-title-line">
+          <strong class="list-work-title">${s.title}</strong>
+          ${s.raw ? `<span class="raw-badge">PDF Crudo</span>` : ""}
+        </div>
+        <span class="list-work-subtitle">${s.composer} — <em>${s.subtitle}</em></span>
+      </div>
+
+      <div class="list-col-meta">
+        <span class="list-meta-pill">${s.period}</span>
+        <span class="list-meta-pill">${s.group}</span>
+        <span class="list-meta-pages">${s.pages}</span>
+      </div>
+
+      <div class="list-col-actions" onclick="event.stopPropagation()">
+        <button class="mini-action-btn" onclick="openAiForWork(${s.id})" title="Consultar Historia, Teoría y YouTube">✦</button>
+        <button class="mini-action-btn" onclick="openPdfModal('${safeTitle}')" title="Taller PDF">✂</button>
+        <button class="mini-action-btn" onclick="switchMode('concert')" title="Abrir en Concierto">◉</button>
+      </div>
+    </div>
+  `;
+}
+
+// ==========================================================================
+// MODO IA MUSICOLÓGICO (HISTORIA, TEORÍA, INTERPRETACIÓN Y LINKS YOUTUBE/WEB)
+// ==========================================================================
+
+function populateAiWorkSelector() {
+  const sel = document.getElementById("aiWorkSelector");
+  if (!sel) return;
+  sel.innerHTML = scores
+    .map((s) => `<option value="${s.id}">${s.composer} — ${s.clean || s.title}</option>`)
+    .join("");
+}
+
+function openAiForWork(scoreId) {
+  const aiMenuBtn = document.querySelector('.dd-item[data-cls="ai-mode"]');
+  selectClassification("ai-mode", "✦ Modo IA Musical", aiMenuBtn);
+  const sel = document.getElementById("aiWorkSelector");
+  if (sel) sel.value = String(scoreId);
+  renderAiMusicologyView(scoreId);
+}
+
+function renderAiMusicologyView(scoreId) {
+  const work = scores.find((s) => s.id === Number(scoreId)) || scores[0];
+  const grid = document.getElementById("aiKnowledgeGrid");
+  document.getElementById("aiCustomAnswerBox").classList.add("hidden");
+
+  const linksHtml = work.aiData.links
+    .map(
+      (lnk) => `
+      <a href="${lnk.url}" target="_blank" rel="noopener noreferrer" class="ai-ext-link">
+        <span>${lnk.label}</span>
+        <span class="ext-arrow">↗</span>
+      </a>
+    `
     )
     .join("");
+
+  grid.innerHTML = `
+    <article class="ai-info-card">
+      <div class="ai-card-head">
+        <span class="ai-card-tag">🏛️ CONTEXTO HISTÓRICO &amp; FUENTES</span>
+        <h4>${work.clean || work.title}</h4>
+      </div>
+      <p>${work.aiData.history}</p>
+      <div class="ai-card-meta">
+        <span><strong>Compositor:</strong> ${work.composer}</span>
+        <span><strong>Periodo:</strong> ${work.period}</span>
+      </div>
+    </article>
+
+    <article class="ai-info-card">
+      <div class="ai-card-head">
+        <span class="ai-card-tag">🎼 ANÁLISIS TEÓRICO &amp; ESTRUCTURAL</span>
+        <h4>Forma, Armonía y Textura</h4>
+      </div>
+      <p>${work.aiData.theory}</p>
+      <div class="ai-card-meta">
+        <span><strong>Dotación:</strong> ${work.group}</span>
+        <span><strong>Afinación:</strong> ${work.tuning}</span>
+      </div>
+    </article>
+
+    <article class="ai-info-card">
+      <div class="ai-card-head">
+        <span class="ai-card-tag">🎸 CRITERIOS INTERPRETATIVOS &amp; TÉCNICOS</span>
+        <h4>Sugerencias de Estudio y Escenario</h4>
+      </div>
+      <p>${work.aiData.performance}</p>
+      <div class="ai-card-actions">
+        <button class="btn-open-study-from-ai" onclick="openScoreInStudy('${(work.clean || work.title).replace(/'/g, "")}', '${work.composer}')">
+          ✎ Abrir partitura en Modo Estudio para anotar
+        </button>
+      </div>
+    </article>
+
+    <article class="ai-info-card links-card">
+      <div class="ai-card-head">
+        <span class="ai-card-tag">▶ INTERPRETACIONES EXISTENTES &amp; RECURSOS WEB</span>
+        <h4>Escuchar y Comparar Versiones (YouTube / IMSLP)</h4>
+      </div>
+      <div class="ai-links-list">
+        ${linksHtml}
+      </div>
+    </article>
+  `;
+}
+
+function askCustomAiQuestion() {
+  const input = document.getElementById("aiCustomPrompt");
+  const q = (input.value || "").trim();
+  if (!q) return;
+  const sel = document.getElementById("aiWorkSelector");
+  const work = scores.find((s) => s.id === Number(sel.value)) || scores[0];
+
+  const box = document.getElementById("aiCustomAnswerBox");
+  box.classList.remove("hidden");
+  box.innerHTML = `
+    <div class="ai-answer-header">
+      <strong>✦ Respuesta Musicológica IA sobre ${work.clean || work.title}:</strong>
+      <span>Consulta: "${q}"</span>
+    </div>
+    <p>
+      En <em>${work.clean || work.title}</em> (${work.composer}), se recomienda priorizar la conducción de las voces internas manteniendo el peso armónico del bajo (${work.tuning}). Puedes comparar cómo abordan este pasaje distintas escuelas interpretativas en los enlaces directos a YouTube de la tarjeta inferior o abrir la partitura en el <strong>Modo Estudio</strong> para estampar las digitaciones y marcas de agógica correspondientes.
+    </p>
+  `;
+  input.value = "";
 }
 
 function openScoreInStudy(title, composer) {
   document.getElementById("hudPieceTitle").textContent = `${composer} — ${title}`;
   switchMode("study");
-}
-
-function setFilter(f, btn) {
-  currentFilter = f;
-  document.querySelectorAll(".filter-token").forEach((c) => c.classList.remove("active"));
-  btn.classList.add("active");
-  renderLibrary();
 }
 
 function cleanLibraryWithAI() {
@@ -99,8 +453,7 @@ function cleanLibraryWithAI() {
       s.raw = false;
     }
   });
-  const btn = document.getElementById("aiBtn");
-  btn.innerHTML = "<span>✦ Biblioteca Normalizada</span>";
+  document.getElementById("classifyMenu").classList.add("hidden");
   renderLibrary();
 }
 
@@ -118,7 +471,9 @@ function triggerPdfToast(msg) {
   document.getElementById("pdfToast").textContent = msg;
 }
 
+// ==========================================================================
 // GENERADOR DE PARTITURA VERTICAL EN HOJA PARADA (6 SISTEMAS)
+// ==========================================================================
 function buildPortraitScoreSvg(activeSys = -1) {
   const systems = 6;
   let svg = `<svg viewBox="0 0 820 980" width="100%" height="100%" preserveAspectRatio="xMidYMid meet" xmlns="http://www.w3.org/2000/svg">`;
@@ -159,7 +514,7 @@ function buildPortraitScoreSvg(activeSys = -1) {
   return svg;
 }
 
-// 2. MODO ESTUDIO (CONCEPTS TOOL RAIL + TRAZO A MOLDE)
+// 2. MODO ESTUDIO
 const stampProfiles = {
   guitar: ["p", "i", "m", "a", "1", "2", "3", "4", "①", "②", "③", "④", "⑤", "⑥", "C.II", "C.V", "C.VII", "½C", "arm.12"],
   strings: ["∏", "∨", "I Pos.", "III Pos.", "pizz.", "arco", "sul tasto", "0", "1", "2", "3", "4"],
@@ -360,7 +715,7 @@ function toggleAudioFollow() {
   }, 2000);
 }
 
-// 4. MODO STAFF EDITOR (Inspirado en StaffPad: Cuadrícula rítmica + Manuscrito a Grabado Musical)
+// 4. MODO EDITOR
 let editorNotes = [
   { x: 155, y: 120, finger: "p", acc: "" },
   { x: 265, y: 100, finger: "i", acc: "" },
@@ -380,7 +735,6 @@ function renderEditorSvg() {
     const yTop = 75 + sys * 340;
     const yTab = yTop + 130;
 
-    // Guías verticales sutiles de pulso estilo StaffPad
     [155, 265, 375, 485, 595, 705].forEach((gx) => {
       svg += `<line x1="${gx}" y1="${yTop - 15}" x2="${gx}" y2="${yTab + 75}" stroke="currentColor" stroke-width="0.6" stroke-dasharray="3,5" opacity="0.22"/>`;
     });
