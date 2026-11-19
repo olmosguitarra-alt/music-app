@@ -81,7 +81,7 @@ Espacio para crear y editar partituras.
 
 La experiencia puede tomar como referencia herramientas como StaffPad, Sibelius, Dorico y Finale.
 
-Objetivos deseadados:
+Objetivos deseados:
 
 - Crear una partitura desde cero.
 - Explorar la conversión de un PDF existente a una partitura editable, similar al flujo de reconocimiento de PhotoScore.
