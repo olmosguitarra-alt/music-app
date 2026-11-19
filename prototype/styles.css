@@ -990,67 +990,81 @@ body {
    OPTIMIZACIÓN RESPONSIVA PARA CELULARES Y TABLETS COMPACTAS (< 768px)
    ========================================================================== */
 @media (max-width: 768px) {
-  /* 1. HUD Superior compacto en celular */
+  /* 1. HUD Superior compacto y deslizable en celular */
   .floating-hud-top {
     top: max(8px, env(safe-area-inset-top));
     left: 8px;
     right: 8px;
     gap: 6px;
+    justify-content: space-between;
   }
 
-  /* Ocultar píldora de título de obra en celular para dar todo el ancho a los 4 modos */
+  /* Ocultar píldora de título de obra en celular */
   .hud-status {
     display: none;
   }
 
+  /* Píldora de los 4 modos: compacta para verse completa + deslizable con el dedo */
   .mode-segmented {
     flex: 1;
-    justify-content: space-between;
+    min-width: 0;
     padding: 3px;
+    gap: 2px;
+    overflow-x: auto;
+    overflow-y: hidden;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    justify-content: space-between;
+  }
+
+  .mode-segmented::-webkit-scrollbar {
+    display: none;
   }
 
   .seg-btn {
-    flex: 1;
+    flex: 1 0 auto;
     justify-content: center;
-    padding: 7px 8px;
-    font-size: 12px;
+    padding: 6px 10px;
+    font-size: 11.5px;
     gap: 4px;
   }
 
   .seg-btn .v-ico {
+    width: 13.5px;
+    height: 13.5px;
+  }
+
+  /* Píldora de paletas súper compacta en celular */
+  .hud-palettes {
+    padding: 4px 6px;
+    gap: 4px;
+    flex-shrink: 0;
+  }
+
+  .theme-orb {
     width: 15px;
     height: 15px;
   }
 
-  .hud-palettes {
-    padding: 5px 8px;
-    gap: 5px;
-  }
-
-  .theme-orb {
-    width: 18px;
-    height: 18px;
-  }
-
   /* 2. Biblioteca en celular: folios más compactos y manejables con el pulgar */
   .library-stage {
-    padding: 60px 12px 28px;
+    padding: 58px 12px 28px;
     gap: 12px;
   }
 
   .folio-grid {
-    grid-template-columns: repeat(auto-fill, minmax(155px, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
     gap: 10px;
   }
 
   .folio-preview-sheet {
-    height: 110px;
+    height: 108px;
     padding: 8px 10px;
   }
 
-  /* 3. Lienzo de Partitura en celular: aprovecha el 98% del ancho y deja espacio al dock inferior */
+  /* 3. Lienzo de Partitura en celular */
   .full-bleed-canvas {
-    padding: 56px 6px 76px;
+    padding: 54px 6px 76px;
   }
 
   .score-folio {
@@ -1068,11 +1082,11 @@ body {
   }
 
   .folio-title h2 {
-    font-size: 15.5px;
+    font-size: 15px;
   }
 
   .folio-title span {
-    font-size: 11px;
+    font-size: 10.5px;
   }
 
   /* 4. El riel lateral de Concepts pasa automáticamente abajo en forma horizontal en Celular */
@@ -1086,26 +1100,27 @@ body {
     border-radius: 999px;
     max-width: calc(100vw - 16px);
     overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
     scrollbar-width: none;
   }
 
   .concepts-tool-rail::-webkit-scrollbar { display: none; }
 
   .rail-tool {
-    width: 46px;
-    height: 44px;
+    width: 44px;
+    height: 42px;
     border-radius: 12px;
   }
 
   .rail-divider {
     width: 0.5px;
-    height: 24px;
+    height: 22px;
     margin: 0 2px;
   }
 
   .rail-inks {
     flex-direction: row;
-    gap: 6px;
+    gap: 5px;
     padding: 0 4px;
   }
 
@@ -1113,7 +1128,7 @@ body {
   .concepts-popover {
     left: 50%;
     top: auto;
-    bottom: 72px;
+    bottom: 68px;
     transform: translateX(-50%);
     width: calc(100vw - 20px);
     max-width: 420px;
@@ -1129,13 +1144,23 @@ body {
   }
 }
 
-/* En teléfonos muy angostos (< 400px), mostrar ícono + etiqueta corta en los modos */
-@media (max-width: 400px) {
+/* En teléfonos pequeños (< 480px), hacer los 4 modos aún más compactos y deslizables */
+@media (max-width: 480px) {
   .seg-btn {
-    padding: 7px 5px;
+    padding: 6px 8px;
     font-size: 11px;
+    gap: 3px;
   }
   .seg-btn .v-ico {
-    display: none;
+    width: 12px;
+    height: 12px;
+  }
+  .hud-palettes {
+    padding: 4px 5px;
+    gap: 3px;
+  }
+  .theme-orb {
+    width: 13px;
+    height: 13px;
   }
 }
