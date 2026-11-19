@@ -3,505 +3,290 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-  <title>Music App — Prototipo Interactivo TCL NXTPAPER 14</title>
+  <title>Atril — Prototipo Minimalista Vertical</title>
   <link rel="stylesheet" href="styles.css" />
 </head>
 <body class="theme-sepia">
-  <!-- BARRA SUPERIOR GLOBAL: SELECTOR DE LOS 4 MODOS -->
-  <header class="top-bar" id="topBar">
-    <div class="brand-area">
-      <div class="brand-logo">♫</div>
-      <div class="brand-text">
-        <span class="brand-title">Atril Pro</span>
-        <span class="brand-subtitle">TCL NXTPAPER 14 Edition</span>
-      </div>
-    </div>
 
-    <!-- Selector central de los 4 Modos definidos por Daniel Olmos -->
-    <nav class="mode-switcher" aria-label="Modos de la aplicación">
-      <button class="mode-btn active" data-mode="library" onclick="switchMode('library')">
-        <span class="mode-icon">📚</span>
-        <span class="mode-label">1. Biblioteca &amp; IA</span>
+  <!-- BARRA SUPERIOR MINIMALISTA: SOLO LOS 4 MODOS Y PAPEL -->
+  <header class="top-nav" id="topNav">
+    <nav class="mode-dock" aria-label="Modos">
+      <button class="mode-pill active" data-mode="library" onclick="switchMode('library')">
+        <svg viewBox="0 0 24 24" class="ico"><path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1 0-5H20"/></svg>
+        <span>Biblioteca</span>
       </button>
-      <button class="mode-btn" data-mode="study" onclick="switchMode('study')">
-        <span class="mode-icon">✏️</span>
-        <span class="mode-label">2. Modo Estudio</span>
+      <button class="mode-pill" data-mode="study" onclick="switchMode('study')">
+        <svg viewBox="0 0 24 24" class="ico"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg>
+        <span>Estudio</span>
       </button>
-      <button class="mode-btn" data-mode="concert" onclick="switchMode('concert')">
-        <span class="mode-icon">🎙️</span>
-        <span class="mode-label">3. Modo Concierto</span>
+      <button class="mode-pill" data-mode="concert" onclick="switchMode('concert')">
+        <svg viewBox="0 0 24 24" class="ico"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" x2="12" y1="19" y2="22"/></svg>
+        <span>Concierto</span>
       </button>
-      <button class="mode-btn" data-mode="editor" onclick="switchMode('editor')">
-        <span class="mode-icon">🎼</span>
-        <span class="mode-label">4. Editor Touch</span>
+      <button class="mode-pill" data-mode="editor" onclick="switchMode('editor')">
+        <svg viewBox="0 0 24 24" class="ico"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>
+        <span>Editor</span>
       </button>
     </nav>
 
-    <!-- Controles rápidos de Papel / Instrumento -->
-    <div class="quick-actions">
-      <select id="paperThemeSelect" class="pill-select" onchange="changePaperTheme(this.value)" title="Tono de papel">
-        <option value="theme-sepia" selected>📜 Papel Sepia NXTPAPER</option>
-        <option value="theme-cream">📄 Papel Crema Henle</option>
-        <option value="theme-white">☀️ Blanco Estudio</option>
-        <option value="theme-night">🌙 Escenario Nocturno</option>
-      </select>
+    <div class="paper-dots" title="Tono de papel">
+      <button class="paper-dot sepia active" onclick="setPaper('theme-sepia', this)" aria-label="Sepia"></button>
+      <button class="paper-dot cream" onclick="setPaper('theme-cream', this)" aria-label="Crema"></button>
+      <button class="paper-dot white" onclick="setPaper('theme-white', this)" aria-label="Blanco"></button>
+      <button class="paper-dot night" onclick="setPaper('theme-night', this)" aria-label="Nocturno"></button>
     </div>
   </header>
 
-  <!-- ===================================================================== -->
-  <!-- MODO 1: BIBLIOTECA INTELIGENTE + IA CATALOGACIÓN + TALLER PDF          -->
-  <!-- ===================================================================== -->
-  <main id="mode-library" class="mode-view active">
-    <div class="library-layout">
-      <!-- Panel Izquierdo: Dimensiones de Organización con IA -->
-      <aside class="library-sidebar">
-        <div class="ai-assistant-card">
-          <div class="ai-header">
-            <span class="ai-badge">✨ IA Musical Activa</span>
-            <button class="btn-ai-clean" onclick="runAiCleanup()">Limpiar Nombres (3)</button>
-          </div>
-          <p class="ai-desc" id="aiStatusText">
-            3 archivos con nombres crudos detectados (<code>0000040517.pdf</code>, <code>01.pdf</code>, <code>(Partition) Bach...</code>). Toca "Limpiar Nombres" para catalogarlos por compositor, periodo y dotación.
-          </p>
+  <!-- =================================================================== -->
+  <!-- 1. MODO BIBLIOTECA (LIMPIO, OPTIMIZADO PARA HOJA PARADA)            -->
+  <!-- =================================================================== -->
+  <main id="mode-library" class="view active">
+    <div class="lib-container">
+      <!-- Barra única de búsqueda + Botón IA llamativo -->
+      <div class="lib-header">
+        <div class="search-bar">
+          <svg viewBox="0 0 24 24" class="ico"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+          <input type="text" id="searchInput" placeholder="Buscar obra, compositor, BWV..." oninput="renderLibrary()" />
         </div>
-
-        <div class="sidebar-section">
-          <h3>Agrupar Biblioteca por</h3>
-          <div class="filter-group-list">
-            <button class="group-chip active" onclick="filterLibrary('all', this)">Todas las Obras (8)</button>
-            <button class="group-chip" onclick="filterLibrary('composer', this)">👤 Por Compositor</button>
-            <button class="group-chip" onclick="filterLibrary('period', this)">🏛️ Por Periodo Histórico</button>
-            <button class="group-chip" onclick="filterLibrary('instrumentation', this)">🎸 Por Dotación Instrumental</button>
-            <button class="group-chip" onclick="filterLibrary('setlists', this)">🎭 Programas de Concierto (3)</button>
-          </div>
-        </div>
-
-        <div class="sidebar-section">
-          <h3>Programas Activos (Setlists)</h3>
-          <ul class="setlist-menu">
-            <li onclick="selectSetlist('Bach Programa')" class="setlist-item">
-              <span>🎼 Bach Programa</span>
-              <span class="badge">3 obras</span>
-            </li>
-            <li onclick="selectSetlist('Duo Toño')" class="setlist-item">
-              <span>🎸 Duo Toño</span>
-              <span class="badge">2 obras</span>
-            </li>
-            <li onclick="selectSetlist('Programa Manuel Hernández')" class="setlist-item">
-              <span>🏛️ Programa Manuel Hernández</span>
-              <span class="badge">3 obras</span>
-            </li>
-          </ul>
-        </div>
-      </aside>
-
-      <!-- Panel Central: Buscador Limpio y Tarjetas de Partituras -->
-      <section class="library-main">
-        <div class="library-toolbar">
-          <div class="search-box">
-            <span class="search-icon">🔍</span>
-            <input type="text" id="librarySearchInput" placeholder="Buscar por compositor, obra, BWV, periodo o dotación..." oninput="renderLibraryCards()" />
-          </div>
-          <button class="btn-secondary" onclick="openPdfWorkshopModal()">✂️ Taller de PDF (Particionar / Unir)</button>
-        </div>
-
-        <!-- Filtros rápidos en una sola línea limpia (en vez de las 2 filas de desplegables de MobileSheets) -->
-        <div class="period-pills" id="subFilterBar">
-          <span class="pill-label">Filtro rápido:</span>
-          <button class="sub-pill active" onclick="setPeriodFilter('Todos', this)">Todos</button>
-          <button class="sub-pill" onclick="setPeriodFilter('Barroco', this)">Barroco</button>
-          <button class="sub-pill" onclick="setPeriodFilter('Siglo XX / Contemporáneo', this)">Siglo XX / Contemporáneo</button>
-          <button class="sub-pill" onclick="setPeriodFilter('Guitarra Sola', this)">Guitarra Sola</button>
-          <button class="sub-pill" onclick="setPeriodFilter('Guitarra y Orquesta', this)">Guitarra y Orquesta</button>
-          <button class="sub-pill" onclick="setPeriodFilter('Dúo / Cámara', this)">Dúo / Cámara</button>
-        </div>
-
-        <div class="score-grid" id="scoreGrid">
-          <!-- Renderizado dinámicamente por app.js -->
-        </div>
-      </section>
-
-      <!-- Panel Derecho: Taller de PDF Rápido e Inspector de Obra -->
-      <aside class="library-inspector" id="libraryInspector">
-        <div class="inspector-header">
-          <span class="inspector-tag">TALLER DE PDF &amp; FICHA</span>
-          <h3 id="inspTitle">Bach — Sonata BWV 1034 (Transcr. D. Russell)</h3>
-        </div>
-        <div class="inspector-meta">
-          <div class="meta-row"><span>Compositor:</span> <strong id="inspComposer">J. S. Bach (1685–1750)</strong></div>
-          <div class="meta-row"><span>Periodo:</span> <strong id="inspPeriod">Barroco</strong></div>
-          <div class="meta-row"><span>Dotación:</span> <strong id="inspInstr">Guitarra Clásica Sola</strong></div>
-          <div class="meta-row"><span>Archivo origen:</span> <strong id="inspPages">Págs. 27–36 (de libro de 307 págs.)</strong></div>
-        </div>
-
-        <div class="pdf-workshop-box">
-          <h4>✂️ Acciones de Editor PDF</h4>
-          <p class="workshop-hint">Modifica páginas o extrae movimientos sin salir de la app:</p>
-          <div class="page-strip" id="inspectorPageStrip">
-            <div class="mini-page selected">Pág 1<br><small>Adagio</small></div>
-            <div class="mini-page selected">Pág 2<br><small>Allegro</small></div>
-            <div class="mini-page">Pág 3<br><small>Andante</small></div>
-            <div class="mini-page">Pág 4<br><small>Allegro</small></div>
-          </div>
-          <div class="workshop-actions">
-            <button class="btn-workshop" onclick="simulatePdfAction('split')">✂️ Particionar en Movimientos</button>
-            <button class="btn-workshop" onclick="simulatePdfAction('addremove')">➕/🗑️ Quitar o Agregar Páginas</button>
-            <button class="btn-workshop" onclick="simulatePdfAction('rename')">✏️ Renombrado Inteligente IA</button>
-          </div>
-          <div id="workshopFeedback" class="workshop-feedback"></div>
-        </div>
-
-        <div class="inspector-open-actions">
-          <button class="btn-primary-large" onclick="switchMode('study')">✏️ Abrir en Modo Estudio</button>
-          <button class="btn-outline-large" onclick="switchMode('concert')">🎙️ Abrir en Modo Concierto</button>
-        </div>
-      </aside>
-    </div>
-  </main>
-
-  <!-- ===================================================================== -->
-  <!-- MODO 2: MODO ESTUDIO (TRAZO LIBRE -> MOLDE + SELLOS POR INSTRUMENTO)  -->
-  <!-- ===================================================================== -->
-  <main id="mode-study" class="mode-view">
-    <!-- Barra de Herramientas de Estudio Limpia y Especializada -->
-    <div class="study-toolbar">
-      <div class="tool-group">
-        <span class="group-title">Trazos Principales</span>
-        <button class="tool-btn active" id="toolPen" onclick="selectStudyTool('pen')" title="Trazo libre con lápiz">
-          🖊️ Trazo Libre
+        <button class="btn-accent-glow" id="aiBtn" onclick="cleanLibraryWithAI()">
+          <span>✨ Organizar con IA</span>
         </button>
-        <button class="tool-btn" id="toolHighlighter" onclick="selectStudyTool('highlighter')" title="Marcador / Resaltador">
-          🖍️ Marcador
-        </button>
-        <button class="tool-btn" id="toolEraser" onclick="selectStudyTool('eraser')" title="Borrador">
-          🧽 Borrador
-        </button>
-        <div class="color-dots">
-          <button class="color-dot active" style="background:#1e3a8a" onclick="setInkColor('#1e3a8a', this)" title="Azul tinta"></button>
-          <button class="color-dot" style="background:#b91c1c" onclick="setInkColor('#b91c1c', this)" title="Rojo agógica"></button>
-          <button class="color-dot" style="background:#15803d" onclick="setInkColor('#15803d', this)" title="Verde voces"></button>
-        </div>
       </div>
 
-      <!-- Detector de Trazo Libre a Texto Digital de Molde -->
-      <div class="tool-group highlight-box">
-        <label class="toggle-mold">
-          <input type="checkbox" id="autoMoldToggle" checked />
-          <span class="toggle-Check">✨</span>
-          <span><strong>Trazo → Letra/Símbolo de Molde</strong> (Convierte tu letra manuscrita a tipografía limpia)</span>
-        </label>
-        <button class="btn-small-accent" onclick="convertAllStrokesToMold()">Convertir trazo actual</button>
+      <!-- Categorías claras y minimalistas -->
+      <div class="filter-bar">
+        <button class="f-chip active" onclick="setFilter('all', this)">Todo</button>
+        <button class="f-chip" onclick="setFilter('setlist', this)">Programas</button>
+        <button class="f-chip" onclick="setFilter('Barroco', this)">Barroco</button>
+        <button class="f-chip" onclick="setFilter('Siglo XX', this)">Siglo XX</button>
+        <button class="f-chip" onclick="setFilter('Guitarra Sola', this)">Guitarra Sola</button>
+        <button class="f-chip" onclick="setFilter('Orquesta / Cámara', this)">Dúo &amp; Orquesta</button>
       </div>
 
-      <!-- Selector de Biblioteca de Sellos por Instrumento -->
-      <div class="tool-group">
-        <span class="group-title">Instrumento:</span>
-        <select id="instrumentStampProfile" class="pill-select" onchange="updateStampPalette(this.value)">
-          <option value="guitar" selected>🎸 Guitarra Clásica</option>
-          <option value="strings">🎻 Cuerdas Frotadas</option>
-          <option value="piano">🎹 Piano / Teclado</option>
-          <option value="winds">🎷 Alientos &amp; Canto</option>
-        </select>
-      </div>
-
-      <!-- Vista de Página (1 Página Horizontal Ancha por defecto para Daniel, o 2 páginas) -->
-      <div class="tool-group">
-        <span class="group-title">Vista:</span>
-        <button class="view-pill active" id="studyView1H" onclick="setScoreLayout('single-horizontal')">1 Pág. Horizontal</button>
-        <button class="view-pill" id="studyView2P" onclick="setScoreLayout('two-pages')">2 Páginas</button>
-      </div>
+      <!-- Lista de partituras limpia tipo galería vertical -->
+      <div class="score-list" id="scoreList"></div>
     </div>
 
-    <!-- Barra Secundaria de Sellos Rápidos Especializados + Agógica y Dinámicas -->
-    <div class="stamp-bar">
-      <div class="stamp-section">
-        <span class="stamp-label" id="stampProfileTitle">Sellos Guitarra:</span>
-        <div class="stamp-list" id="instrumentStampsContainer">
-          <!-- Llenado por JS según instrumento -->
-        </div>
-      </div>
-      <div class="stamp-divider"></div>
-      <div class="stamp-section">
-        <span class="stamp-label">Agógica, Dinámicas y Contrastes:</span>
-        <div class="stamp-list">
-          <button class="stamp-chip" onclick="selectStamp('poco rit.')">poco rit.</button>
-          <button class="stamp-chip" onclick="selectStamp('a tempo')">a tempo</button>
-          <button class="stamp-chip" onclick="selectStamp('dolce')">dolce</button>
-          <button class="stamp-chip" onclick="selectStamp('espress.')">espress.</button>
-          <button class="stamp-chip" onclick="selectStamp('pp')">pp</button>
-          <button class="stamp-chip" onclick="selectStamp('mp')">mp</button>
-          <button class="stamp-chip" onclick="selectStamp('mf')">mf</button>
-          <button class="stamp-chip" onclick="selectStamp('f')">f</button>
-          <button class="stamp-chip" onclick="selectStamp('cresc. ───')">cresc.</button>
-          <button class="stamp-chip" onclick="selectStamp('👓')">👓 Atención</button>
-        </div>
-      </div>
-      <button class="btn-clear-annotations" onclick="clearStudyAnnotations()">🗑️ Limpiar capa</button>
-    </div>
-
-    <!-- Lienzo de la Partitura en Modo Estudio -->
-    <div class="score-stage" id="studyScoreStage">
-      <div class="score-paper-container single-horizontal" id="studyPaperContainer">
-        <!-- Página 1 con Pentagrama SVG de alta nitidez + Canvas interactivo encima -->
-        <div class="score-sheet" id="studySheet1">
-          <div class="sheet-header">
-            <span class="sheet-arranger">transcrit et doigté par David Russell</span>
-            <div class="sheet-title-block">
-              <h2>SONATE</h2>
-              <p>BWV 1034 — I. Adagio ma non tanto</p>
-            </div>
-            <span class="sheet-composer">J. S. Bach (1685–1750)</span>
-          </div>
-
-          <div class="svg-score-wrapper" id="studySvgWrapper1">
-            <!-- Renderizado SVG de pentagrama + canvas de dibujo -->
-            <div id="studyNotationSvg1" class="notation-svg-layer"></div>
-            <canvas id="studyCanvas1" class="annotation-canvas"></canvas>
-            <div id="moldOverlay1" class="mold-overlay-layer"></div>
-          </div>
-
-          <div class="sheet-footer">
-            <span>Modo Estudio — Dibuja con lápiz o dedo sobre cualquier compás (con conversión automática a letra de molde)</span>
-            <span>Página 1 / 10 (Libro pág. 27)</span>
-          </div>
+    <!-- Modal Flotante Minimalista para Taller de PDF (Solo aparece al tocar ✂️) -->
+    <div class="modal-backdrop hidden" id="pdfModal" onclick="closePdfModal(event)">
+      <div class="pdf-modal-card" onclick="event.stopPropagation()">
+        <div class="modal-top">
+          <h3 id="modalScoreTitle">Sonata BWV 1034</h3>
+          <button class="icon-close" onclick="closePdfModal()">✕</button>
         </div>
 
-        <!-- Página 2 (Visible cuando se elige vista de 2 páginas) -->
-        <div class="score-sheet second-page hidden-page" id="studySheet2">
-          <div class="sheet-header">
-            <span>4</span>
-            <div class="sheet-title-block">
-              <h2>BWV 1034 — II. Allegro</h2>
-            </div>
-            <span>J. S. Bach</span>
-          </div>
-          <div class="svg-score-wrapper">
-            <div id="studyNotationSvg2" class="notation-svg-layer"></div>
-          </div>
-          <div class="sheet-footer">
-            <span>Edición Doberman-Yppan DO 91</span>
-            <span>Página 2 / 10 (Libro pág. 28)</span>
-          </div>
+        <div class="pdf-pages-preview">
+          <div class="page-thumb active" onclick="this.classList.toggle('active')"><span>1</span><small>Adagio</small></div>
+          <div class="page-thumb active" onclick="this.classList.toggle('active')"><span>2</span><small>Allegro</small></div>
+          <div class="page-thumb" onclick="this.classList.toggle('active')"><span>3</span><small>Andante</small></div>
+          <div class="page-thumb" onclick="this.classList.toggle('active')"><span>4</span><small>Allegro</small></div>
         </div>
+
+        <div class="modal-actions-grid">
+          <button class="m-action-btn" onclick="triggerPdfToast('✂️ Páginas extraídas como nueva partitura')">
+            <span class="m-ico">✂️</span>
+            <span>Particionar</span>
+          </button>
+          <button class="m-action-btn" onclick="triggerPdfToast('➕ Página agregada al documento')">
+            <span class="m-ico">➕</span>
+            <span>Agregar Pág.</span>
+          </button>
+          <button class="m-action-btn" onclick="triggerPdfToast('🗑️ Páginas seleccionadas eliminadas')">
+            <span class="m-ico">🗑️</span>
+            <span>Quitar Pág.</span>
+          </button>
+          <button class="m-action-btn" onclick="triggerPdfToast('✨ Renombrado por IA completado')">
+            <span class="m-ico">✨</span>
+            <span>Renombrar IA</span>
+          </button>
+        </div>
+        <div class="modal-toast" id="pdfToast"></div>
       </div>
     </div>
   </main>
 
-  <!-- ===================================================================== -->
-  <!-- MODO 3: MODO CONCIERTO (ESCENARIO, 1 PÁG HORIZONTAL / 2 PÁGS + AUDIO) -->
-  <!-- ===================================================================== -->
-  <main id="mode-concert" class="mode-view">
-    <div class="concert-hud" id="concertHud">
-      <div class="concert-piece-info">
-        <span class="live-dot"></span>
-        <strong>Bach: Sonata BWV 1034</strong>
-        <span class="setlist-progress">Programa: "Bach Programa" (Obra 1 de 3)</span>
-      </div>
-
-      <!-- Selector de Disposición y Tipo de Cambio de Página -->
-      <div class="concert-controls">
-        <div class="control-pill-group">
-          <label>Disposición:</label>
-          <button class="c-pill active" id="cLayout1H" onclick="setConcertLayout('1h')">1 Pág. Horizontal (Ancha)</button>
-          <button class="c-pill" id="cLayout2P" onclick="setConcertLayout('2p')">2 Páginas</button>
-          <button class="c-pill" id="cLayout1V" onclick="setConcertLayout('1v')">1 Pág. Completa</button>
+  <!-- =================================================================== -->
+  <!-- 2. MODO ESTUDIO (HOJA PARADA AL 95% + CÁPSULA FLOTANTE INFERIOR)    -->
+  <!-- =================================================================== -->
+  <main id="mode-study" class="view">
+    <div class="sheet-stage">
+      <div class="portrait-sheet" id="studySheet">
+        <div class="sheet-head">
+          <span class="meta-left">David Russell, transcr.</span>
+          <div class="meta-center">
+            <h2>SONATE BWV 1034</h2>
+            <span>I. Adagio ma non tanto</span>
+          </div>
+          <span class="meta-right">J. S. Bach</span>
         </div>
 
-        <div class="control-pill-group">
-          <label>Transición:</label>
-          <select id="pageTurnStyle" class="pill-select">
-            <option value="half-scroll">Media Página Horizontal (Sin perder compás)</option>
-            <option value="wipe">Limpiaparabrisas (Anticipa pág. siguiente)</option>
-            <option value="step-1">Avance de 1 en 1 página ([1|2] → [2|3])</option>
-            <option value="step-2">Salto de 2 en 2 páginas ([1|2] → [3|4])</option>
-          </select>
+        <div class="sheet-body" id="studyWrap">
+          <div id="studySvg" class="svg-layer"></div>
+          <canvas id="studyCanvas" class="draw-layer"></canvas>
+          <div id="studyMoldLayer" class="mold-layer"></div>
         </div>
 
-        <!-- Seguimiento Auditivo (Cambio de Página por Audio) -->
-        <button class="btn-audio-follow" id="audioFollowBtn" onclick="toggleAudioFollower()">
-          🎙️ Activar Seguimiento por Audio
-        </button>
-
-        <button class="btn-zen" onclick="toggleConcertZenMode()" title="Ocultar barras para concierto">
-          🔒 Bloqueo Escenario
-        </button>
+        <div class="sheet-foot">
+          <span>BWV 1034</span>
+          <span>1 / 10</span>
+        </div>
       </div>
     </div>
 
-    <!-- Barra de Estado del Escucha Auditivo en Vivo -->
-    <div class="audio-follower-bar hidden" id="audioFollowerBar">
-      <div class="mic-wave">
-        <span></span><span></span><span></span><span></span><span></span>
+    <!-- Panel Desplegable de Sellos por Instrumento (Oculto por defecto para limpieza visual) -->
+    <div class="floating-popover hidden" id="stampPopover">
+      <div class="popover-tabs">
+        <button class="p-tab active" onclick="switchStampTab('guitar', this)">🎸 Guitarra</button>
+        <button class="p-tab" onclick="switchStampTab('strings', this)">🎻 Cuerdas</button>
+        <button class="p-tab" onclick="switchStampTab('piano', this)">🎹 Piano</button>
+        <button class="p-tab" onclick="switchStampTab('agogic', this)">🎼 Agógica &amp; Dinámica</button>
       </div>
-      <div class="follower-status">
-        <strong id="followerMeasureText">Escuchando guitarra en vivo... Compás 1 (Adagio ma non tanto)</strong>
-        <span class="follower-sub">Detectando notas y rubato • Cambio automático programado al final del sistema 3</span>
-      </div>
-      <div class="follower-progress-track">
-        <div class="follower-progress-fill" id="followerProgressBar" style="width: 15%"></div>
-      </div>
+      <div class="stamp-grid" id="stampGrid"></div>
     </div>
 
-    <!-- Atril de Concierto Limpio -->
-    <div class="concert-stage" id="concertStage">
-      <button class="page-zone-btn prev" onclick="turnConcertPage(-1)" title="Página o sistema anterior">‹</button>
+    <!-- CÁPSULA FLOTANTE INFERIOR: BOTONES CLAROS, LLAMATIVOS Y MINIMALISTAS -->
+    <div class="floating-dock">
+      <button class="dock-btn active" id="btnPen" onclick="setStudyTool('pen')">
+        <span class="d-ico">🖊️</span>
+        <span>Trazo</span>
+      </button>
+      <button class="dock-btn" id="btnMarker" onclick="setStudyTool('marker')">
+        <span class="d-ico">🖍️</span>
+        <span>Marcador</span>
+      </button>
+      <button class="dock-btn" id="btnEraser" onclick="setStudyTool('eraser')">
+        <span class="d-ico">🧽</span>
+        <span>Borrar</span>
+      </button>
 
-      <div class="concert-paper-wrapper layout-1h" id="concertPaperWrapper">
-        <div class="score-sheet concert-sheet" id="concertSheetLeft">
-          <div class="sheet-header">
-            <span>transcrit et doigté par David Russell</span>
-            <div class="sheet-title-block">
-              <h2 id="concertPageTitle">SONATE BWV 1034 — I. Adagio ma non tanto</h2>
-            </div>
-            <span id="concertPageIndicator">Sistema 1–3 (Pág. 1A)</span>
-          </div>
-          <div id="concertNotationLeft" class="notation-svg-layer concert-notation"></div>
-        </div>
+      <div class="dock-sep"></div>
 
-        <div class="score-sheet concert-sheet hidden-page" id="concertSheetRight">
-          <div class="sheet-header">
-            <span>Continuación</span>
-            <div class="sheet-title-block">
-              <h2>BWV 1034 — II. Allegro</h2>
-            </div>
-            <span>Pág. 2</span>
-          </div>
-          <div id="concertNotationRight" class="notation-svg-layer concert-notation"></div>
-        </div>
+      <!-- Botón Llamativo de Conversión a Letra de Molde -->
+      <button class="dock-btn mold-active" id="btnMoldToggle" onclick="toggleAutoMold()">
+        <span class="d-ico">✨</span>
+        <span>A Molde</span>
+      </button>
+
+      <!-- Botón de Sellos Especializados -->
+      <button class="dock-btn" id="btnStamps" onclick="toggleStampPopover()">
+        <span class="d-ico">🏷️</span>
+        <span>Sellos</span>
+      </button>
+
+      <div class="dock-sep"></div>
+
+      <!-- Colores minimalistas -->
+      <div class="ink-selector">
+        <button class="ink-dot blue active" onclick="setInk('#1d4ed8', this)"></button>
+        <button class="ink-dot red" onclick="setInk('#dc2626', this)"></button>
+        <button class="ink-dot green" onclick="setInk('#15803d', this)"></button>
       </div>
 
-      <button class="page-zone-btn next" onclick="turnConcertPage(1)" title="Siguiente página o media página">›</button>
+      <button class="dock-icon-only" onclick="clearStudyLayer()" title="Limpiar anotaciones">↺</button>
     </div>
   </main>
 
-  <!-- ===================================================================== -->
-  <!-- MODO 4: EDITOR TOUCH (SIBELIUS TÁCTIL + MANUSCRITO A NOTACIÓN MOLDE)  -->
-  <!-- ===================================================================== -->
-  <main id="mode-editor" class="mode-view">
-    <div class="editor-top-ribbon">
-      <div class="ribbon-section">
-        <span class="ribbon-badge">✨ Motor Trazo → Notación de Molde</span>
-        <p class="ribbon-hint">
-          Dibuja una nota, acorde, clave o indicación con el lápiz en el pentagrama y se convertirá al instante en notación editorial estilo Sibelius.
-        </p>
+  <!-- =================================================================== -->
+  <!-- 3. MODO CONCIERTO (HOJA PARADA 100% LIMPIA + ESCUCHA AUDITIVA)      -->
+  <!-- =================================================================== -->
+  <main id="mode-concert" class="view">
+    <div class="sheet-stage concert-clean">
+      <button class="edge-tap left" onclick="turnPage(-1)" aria-label="Página anterior">‹</button>
+
+      <div class="portrait-sheet" id="concertSheet">
+        <div class="sheet-head">
+          <span class="meta-left">David Russell, transcr.</span>
+          <div class="meta-center">
+            <h2>SONATE BWV 1034</h2>
+            <span id="concertSub">I. Adagio ma non tanto</span>
+          </div>
+          <span class="meta-right" id="concertPageNum">Pág. 1 / 10</span>
+        </div>
+
+        <div class="sheet-body">
+          <div id="concertSvg" class="svg-layer"></div>
+        </div>
+
+        <div class="sheet-foot">
+          <span>Bach Programa</span>
+          <span id="concertTransitionTag">Vista Hoja Parada</span>
+        </div>
       </div>
 
-      <div class="ribbon-actions">
-        <button class="editor-action-btn active" id="edPenMode" onclick="setEditorInputMode('handwriting')">
-          ✍️ Lápiz Musical (Trazo a Molde)
-        </button>
-        <button class="editor-action-btn" id="edTouchMode" onclick="setEditorInputMode('touch')">
-          👆 Inserción Directa Touch
-        </button>
-        <button class="editor-action-btn" onclick="playEditorScore()">
-          ▶️ Escuchar Compás
-        </button>
-        <button class="editor-action-btn" onclick="clearEditorMeasure()">
-          ↺ Reiniciar Compás Demo
-        </button>
+      <button class="edge-tap right" onclick="turnPage(1)" aria-label="Siguiente página">›</button>
+    </div>
+
+    <!-- Cápsula Flotante de Concierto Ultra Compacta -->
+    <div class="floating-dock concert-dock">
+      <button class="dock-btn" onclick="turnPage(-1)">
+        <span class="d-ico">◀</span>
+      </button>
+
+      <button class="dock-btn audio-cta" id="btnAudioFollow" onclick="toggleAudioFollow()">
+        <span class="d-ico">🎙️</span>
+        <span id="audioFollowLabel">Seguimiento Audio</span>
+      </button>
+
+      <button class="dock-btn" id="btnPageMode" onclick="cyclePageLayout()">
+        <span class="d-ico">📄</span>
+        <span id="pageModeLabel">1 Pág</span>
+      </button>
+
+      <button class="dock-btn" onclick="turnPage(1)">
+        <span class="d-ico">▶</span>
+      </button>
+    </div>
+  </main>
+
+  <!-- =================================================================== -->
+  <!-- 4. MODO EDITOR (TRAZO LIBRE A NOTACIÓN DE MOLDE + KEYPAD TÁCTIL)    -->
+  <!-- =================================================================== -->
+  <main id="mode-editor" class="view">
+    <div class="sheet-stage">
+      <div class="portrait-sheet editor-sheet-layout">
+        <div class="sheet-head">
+          <span class="meta-left">6ª en Re</span>
+          <div class="meta-center">
+            <h2 contenteditable="true">Preludio en Re menor</h2>
+            <span>✍️ Dibuja notas o símbolos en el pentagrama</span>
+          </div>
+          <span class="meta-right" id="editorStatusPill">✨ Trazo → Molde Musical</span>
+        </div>
+
+        <div class="sheet-body" id="editorWrap">
+          <div id="editorSvg" class="svg-layer"></div>
+          <canvas id="editorCanvas" class="draw-layer"></canvas>
+        </div>
       </div>
     </div>
 
-    <div class="editor-workspace">
-      <!-- Lienzo Central de Edición Musical (Pentagrama + Tablatura opcional) -->
-      <div class="editor-paper-stage">
-        <div class="editor-sheet">
-          <div class="editor-sheet-header">
-            <div>
-              <h2 contenteditable="true" class="editable-heading">Preludio para Guitarra en Re menor</h2>
-              <p contenteditable="true" class="editable-subheading">Afinación: 6ª en Re • Tempo: Andante espressivo (♩ = 68)</p>
-            </div>
-            <div class="editor-format-badges">
-              <span class="tag-pill">Notación + Digitación</span>
-              <span class="tag-pill">Reconocimiento SMuFL Activo</span>
-            </div>
-          </div>
+    <!-- KEYPAD TÁCTIL FLOTANTE (ESTILO SIBELIUS PERO MINIMALISTA Y LLAMATIVO) -->
+    <div class="floating-dock editor-dock">
+      <button class="kp-pill" onclick="pickDuration('𝅝', 'Redonda', this)">𝅝</button>
+      <button class="kp-pill" onclick="pickDuration('𝅗𝅥', 'Blanca', this)">𝅗𝅥</button>
+      <button class="kp-pill active" onclick="pickDuration('♩', 'Negra', this)">♩</button>
+      <button class="kp-pill" onclick="pickDuration('♪', 'Corchea', this)">♪</button>
+      <button class="kp-pill" onclick="pickDuration('♬', 'Semicorchea', this)">♬</button>
 
-          <!-- Zona Interactiva donde el usuario dibuja notas a mano y se vuelven de molde -->
-          <div class="editor-staff-interactive" id="editorStaffArea">
-            <div id="editorMoldSvgContainer" class="editor-svg-layer"></div>
-            <canvas id="editorHandwritingCanvas" class="editor-draw-canvas"></canvas>
-            <div class="editor-Status-toast" id="editorRecognitionToast">
-              ✍️ Dibuja una cabeza de nota, plica, alteración (# / b) o expresión sobre el pentagrama...
-            </div>
-          </div>
+      <div class="dock-sep"></div>
 
-          <div class="editor-quick-demos">
-            <span>Pruebas rápidas de reconocimiento manuscrito → molde:</span>
-            <button class="demo-chip" onclick="simulateHandwrittenNote('quarter-d', 'Negra Re4 + digitación p')">✍️ Dibujar Negra (Re) + "p"</button>
-            <button class="demo-chip" onclick="simulateHandwrittenNote('chord-gm', 'Acorde Sol menor + C.III')">✍️ Dibujar Acorde + Cejilla C.III</button>
-            <button class="demo-chip" onclick="simulateHandwrittenNote('sharp-c', 'Sostenido Do#5 + ligadura')">✍️ Dibujar Alteración ♯ + Ligadura</button>
-            <button class="demo-chip" onclick="simulateHandwrittenNote('expr-dolce', 'Expresión manuscrita dolce')">✍️ Escribir "dolce espress."</button>
-          </div>
-        </div>
-      </div>
+      <button class="kp-pill" onclick="pickAccidental('♯', this)">♯</button>
+      <button class="kp-pill" onclick="pickAccidental('♭', this)">♭</button>
+      <button class="kp-pill" onclick="pickAccidental('♮', this)">♮</button>
 
-      <!-- KEYPAD TÁCTIL INSPIRADO EN SIBELIUS (Rediseñado para Pulgar / Touch en Tablet de 14") -->
-      <aside class="sibelius-touch-keypad">
-        <div class="keypad-header">
-          <h4>Keypad Táctil (Sibelius Touch)</h4>
-          <span class="keypad-sub">Control con una mano + Lápiz</span>
-        </div>
+      <div class="dock-sep"></div>
 
-        <!-- Pestañas del Keypad de Sibelius -->
-        <div class="keypad-tabs">
-          <button class="kp-tab active">1. Figuras</button>
-          <button class="kp-tab">2. Más Ritmos</button>
-          <button class="kp-tab">3. Articulación</button>
-          <button class="kp-tab">4. Guitarra</button>
-        </div>
+      <button class="dock-btn mold-active" onclick="insertSampleChord()">
+        <span class="d-ico">✍️</span>
+        <span> + Acorde</span>
+      </button>
 
-        <!-- Cuadrícula Táctil Grande y Ergonómica -->
-        <div class="keypad-grid">
-          <button class="kp-btn" onclick="selectKeypadDuration('𝅝', 'Redonda')">
-            <span class="kp-sym">𝅝</span><small>Redonda</small>
-          </button>
-          <button class="kp-btn" onclick="selectKeypadDuration('𝅗𝅥', 'Blanca')">
-            <span class="kp-sym">𝅗𝅥</span><small>Blanca</small>
-          </button>
-          <button class="kp-btn active" onclick="selectKeypadDuration('♩', 'Negra')">
-            <span class="kp-sym">♩</span><small>Negra</small>
-          </button>
-          <button class="kp-btn" onclick="selectKeypadDuration('♪', 'Corchea')">
-            <span class="kp-sym">♪</span><small>Corchea</small>
-          </button>
-          <button class="kp-btn" onclick="selectKeypadDuration('♬', 'Semicorchea')">
-            <span class="kp-sym">♬</span><small>Semicorchea</small>
-          </button>
-          <button class="kp-btn" onclick="selectKeypadDuration('•', 'Puntillo')">
-            <span class="kp-sym">•</span><small>Puntillo</small>
-          </button>
+      <button class="dock-btn play-cta" onclick="playEditorNotes()">
+        <span class="d-ico">▶</span>
+        <span>Sonar</span>
+      </button>
 
-          <button class="kp-btn" onclick="selectKeypadDuration('♯', 'Sostenido')">
-            <span class="kp-sym">♯</span><small>Sostenido</small>
-          </button>
-          <button class="kp-btn" onclick="selectKeypadDuration('♭', 'Bemol')">
-            <span class="kp-sym">♭</span><small>Bemol</small>
-          </button>
-          <button class="kp-btn" onclick="selectKeypadDuration('♮', 'Becuadro')">
-            <span class="kp-sym">♮</span><small>Becuadro</small>
-          </button>
-          <button class="kp-btn" onclick="selectKeypadDuration('⌒', 'Ligadura')">
-            <span class="kp-sym">⌒</span><small>Ligadura</small>
-          </button>
-          <button class="kp-btn" onclick="selectKeypadDuration('𝄽', 'Silencio')">
-            <span class="kp-sym">𝄽</span><small>Silencio</small>
-          </button>
-          <button class="kp-btn" onclick="selectKeypadDuration('3', 'Tresillo')">
-            <span class="kp-sym">³</span><small>Tresillo</small>
-          </button>
-        </div>
-
-        <!-- Sección de Voz Polifónica (Crítico en Guitarra Clásica y Piano) -->
-        <div class="keypad-voices">
-          <span>Voz activa (Polifonía):</span>
-          <div class="voice-buttons">
-            <button class="v-btn active" onclick="selectVoice(1, this)">Voz 1 (Soprano)</button>
-            <button class="v-btn" onclick="selectVoice(2, this)">Voz 2 (Bajo)</button>
-            <button class="v-btn" onclick="selectVoice(3, this)">Voz 3 (Interna)</button>
-          </div>
-        </div>
-      </aside>
+      <button class="dock-icon-only" onclick="resetEditorNotes()" title="Reiniciar">↺</button>
     </div>
   </main>
 
