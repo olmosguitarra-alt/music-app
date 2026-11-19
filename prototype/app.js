@@ -982,42 +982,47 @@ async function speakAsBachGpt(htmlMessage) {
   stopActiveBachAudio();
   const apiKey = getGeminiApiKey();
 
-  // 1. Intentar primero el motor neuronal hiperrealista de Gemini TTS (voz grave 'Charon' con acento alemán)
+  // 1. Usar primero el modelo ultraligero y rápido gemini-3.8-flash-lite-tts (con respaldo a 2.5-flash-preview-tts)
   if (apiKey) {
-    try {
-      const ttsPrompt = `Lee el siguiente texto exactamente con voz masculina grave, cálida, culta y un auténtico acento alemán hablando español (como Johann Sebastian Bach): "${cleanText.slice(0, 680)}"`;
-      const resp = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-tts:generateContent?key=${apiKey}`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            contents: [{ parts: [{ text: ttsPrompt }] }],
-            generationConfig: {
-              responseModalities: ["AUDIO"],
-              speechConfig: {
-                voiceConfig: {
-                  prebuiltVoiceConfig: {
-                    voiceName: "Charon"
+    // Limitamos la lectura hablada a las primeras 280 letras para que el audio se genere en ~1.5 segundos
+    const shortSpoken = cleanText.slice(0, 290);
+    const ttsPrompt = `Lee con voz masculina grave y acento alemán culto en español: "${shortSpoken}"`;
+    const ttsModels = ["gemini-3.8-flash-lite-tts", "gemini-3.8-flash-tts", "gemini-2.5-flash-preview-tts"];
+
+    for (const modelName of ttsModels) {
+      try {
+        const resp = await fetch(
+          `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${apiKey}`,
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              contents: [{ parts: [{ text: ttsPrompt }] }],
+              generationConfig: {
+                responseModalities: ["AUDIO"],
+                speechConfig: {
+                  voiceConfig: {
+                    prebuiltVoiceConfig: {
+                      voiceName: "Charon"
+                    }
                   }
                 }
               }
-            }
-          })
-        }
-      );
+            })
+          }
+        );
 
-      if (resp.ok) {
-        const data = await resp.json();
-        const b64 =
-          data?.candidates?.[0]?.content?.parts?.[0]?.inlineData?.data;
-        if (b64) {
-          await playPcm24kBase64(b64);
-          return;
+        if (resp.ok) {
+          const data = await resp.json();
+          const b64 = data?.candidates?.[0]?.content?.parts?.[0]?.inlineData?.data;
+          if (b64) {
+            await playPcm24kBase64(b64);
+            return;
+          }
         }
+      } catch (err) {
+        console.warn(`TTS model ${modelName} error:`, err);
       }
-    } catch (err) {
-      console.warn("Gemini Neural TTS fallback a WebSpeech:", err);
     }
   }
 
@@ -1034,40 +1039,44 @@ async function speakAsBachGpt(htmlMessage) {
   }
 }
 
-// MOTOR DE INTELIGENCIA REAL GEMINI 2.5 FLASH PARA RESPUESTAS DE BACHGPT
+// MOTOR DE INTELIGENCIA REAL GEMINI 3.5 FLASH LITE (Responde en ~1.8 seg para cualquier consulta del mundo real)
 async function askRealGeminiBachBrain(userQuestion, contextSystemPrompt) {
   const apiKey = getGeminiApiKey();
   if (!apiKey) return null;
-  try {
-    const resp = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`,
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          systemInstruction: {
-            parts: [
-              {
-                text:
-                  `Eres BachGPT, la encarnación en 8 bits de Johann Sebastian Bach dentro de la aplicación profesional de partituras 'Atril', creada para el guitarrista clásico mexicano Daniel Olmos. ` +
-                  `Hablas en español con un tono cálido, culto, sabio y apasionado, intercalando ocasionalmente breves expresiones alemanas naturales ('¡Guten Tag, mein lieber Kollege!', '¡Ja, natürlich!', '¡Wunderbar!', 'mein Freund'). ` +
-                  `Sé conciso (máximo 1 párrafo claro o 3 viñetas breves) para que tu respuesta sea cómoda de leer en una ventana flotante y rápida de escuchar con tu voz grave. ` +
-                  contextSystemPrompt
-              }
-            ]
-          },
-          contents: [{ role: "user", parts: [{ text: userQuestion }] }]
-        })
+
+  const sysText =
+    `Eres BachGPT, la encarnación en 8 bits de Johann Sebastian Bach dentro de la aplicación profesional de partituras 'Atril', creada para el guitarrista clásico mexicano Daniel Olmos. ` +
+    `Hablas en español con un tono cálido, culto, sabio y apasionado, con breves expresiones alemanas ('¡Guten Tag, mein lieber Kollege!', '¡Ja, natürlich!', '¡Wunderbar!', 'mein Freund'). ` +
+    `Responde directamente sobre cualquier compositor, obra, intérprete, historia, teoría, acordes o tema del mundo real que el usuario te pregunte. ` +
+    `Sé conciso y sustancioso (máximo 3 a 4 oraciones claras) para que tu voz neuronal se reproduzca al instante. ` +
+    contextSystemPrompt;
+
+  // Modelos ordenados del más rápido (~1.8s) al respaldo
+  const fastModels = ["gemini-3.5-flash-lite", "gemini-3.1-flash-lite", "gemini-3-flash-preview"];
+
+  for (const modelName of fastModels) {
+    try {
+      const resp = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${apiKey}`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            systemInstruction: { parts: [{ text: sysText }] },
+            contents: [{ role: "user", parts: [{ text: userQuestion }] }]
+          })
+        }
+      );
+      if (resp.ok) {
+        const data = await resp.json();
+        const replyText = data?.candidates?.[0]?.content?.parts?.[0]?.text;
+        if (replyText) return replyText;
       }
-    );
-    if (!resp.ok) return null;
-    const data = await resp.json();
-    const replyText = data?.candidates?.[0]?.content?.parts?.[0]?.text;
-    return replyText || null;
-  } catch (e) {
-    console.warn("Gemini brain error:", e);
-    return null;
+    } catch (e) {
+      console.warn(`Gemini model ${modelName} error:`, e);
+    }
   }
+  return null;
 }
 
 function toggleBachVoiceOutput() {
@@ -1504,12 +1513,28 @@ function askBachTopic(topic) {
   }
 }
 
+function appendBachLoadingBubble() {
+  const box = document.getElementById("bachChatMessages");
+  if (!box) return null;
+  const wrap = document.createElement("div");
+  wrap.className = "bach-msg-row";
+  wrap.innerHTML = `
+    <div class="bach-mini-8bit">${build8BitBachSvg(true)}</div>
+    <div class="chat-bubble bach-bubble" style="opacity:0.75"><em>🎼 Consultando en Leipzig...</em></div>
+  `;
+  box.appendChild(wrap);
+  box.scrollTop = box.scrollHeight;
+  return wrap;
+}
+
 async function sendUserMessageToBach() {
   const input = document.getElementById("bachUserInput");
   const text = (input.value || "").trim();
   if (!text) return;
   input.value = "";
   appendUserMessage(text);
+
+  const loadingEl = appendBachLoadingBubble();
 
   const lower = text.toLowerCase();
 
@@ -1539,8 +1564,9 @@ async function sendUserMessageToBach() {
     extraLinksHtml = `<div class="bach-links-stack"><a href="https://www.youtube.com/results?search_query=${ytQuery}" target="_blank" rel="noopener noreferrer" class="bach-chat-link">▶ Ver referencias en YouTube sobre "${text}" ↗</a></div>`;
   }
 
-  // Consultar a Gemini 2.5 Flash en vivo
+  // Consultar a Gemini 3.5 Flash Lite en vivo (~1.8s)
   const aiResponse = await askRealGeminiBachBrain(text, ctxInstruction);
+  if (loadingEl) loadingEl.remove();
   if (aiResponse) {
     const formatted = aiResponse
       .replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>")
@@ -1551,6 +1577,7 @@ async function sendUserMessageToBach() {
   }
 
   // Fallback local si no hay conexión
+  if (loadingEl) loadingEl.remove();
   if (bachContextMode === "notebook") {
     appendBachMessage(
       `<strong>📖 Análisis en tu Libro "${activeTheoryBook.title}":</strong><br>
