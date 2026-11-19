@@ -1088,6 +1088,75 @@ body.palette-linen .pdf-page-canvas {
   color: var(--text-secondary);
 }
 
+/* Barra de 3 modos de BachGPT: Consulta General | Obra PDF Actual | Libro Teoría (Notebook) */
+.bach-context-switcher {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 4px;
+  padding: 6px 10px;
+  background: rgba(0, 0, 0, 0.14);
+  border-bottom: 0.5px solid var(--glass-border);
+}
+
+.bctx-tab {
+  background: transparent;
+  border: 0.5px solid transparent;
+  color: var(--text-secondary);
+  padding: 6px 4px;
+  border-radius: 8px;
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  transition: all 0.15s ease;
+}
+
+.bctx-tab.active {
+  background: var(--accent);
+  color: var(--accent-ink);
+  font-weight: 700;
+}
+
+/* Sub-barra exclusiva para Libros de Texto y Teoría (Estilo Gemini NotebookLM) */
+.bach-notebook-bar {
+  padding: 8px 12px;
+  background: rgba(207, 169, 114, 0.12);
+  border-bottom: 0.5px solid var(--glass-border);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.nb-info {
+  font-size: 11px;
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.nb-upload-btn {
+  background: var(--accent);
+  color: var(--accent-ink);
+  border: none;
+  padding: 6px 10px;
+  border-radius: 8px;
+  font-size: 11.5px;
+  font-weight: 700;
+  cursor: pointer;
+  text-align: center;
+}
+
+/* Mini icono de Bach 8-bits en cada tarjeta de PDF en la Biblioteca */
+.bach-card-btn {
+  padding: 3px !important;
+  background: #1e293b !important;
+  border: 1px solid var(--accent) !important;
+  overflow: hidden;
+}
+
 .bach-work-context-bar select {
   flex: 1;
   background: var(--card-bg);

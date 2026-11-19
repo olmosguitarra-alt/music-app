@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <title>Atril — Con BachGPT (8-bit Assistant)</title>
-  <link rel="stylesheet" href="styles.css?v=7" />
+  <link rel="stylesheet" href="styles.css?v=8" />
   <!-- Motores Oficiales para Renderizar (PDF.js) y Particionar/Editar PDFs Reales (pdf-lib) -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf-lib/1.17.1/pdf-lib.min.js"></script>
@@ -14,6 +14,8 @@
   <!-- Inputs ocultos para importar PDFs reales desde la Tablet o Celular -->
   <input type="file" id="realPdfFileInput" accept="application/pdf,.pdf" multiple style="display:none" onchange="handleRealPdfUpload(this.files)" />
   <input type="file" id="appendPdfFileInput" accept="application/pdf,.pdf" style="display:none" onchange="handleAppendPdfPages(this.files)" />
+  <!-- Input oculto exclusivo para Libros de Texto y Teoría (Modo NotebookLM de BachGPT) -->
+  <input type="file" id="theoryBookPdfInput" accept="application/pdf,.pdf" style="display:none" onchange="handleTheoryBookUpload(this.files)" />
 
   <!-- =================================================================== -->
   <!-- HUD SUPERIOR FLOTANTE                                               -->
@@ -100,10 +102,10 @@
 
             <div class="dd-divider"></div>
 
-            <button class="dd-item ai-special" onclick="toggleBachGptChat(true); document.getElementById('classifyMenu').classList.add('hidden');">
+            <button class="dd-item ai-special" onclick="openBachGptGeneralMode(); document.getElementById('classifyMenu').classList.add('hidden');">
               <div class="ai-dd-text">
-                <strong>💬 Consultar a BachGPT</strong>
-                <span>Abrir asistente musical de 8-bits</span>
+                <strong>💬 BachGPT (Consulta General)</strong>
+                <span>Teoría, app, libros de texto y análisis</span>
               </div>
             </button>
 
@@ -409,39 +411,56 @@
   <!-- =================================================================== -->
   <div class="bachgpt-widget-root">
 
-    <!-- Ventana Flotante de Chat con J. S. Bach (Oculta hasta tocar el icono 8-bit) -->
+    <!-- Ventana Flotante de Chat con J. S. Bach -->
     <aside class="bachgpt-chat-window hidden" id="bachGptWindow">
       <div class="bach-chat-header">
         <div class="bach-avatar-badge" id="bachHeaderAvatar"></div>
         <div class="bach-header-info">
           <div class="bach-name-row">
             <strong>BachGPT</strong>
-            <span class="bach-8bit-tag">8-BIT KAPELLMEISTER</span>
+            <span class="bach-8bit-tag" id="bachModeTag">MODO GENERAL</span>
           </div>
-          <span class="bach-status-sub" id="bachCurrentWorkLabel">Consultando: Sonata BWV 1034</span>
+          <span class="bach-status-sub" id="bachCurrentWorkLabel">Consultoría General, Teoría &amp; Guía de la App</span>
         </div>
-        <button class="bach-voice-toggle active" id="bachVoiceToggleBtn" onclick="toggleBachVoiceOutput()" title="Activar/Desactivar voz alemanizada de BachGPT">
+        <button class="bach-voice-toggle active" id="bachVoiceToggleBtn" onclick="toggleBachVoiceOutput()" title="Activar/Desactivar voz grave alemanizada de BachGPT">
           🔊 Voz
         </button>
         <button class="btn-circle-ghost" onclick="toggleBachGptChat(false)" title="Cerrar chat">✕</button>
       </div>
 
-      <!-- Selector rápido de sobre qué obra de tu biblioteca quieres platicar con Bach -->
-      <div class="bach-work-context-bar">
-        <label for="bachWorkSelect">Obra:</label>
+      <!-- Barra de Contexto Dual: Cambia entre Modo General (con Notebook de Libros de Teoría) y Modo Obra PDF Específica -->
+      <div class="bach-context-switcher" id="bachContextBar">
+        <button class="bctx-tab active" id="bctxGeneralBtn" onclick="openBachGptGeneralMode()">
+          🌐 Consulta General
+        </button>
+        <button class="bctx-tab" id="bctxWorkBtn" onclick="openBachGptSpecificWorkMode(activeScore ? activeScore.id : 1)">
+          🎼 Obra PDF Actual
+        </button>
+        <button class="bctx-tab" id="bctxNotebookBtn" onclick="openBachGptNotebookMode()">
+          📖 Libro Teoría (Notebook)
+        </button>
+      </div>
+
+      <!-- Sub-barra dinámica: En Modo Obra muestra el selector de PDF; En Modo Notebook permite cargar PDF de texto/teoría -->
+      <div class="bach-work-context-bar hidden" id="bachWorkSelectRow">
+        <label for="bachWorkSelect">Obra PDF:</label>
         <select id="bachWorkSelect" onchange="changeBachConversationWork(this.value)"></select>
+      </div>
+
+      <div class="bach-notebook-bar hidden" id="bachNotebookBar">
+        <div class="nb-info">
+          <span id="nbLoadedBookName">📖 Sin libro cargado (Sube un PDF de teoría, tratado o historia)</span>
+        </div>
+        <button class="nb-upload-btn" onclick="document.getElementById('theoryBookPdfInput').click()">
+          ＋ Subir PDF de Texto/Teoría
+        </button>
       </div>
 
       <!-- Historial de Mensajes de la Conversación con Bach -->
       <div class="bach-chat-messages" id="bachChatMessages"></div>
 
-      <!-- Sugerencias rápidas de plática -->
-      <div class="bach-quick-prompts">
-        <button class="bach-chip" onclick="askBachTopic('history')">📜 Historia</button>
-        <button class="bach-chip" onclick="askBachTopic('theory')">🎼 Análisis y Teoría</button>
-        <button class="bach-chip" onclick="askBachTopic('performance')">🎸 Digitación e Interpretación</button>
-        <button class="bach-chip" onclick="askBachTopic('links')">▶ YouTube &amp; Ediciones</button>
-      </div>
+      <!-- Sugerencias rápidas dinámicas (Cambian según si estás en Modo General, Modo Obra PDF o Modo Notebook Teoría) -->
+      <div class="bach-quick-prompts" id="bachQuickPrompts"></div>
 
       <!-- Barra de entrada con Micrófono de Voz para platicar sin soltar la guitarra -->
       <div class="bach-chat-input-bar">
@@ -453,14 +472,14 @@
       </div>
     </aside>
 
-    <!-- Botón Flotante con el Retrato de J. S. Bach en Arte de 8 Bits -->
-    <button class="bachgpt-fab" id="bachGptFab" onclick="toggleBachGptChat()" title="Platicar con BachGPT">
+    <!-- Botón Flotante Principal con el Retrato de J. S. Bach en Arte de 8 Bits (Abre Modo General) -->
+    <button class="bachgpt-fab" id="bachGptFab" onclick="handleMainBachFabClick()" title="BachGPT — Consulta General, Teoría, App y Libros">
       <div class="bach-8bit-icon" id="bachFabIcon"></div>
       <span class="bach-fab-label">BachGPT</span>
     </button>
 
   </div>
 
-  <script src="app.js?v=7"></script>
+  <script src="app.js?v=8"></script>
 </body>
 </html>

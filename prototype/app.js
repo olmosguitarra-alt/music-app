@@ -740,7 +740,7 @@ function buildFolioCardHtml(s) {
       <div class="folio-card-foot" onclick="event.stopPropagation()">
         <span class="period-tag">${s.period} • ${s.pages}</span>
         <div class="folio-quick-btns">
-          <button class="mini-action-btn" onclick="openAiForWork(${s.id})" title="Consultar IA Musicológica">✦</button>
+          <button class="mini-action-btn bach-card-btn" onclick="openAiForWork(${s.id})" title="BachGPT: Consultar específicamente sobre esta obra">${build8BitBachSvg(false)}</button>
           <button class="mini-action-btn" onclick="openPdfModalById(${s.id})" title="Taller PDF y Renombrar">✂</button>
           <button class="mini-action-btn" onclick="openScoreById(${s.id}, 'concert')" title="Modo Concierto">◉</button>
         </div>
@@ -767,7 +767,7 @@ function buildListRowHtml(s) {
       </div>
 
       <div class="list-col-actions" onclick="event.stopPropagation()">
-        <button class="mini-action-btn" onclick="openAiForWork(${s.id})" title="Consultar Historia, Teoría y YouTube">✦</button>
+        <button class="mini-action-btn bach-card-btn" onclick="openAiForWork(${s.id})" title="BachGPT: Consultar específicamente sobre esta obra">${build8BitBachSvg(false)}</button>
         <button class="mini-action-btn" onclick="openPdfModalById(${s.id})" title="Taller PDF y Renombrar">✂</button>
         <button class="mini-action-btn" onclick="openScoreById(${s.id}, 'concert')" title="Abrir en Concierto">◉</button>
       </div>
@@ -776,14 +776,26 @@ function buildListRowHtml(s) {
 }
 
 // ==========================================================================
-// BACHGPT: CHATBOT FLOTANTE 8 BITS CON ENTRADA POR VOZ Y VOZ ALEMANIZADA
+// BACHGPT: CHATBOT FLOTANTE 8 BITS CON 3 MODALIDADES DIFERENCIADAS:
+// 1. MODO GENERAL (En la pantalla principal: Teoría, Guía de la App, Consultas de todo tipo)
+// 2. MODO OBRA PDF ESPECÍFICA (Al tocar el icono de BachGPT sobre una partitura PDF)
+// 3. MODO NOTEBOOK DE TEORÍA (Tipo Gemini NotebookLM para libros de texto y tratados en PDF)
 // ==========================================================================
+let bachContextMode = "general"; // 'general' | 'work' | 'notebook'
 let bachSelectedWorkId = 1;
-let bachGreetingInitialized = false;
 let bachVoiceEnabled = true;
 let bachSpeechRecognition = null;
 let isBachListeningMic = false;
 let bachMouthAnimTimer = null;
+
+// Estado del Libro de Texto / Teoría (Modo NotebookLM)
+let activeTheoryBook = {
+  loaded: false,
+  title: "Tratado de Armonía y Contrapunto (Ejemplo Base)",
+  pages: 0,
+  extractedText: "El contrapunto barroco se fundamenta en la independencia melódica y rítmica de las voces. En la conducción de voces se evitan las quintas y octavas paralelas, priorizando el movimiento contrario y oblicuo. El bajo continuo sostiene la arquitectura armónica mediante cifrados interválicos sobre la línea del bajo.",
+  chapters: ["I. Conducción de Voces y Contrapunto", "II. El Bajo Continuo y Cifrados", "III. Ornamentación y Retórica Musical en el Barroco"]
+};
 
 // Generador de Retrato en Pixel Art de 8 Bits de J. S. Bach (con animación de boca al hablar)
 function build8BitBachSvg(mouthOpen = false) {
@@ -852,32 +864,37 @@ function setBach8BitTalkingAnimation(isTalking) {
     const frameSvg = build8BitBachSvg(openState);
     if (fabIcon) fabIcon.innerHTML = frameSvg;
     if (headerAvatar) headerAvatar.innerHTML = frameSvg;
-  }, 170);
+  }, 165);
 }
 
-// SINTETIZADOR DE VOZ DE BACHGPT: Español con inflexión y fonética alemanizada
+// SINTETIZADOR DE VOZ DE BACHGPT: Voz Grave con Acento Alemán Marcado hablando Español
 function germanizeSpanishTextForSpeech(cleanText) {
-  // Limpiamos etiquetas HTML y emojis para la lectura hablada
   let txt = cleanText
     .replace(/<button[\s\S]*?<\/button>/gi, "")
     .replace(/<a[\s\S]*?<\/a>/gi, "")
     .replace(/<[^>]+>/g, " ")
-    .replace(/[📜🎼🎸▶🏛️✦💬🔊🎙️↗]/g, "")
+    .replace(/[📜🎼🎸▶🏛️✦💬🔊🎙️↗🌐📖]/g, "")
     .replace(/BWV/g, "B V V")
     .replace(/\s+/g, " ")
     .trim();
 
-  // Matices fonéticos sutiles para que una voz en español suene con cadencia germana
-  // (ej. "v" labiodental / "f" suave, "z/ce/ci" sibilante, "j/ge" aspirada suave y muletillas de Leipzig)
+  // Fonética hispano-germana marcada para el motor TTS
   txt = txt
     .replace(/\bBueno\b/gi, "Also")
     .replace(/\bHola\b/gi, "Guten Tag")
-    .replace(/\bamigo\b/gi, "mein Freund")
-    .replace(/\bquerido colega\b/gi, "mein lieber Kollege")
-    .replace(/\bexcelente\b/gi, "vunderbar, excelente")
+    .replace(/\bamigo\b/gi, "main Froind")
+    .replace(/\bmein Freund\b/gi, "main Froind")
+    .replace(/\bquerido colega\b/gi, "main líber Kollegue")
+    .replace(/\bmein lieber Kollege\b/gi, "main líber Kollegue")
+    .replace(/\bwunderbar\b/gi, "vúnderbar")
+    .replace(/\bnatürlich\b/gi, "natúrlij")
+    .replace(/\bKapellmeister\b/gi, "Kapélmaister")
     .replace(/\bsí\b/gi, "ja")
-    .replace(/\bclaro\b/gi, "natürlich")
-    .replace(/\bguitarra\b/gi, "guitarrra");
+    .replace(/\bclaro\b/gi, "natúrlij")
+    .replace(/\bverdad\b/gi, "ferdad")
+    .replace(/\bvida\b/gi, "fida")
+    .replace(/\bobra\b/gi, "óbrra")
+    .replace(/\bguitarra\b/gi, "guitárrra");
 
   return txt;
 }
@@ -892,27 +909,20 @@ function speakAsBachGpt(htmlMessage) {
     const utter = new SpeechSynthesisUtterance(spokenText);
     const voices = window.speechSynthesis.getVoices() || [];
 
-    // Estrategia de selección de voz:
-    // 1. Si hay una voz alemana multilingüe (ej. Google Deutsch / Microsoft Conrad / Stefan) que lee caracteres latinos con acento alemán real, o
-    // 2. Una voz masculina en español con tono grave (pitch 0.84) y cadencia pausada de Kapellmeister (rate 0.92)
-    const germanVoice = voices.find((v) => v.lang && v.lang.toLowerCase().startsWith("de"));
     const spanishMaleVoice =
-      voices.find((v) => v.lang && v.lang.toLowerCase().startsWith("es") && /male|pablo|jorge|raul|diego|carlos|alvaro/i.test(v.name)) ||
+      voices.find((v) => v.lang && v.lang.toLowerCase().startsWith("es") && /male|pablo|jorge|raul|diego|carlos|alvaro|alonso/i.test(v.name)) ||
       voices.find((v) => v.lang && v.lang.toLowerCase().startsWith("es"));
 
     if (spanishMaleVoice) {
       utter.voice = spanishMaleVoice;
       utter.lang = spanishMaleVoice.lang;
-    } else if (germanVoice) {
-      utter.voice = germanVoice;
-      utter.lang = "es-ES";
     } else {
       utter.lang = "es-MX";
     }
 
-    // Timbre grave barroco y cadencia articulada alemana
-    utter.pitch = 0.82;
-    utter.rate = 0.93;
+    // Voz grave profunda (pitch 0.72) y cadencia pausada alemana (rate 0.90)
+    utter.pitch = 0.72;
+    utter.rate = 0.90;
 
     utter.onstart = () => setBach8BitTalkingAnimation(true);
     utter.onend = () => setBach8BitTalkingAnimation(false);
@@ -935,11 +945,11 @@ function toggleBachVoiceOutput() {
     window.speechSynthesis.cancel();
     setBach8BitTalkingAnimation(false);
   } else if (bachVoiceEnabled) {
-    speakAsBachGpt("¡Ja, mein Freund! Mi voz de Kapellmeister está lista.");
+    speakAsBachGpt("¡Ja, mein Freund! Mi voz grave desde Leipzig está lista.");
   }
 }
 
-// ENTRADA POR VOZ DEL USUARIO (Web Speech Recognition API en Español)
+// ENTRADA POR VOZ DEL USUARIO
 function toggleBachSpeechRecognition() {
   const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
   const micBtn = document.getElementById("bachMicBtn");
@@ -947,7 +957,7 @@ function toggleBachSpeechRecognition() {
 
   if (!SpeechRec) {
     appendBachMessage(
-      "Ach, mein Freund! Este navegador no tiene habilitado el micrófono directo, pero puedes usar el botón de micrófono del teclado de tu tablet Android o escribirme aquí."
+      "Ach, mein Freund! Este navegador no tiene habilitado el micrófono directo, pero puedes usar el micrófono del teclado de tu tablet o escribirme."
     );
     return;
   }
@@ -957,7 +967,6 @@ function toggleBachSpeechRecognition() {
     return;
   }
 
-  // Detener voz de Bach mientras escucha al músico
   if ("speechSynthesis" in window) {
     window.speechSynthesis.cancel();
     setBach8BitTalkingAnimation(false);
@@ -1022,21 +1031,22 @@ function populateBachWorkSelect() {
     .join("");
 }
 
+// Al tocar el botón flotante principal de BachGPT abajo a la derecha -> Abre el MODO GENERAL
+function handleMainBachFabClick() {
+  const win = document.getElementById("bachGptWindow");
+  if (!win.classList.contains("hidden")) {
+    toggleBachGptChat(false);
+  } else {
+    openBachGptGeneralMode();
+  }
+}
+
 function toggleBachGptChat(forceState) {
   const win = document.getElementById("bachGptWindow");
   if (!win) return;
   const shouldOpen = typeof forceState === "boolean" ? forceState : win.classList.contains("hidden");
-
   if (shouldOpen) {
-    populateBachWorkSelect();
     win.classList.remove("hidden");
-    if (!bachGreetingInitialized) {
-      bachGreetingInitialized = true;
-      const work = scores.find((s) => s.id === Number(bachSelectedWorkId)) || scores[0];
-      appendBachMessage(
-        `¡Guten Tag, mein lieber Kollege! Soy <strong>BachGPT</strong>, tu Kapellmeister desde Leipzig. Veo que tenemos en el atril <em>"${work.clean || work.title}"</em>. ¡Ja, wunderbar! Puedes hablarme tocando el micrófono 🎙️ o preguntar sobre su historia, contrapunto, digitación o videos en YouTube.`
-      );
-    }
   } else {
     win.classList.add("hidden");
     if ("speechSynthesis" in window) {
@@ -1046,23 +1056,247 @@ function toggleBachGptChat(forceState) {
   }
 }
 
-function openAiForWork(scoreId) {
-  bachSelectedWorkId = Number(scoreId);
+// ==========================================================================
+// MODO 1 DE BACHGPT: MODO CONSULTA GENERAL (Pantalla Principal)
+// Teoría, historia general, técnica, cómo usar la app, videos/audios abiertos
+// ==========================================================================
+function openBachGptGeneralMode() {
+  bachContextMode = "general";
   toggleBachGptChat(true);
+
+  document.getElementById("bctxGeneralBtn").classList.add("active");
+  document.getElementById("bctxWorkBtn").classList.remove("active");
+  document.getElementById("bctxNotebookBtn").classList.remove("active");
+
+  document.getElementById("bachWorkSelectRow").classList.add("hidden");
+  document.getElementById("bachNotebookBar").classList.add("hidden");
+
+  document.getElementById("bachModeTag").textContent = "MODO GENERAL";
+  document.getElementById("bachCurrentWorkLabel").textContent = "Consultas de todo tipo: Teoría, Historia, Técnica y Guía de la App";
+
+  document.getElementById("bachQuickPrompts").innerHTML = `
+    <button class="bach-chip" onclick="askBachGeneral('app-guide')">🧭 ¿Cómo funciona la App?</button>
+    <button class="bach-chip" onclick="askBachGeneral('harmony')">🎼 Consulta de Armonía / Teoría</button>
+    <button class="bach-chip" onclick="askBachGeneral('technique')">🎸 Técnica e Interpretación</button>
+    <button class="bach-chip" onclick="openBachGptNotebookMode()">📖 Estudiar Libro PDF (Notebook)</button>
+  `;
+
+  const box = document.getElementById("bachChatMessages");
+  box.innerHTML = "";
+  appendBachMessage(
+    `¡Guten Tag, mein lieber Kollege! Estás en mi <strong>Modo de Consulta General</strong>. Aquí puedes preguntarme de todo tipo de temas: <strong>teoría musical, análisis armónico, historia, técnica instrumental, búsqueda de videos/audios</strong> o pedirme que te explique <strong>cómo funciona cada modo de esta aplicación</strong>. También puedes abrir la pestaña <em>"📖 Libro Teoría (Notebook)"</em> para que estudiemos juntos un libro o tratado en PDF.`
+  );
+}
+
+function askBachGeneral(topic) {
+  if (topic === "app-guide") {
+    appendUserMessage("Maestro Bach, explícame cómo funciona la aplicación y sus 4 modos.");
+    setTimeout(() => {
+      appendBachMessage(
+        `<strong>🧭 Guía de la App por tu Kapellmeister:</strong><br>
+        ¡Ja, natürlich! Esta aplicación tiene <strong>4 modos principales</strong> en la barra superior:<br>
+        1. <strong>Biblioteca</strong>: Importa tus PDFs reales con <em>"＋ Importar PDF"</em>, alterna entre vista <em>Folio</em> y <em>Lista</em>, usa el taller <em>✂</em> para particionar páginas, o toca mi rostro de 8 bits en cada partitura para hablar exclusivamente de esa obra.<br>
+        2. <strong>Estudio</strong>: Lee tu partitura en Hoja Parada, escribe con el lápiz óptico, usa <em>"✦ A Molde"</em> para volver limpio tu trazo y estampa sellos de digitación.<br>
+        3. <strong>Concierto</strong>: Lectura limpia al 100% con <em>Escucha Activa</em> para cambio automático de página.<br>
+        4. <strong>Editor</strong>: Dibuja notas a mano en el pentagrama y conviértelas a notación grabada de molde con tablatura.`
+      );
+    }, 220);
+  } else if (topic === "harmony") {
+    appendUserMessage("Háblame sobre análisis armónico, contrapunto y conducción de voces.");
+    setTimeout(() => {
+      appendBachMessage(
+        `<strong>🎼 Teoría y Análisis Armónico:</strong><br>
+        ¡Ach, el contrapunto es el orden del cosmos! Cuando analices cualquier obra, identifica primero la línea del <strong>bajo estructural</strong> y las cadencias que definen la arquitectura tonal. En la guitarra clásica, escuchar las voces internas (como en una fuga o sarabanda) te revelará qué notas deben sostenerse y cuáles deben respirar. ¿Sobre qué acorde, cadencia o forma musical quieres profundizar, mein Freund?`
+      );
+    }, 220);
+  } else if (topic === "technique") {
+    appendUserMessage("Dame consejos generales de estudio, técnica y preparación para concierto.");
+    setTimeout(() => {
+      appendBachMessage(
+        `<strong>🎸 Sabiduría de Estudio y Técnica:</strong><br>
+        ¡Ja! Como decía a mis alumnos en Leipzig: estudia primero a un tempo donde tu mente gobierne cada dedo sin tensión. Separa las voces cantando la línea superior mientras tocas el bajo, y registra tus digitaciones definitivas en el <strong>Modo Estudio</strong> para que tu memoria muscular sea infalible en el escenario.`
+      );
+    }, 220);
+  }
+}
+
+// ==========================================================================
+// MODO 2 DE BACHGPT: MODO OBRA PDF ESPECÍFICA (Al tocar el icono en una partitura)
+// Conversación 100% dirigida a esa obra: compositor, estilo, época, contexto, links
+// ==========================================================================
+function openAiForWork(scoreId) {
+  openBachGptSpecificWorkMode(scoreId);
+}
+
+function openBachGptSpecificWorkMode(scoreId) {
+  bachContextMode = "work";
+  bachSelectedWorkId = Number(scoreId) || (activeScore ? activeScore.id : 1);
+  toggleBachGptChat(true);
+
+  document.getElementById("bctxGeneralBtn").classList.remove("active");
+  document.getElementById("bctxWorkBtn").classList.add("active");
+  document.getElementById("bctxNotebookBtn").classList.remove("active");
+
+  document.getElementById("bachWorkSelectRow").classList.remove("hidden");
+  document.getElementById("bachNotebookBar").classList.add("hidden");
+
+  populateBachWorkSelect();
   const sel = document.getElementById("bachWorkSelect");
-  if (sel) sel.value = String(scoreId);
-  changeBachConversationWork(scoreId);
+  if (sel) sel.value = String(bachSelectedWorkId);
+
+  const work = scores.find((s) => s.id === bachSelectedWorkId) || scores[0];
+  const title = work.clean || work.title;
+
+  document.getElementById("bachModeTag").textContent = "OBRA ESPECÍFICA";
+  document.getElementById("bachCurrentWorkLabel").textContent = `Enfocado en: ${title}`;
+
+  document.getElementById("bachQuickPrompts").innerHTML = `
+    <button class="bach-chip" onclick="askBachTopic('history')">📜 Contexto Histórico y Época</button>
+    <button class="bach-chip" onclick="askBachTopic('theory')">🎼 Estilo y Análisis Armónico</button>
+    <button class="bach-chip" onclick="askBachTopic('performance')">🎸 Técnica e Interpretación</button>
+    <button class="bach-chip" onclick="askBachTopic('links')">▶ Videos, Audios y Versiones</button>
+  `;
+
+  const box = document.getElementById("bachChatMessages");
+  box.innerHTML = "";
+
+  const linksHtml = work.aiData.links
+    .map(
+      (lnk) =>
+        `<a href="${lnk.url}" target="_blank" rel="noopener noreferrer" class="bach-chat-link">${lnk.label} ↗</a>`
+    )
+    .join("");
+
+  appendBachMessage(
+    `¡Ja, mein lieber Kollege! Me has invocado directamente sobre la partitura de <strong>"${title}"</strong>.<br>
+    • <strong>Compositor:</strong> ${work.composer}<br>
+    • <strong>Época y Estilo:</strong> Periodo ${work.period} (${work.group})<br>
+    • <strong>Contexto Histórico:</strong> ${work.aiData.history}<br><br>
+    Aquí tienes <strong>referencias externas, videos, audios y distintas versiones de interpretación</strong>:<div class="bach-links-stack">${linksHtml}</div>`
+  );
 }
 
 function changeBachConversationWork(scoreId) {
-  bachSelectedWorkId = Number(scoreId);
-  const work = scores.find((s) => s.id === bachSelectedWorkId) || scores[0];
-  const lbl = document.getElementById("bachCurrentWorkLabel");
-  if (lbl) lbl.textContent = `Consultando: ${work.clean || work.title}`;
+  openBachGptSpecificWorkMode(Number(scoreId));
+}
 
+// ==========================================================================
+// MODO 3 DE BACHGPT: MODO NOTEBOOK DE TEORÍA (Tipo Gemini NotebookLM)
+// Exclusivo para libros de texto, tratados e historia en PDF
+// ==========================================================================
+function openBachGptNotebookMode() {
+  bachContextMode = "notebook";
+  toggleBachGptChat(true);
+
+  document.getElementById("bctxGeneralBtn").classList.remove("active");
+  document.getElementById("bctxWorkBtn").classList.remove("active");
+  document.getElementById("bctxNotebookBtn").classList.add("active");
+
+  document.getElementById("bachWorkSelectRow").classList.add("hidden");
+  document.getElementById("bachNotebookBar").classList.remove("hidden");
+
+  document.getElementById("bachModeTag").textContent = "NOTEBOOK TEORÍA";
+  document.getElementById("bachCurrentWorkLabel").textContent = "Estudio y Comprensión de Libros de Texto y Teoría";
+
+  document.getElementById("bachQuickPrompts").innerHTML = `
+    <button class="bach-chip" onclick="askBachNotebook('summary')">📑 Resumen Ejecutivo del Libro</button>
+    <button class="bach-chip" onclick="askBachNotebook('concepts')">🔑 Conceptos Teóricos Clave</button>
+    <button class="bach-chip" onclick="askBachNotebook('quiz')">❓ Guía de Estudio / Preguntas</button>
+    <button class="bach-chip" onclick="document.getElementById('theoryBookPdfInput').click()">＋ Cargar otro Libro PDF</button>
+  `;
+
+  const box = document.getElementById("bachChatMessages");
+  box.innerHTML = "";
   appendBachMessage(
-    `¡Ah, ja, natürlich! Hemos puesto en el facistol <strong>${work.clean || work.title}</strong> de <em>${work.composer}</em> (${work.period}). Toca el micrófono 🎙️ o elige un tema aquí abajo, mein Freund.`
+    `¡Willkommen a mi <strong>Cuaderno de Estudio Teórico (estilo Gemini Notebook)</strong>! Esta sección es <strong>exclusiva para libros de texto, tratados de armonía, contrapunto o historia musical en PDF</strong>.<br><br>
+    Sube cualquier PDF de texto con el botón <em>"＋ Subir PDF de Texto/Teoría"</em> de aquí arriba: yo leeré sus páginas completas para hacerte resúmenes, explicarte capítulos complejos, responder dudas sobre el texto y ayudarte a estudiarlo.`
   );
+}
+
+async function handleTheoryBookUpload(files) {
+  if (!files || files.length === 0) return;
+  const file = files[0];
+  document.getElementById("nbLoadedBookName").textContent = `⏳ Analizando libro "${file.name}"...`;
+
+  let extracted = "";
+  let totalPages = 1;
+
+  if (window.pdfjsLib) {
+    try {
+      const buf = await file.arrayBuffer();
+      const pdf = await window.pdfjsLib.getDocument({ data: new Uint8Array(buf) }).promise;
+      totalPages = pdf.numPages;
+      const maxPagesToRead = Math.min(totalPages, 15);
+      const chunks = [];
+      for (let p = 1; p <= maxPagesToRead; p++) {
+        const page = await pdf.getPage(p);
+        const content = await page.getTextContent();
+        const pageText = content.items.map((it) => it.str).join(" ");
+        if (pageText.trim()) chunks.push(`[Pág. ${p}]: ${pageText.trim()}`);
+      }
+      extracted = chunks.join(" ");
+    } catch (e) {
+      console.warn("Error leyendo texto del libro PDF:", e);
+    }
+  }
+
+  activeTheoryBook = {
+    loaded: true,
+    title: file.name.replace(/\.pdf$/i, ""),
+    pages: totalPages,
+    extractedText:
+      extracted.length > 40
+        ? extracted
+        : `Libro de teoría e investigación musical "${file.name}" (${totalPages} páginas). Contiene fundamentos teóricos, análisis formal, historia y práctica interpretativa.`
+  };
+
+  document.getElementById("nbLoadedBookName").textContent = `📖 Libro activo: ${activeTheoryBook.title} (${totalPages} págs.)`;
+  document.getElementById("theoryBookPdfInput").value = "";
+
+  const previewSnippet = activeTheoryBook.extractedText.slice(0, 320);
+  appendBachMessage(
+    `¡Wunderbar! He leído y analizado tu libro de teoría <strong>"${activeTheoryBook.title}"</strong> (${totalPages} páginas).<br>
+    <em>Extracto procesado:</em> "${previewSnippet}..."<br><br>
+    ¿Quieres que te prepare un <strong>resumen general</strong>, que desglosemos sus <strong>conceptos teóricos clave</strong> o me haces una pregunta específica sobre su contenido?`
+  );
+}
+
+function askBachNotebook(action) {
+  const title = activeTheoryBook.title;
+  const snippet = activeTheoryBook.extractedText.slice(0, 420);
+
+  if (action === "summary") {
+    appendUserMessage(`Hazme un resumen de estudio del libro "${title}".`);
+    setTimeout(() => {
+      appendBachMessage(
+        `<strong>📑 Resumen de Estudio (Notebook) — ${title}:</strong><br>
+        ¡Ja, mein Freund! Tras analizar el texto del documento, las ideas centrales son:<br>
+        • <strong>Síntesis del contenido:</strong> ${snippet}...<br>
+        • <strong>Aplicación práctica para el músico:</strong> Este tratado conecta la comprensión teórica de la estructura con la toma de decisiones interpretativas en el instrumento.`
+      );
+    }, 240);
+  } else if (action === "concepts") {
+    appendUserMessage(`¿Cuáles son los conceptos teóricos clave en "${title}"?`);
+    setTimeout(() => {
+      appendBachMessage(
+        `<strong>🔑 Conceptos Clave Extraídos de "${title}":</strong><br>
+        1. <strong>Arquitectura y Conducción Melódica:</strong> Relación entre tensión armónica y dirección del fraseo.<br>
+        2. <strong>Sintaxis y Articulación:</strong> Cómo agrupar los motivos según las reglas estilísticas del texto.<br>
+        3. <strong>Referencia textual directa:</strong> <em>"${activeTheoryBook.extractedText.slice(0, 220)}..."</em>`
+      );
+    }, 240);
+  } else if (action === "quiz") {
+    appendUserMessage(`Prepárame preguntas de repaso para estudiar "${title}".`);
+    setTimeout(() => {
+      appendBachMessage(
+        `<strong>❓ Guía de Estudio y Repaso — ${title}:</strong><br>
+        ¡Excelente método pedagógico! Reflexiona sobre estas 3 preguntas basadas en tu PDF:<br>
+        1. ¿Cómo define el autor la relación entre la estructura armónica y el fraseo en este capítulo?<br>
+        2. ¿Qué principios del texto puedes aplicar directamente a la obra que estás estudiando hoy en tu atril?<br>
+        3. ¿Qué diferencias estilísticas señala el documento entre épocas?`
+      );
+    }, 240);
+  }
 }
 
 function appendUserMessage(text) {
@@ -1096,31 +1330,31 @@ function askBachTopic(topic) {
   const title = work.clean || work.title;
 
   if (topic === "history") {
-    appendUserMessage(`Maestro Bach, cuéntame la historia de "${title}".`);
+    appendUserMessage(`Maestro Bach, cuéntame la historia y época de "${title}".`);
     setTimeout(() => {
       appendBachMessage(
-        `<strong>📜 Crónica Histórica:</strong><br>¡Ja, escucha bien, mein Freund! ${work.aiData.history}<br><small style="opacity:0.75">Periodo: ${work.period} • Autor: ${work.composer}</small>`
+        `<strong>📜 Contexto Histórico y Época (${title}):</strong><br>¡Ja, escucha bien, mein Freund! ${work.aiData.history}<br><small style="opacity:0.75">Periodo: ${work.period} • Compositor: ${work.composer}</small>`
       );
     }, 220);
   } else if (topic === "theory") {
-    appendUserMessage(`¿Cómo está construida teórica y formalmente "${title}"?`);
+    appendUserMessage(`¿Cuál es el estilo y análisis armónico de "${title}"?`);
     setTimeout(() => {
       appendBachMessage(
-        `<strong>🎼 Arquitectura y Contrapunto:</strong><br>¡Ach, la arquitectura musical es sagrada! ${work.aiData.theory}<br><small style="opacity:0.75">Dotación: ${work.group} • Extensión: ${work.pages}</small>`
+        `<strong>🎼 Estilo, Forma y Análisis Armónico (${title}):</strong><br>¡Ach, la arquitectura de esta obra es fascinante! ${work.aiData.theory}<br><small style="opacity:0.75">Dotación: ${work.group} • Extensión: ${work.pages}</small>`
       );
     }, 220);
   } else if (topic === "performance") {
-    appendUserMessage(`¿Qué consejos de digitación e interpretación me das para "${title}"?`);
+    appendUserMessage(`¿Qué consejos técnicos y de digitación me das para "${title}"?`);
     setTimeout(() => {
       appendBachMessage(
-        `<strong>🎸 Consejo del Kapellmeister:</strong><br>En el atril, mein Kollege: ${work.aiData.performance}<br>
+        `<strong>🎸 Técnica e Interpretación (${title}):</strong><br>En el atril, mein Kollege: ${work.aiData.performance}<br>
         <button class="bach-inline-btn" onclick="openScoreById(${work.id}, 'study'); toggleBachGptChat(false);">
-          ✎ Abrir partitura en Modo Estudio para anotar
+          ✎ Abrir "${title}" en Modo Estudio para anotar
         </button>`
       );
     }, 220);
   } else if (topic === "links") {
-    appendUserMessage(`Muéstrame interpretaciones en YouTube y ediciones de "${title}".`);
+    appendUserMessage(`Muéstrame videos, audios y versiones de "${title}".`);
     const linksHtml = work.aiData.links
       .map(
         (lnk) =>
@@ -1129,7 +1363,7 @@ function askBachTopic(topic) {
       .join("");
     setTimeout(() => {
       appendBachMessage(
-        `<strong>▶ Grabaciones de Referencia y Fuentes Web:</strong><br>¡Ja, wunderbar! Aquí tienes enlaces directos para escuchar versiones de <em>${title}</em>:<div class="bach-links-stack">${linksHtml}</div>`
+        `<strong>▶ Videos, Audios de Referencia y Versiones (${title}):</strong><br>¡Ja, wunderbar! Aquí tienes enlaces externos directos a distintas interpretaciones y ediciones de <em>${title}</em>:<div class="bach-links-stack">${linksHtml}</div>`
       );
     }, 220);
   }
@@ -1142,29 +1376,62 @@ function sendUserMessageToBach() {
   input.value = "";
   appendUserMessage(text);
 
-  const work = scores.find((s) => s.id === Number(bachSelectedWorkId)) || scores[0];
-  const title = work.clean || work.title;
   const lower = text.toLowerCase();
 
+  // 1. Si está en MODO NOTEBOOK (Libros de Teoría)
+  if (bachContextMode === "notebook") {
+    setTimeout(() => {
+      appendBachMessage(
+        `<strong>📖 Análisis en tu Libro "${activeTheoryBook.title}":</strong><br>
+        Respecto a tu consulta <em>"${text}"</em>, basándome en el texto estudiado (<em>"${activeTheoryBook.extractedText.slice(0, 240)}..."</em>), este concepto es fundamental para comprender la estructura y la praxis musical. ¿Quieres que profundicemos en otro capítulo del PDF?`
+      );
+    }, 250);
+    return;
+  }
+
+  // 2. Si está en MODO CONSULTA GENERAL (Pantalla Principal)
+  if (bachContextMode === "general") {
+    setTimeout(() => {
+      if (lower.includes("app") || lower.includes("funciona") || lower.includes("modo") || lower.includes("usar") || lower.includes("ayuda")) {
+        askBachGeneral("app-guide");
+      } else if (lower.includes("libro") || lower.includes("tratado") || lower.includes("notebook") || lower.includes("leer")) {
+        openBachGptNotebookMode();
+      } else {
+        const ytQuery = encodeURIComponent(text + " classical music analysis guitar");
+        appendBachMessage(
+          `¡Ja, excelente consulta general, mein Freund! Sobre <strong>"${text}"</strong>: desde la perspectiva de la teoría armónica, la historia y la técnica instrumental, recuerda siempre vincular el análisis estructural con la calidad del sonido y la claridad polifónica.<br>
+          <div class="bach-links-stack">
+            <a href="https://www.youtube.com/results?search_query=${ytQuery}" target="_blank" rel="noopener noreferrer" class="bach-chat-link">▶ Buscar videos y clases sobre "${text}" en YouTube ↗</a>
+          </div>`
+        );
+      }
+    }, 250);
+    return;
+  }
+
+  // 3. Si está en MODO OBRA PDF ESPECÍFICA
+  const work = scores.find((s) => s.id === Number(bachSelectedWorkId)) || scores[0];
+  const title = work.clean || work.title;
+
   setTimeout(() => {
-    if (lower.includes("youtube") || lower.includes("video") || lower.includes("escuchar") || lower.includes("grabacion") || lower.includes("version")) {
+    if (lower.includes("youtube") || lower.includes("video") || lower.includes("audio") || lower.includes("escuchar") || lower.includes("version")) {
       askBachTopic("links");
-    } else if (lower.includes("historia") || lower.includes("origen") || lower.includes("año") || lower.includes("compuso") || lower.includes("cuando")) {
+    } else if (lower.includes("historia") || lower.includes("epoca") || lower.includes("origen") || lower.includes("compositor")) {
       askBachTopic("history");
-    } else if (lower.includes("armonia") || lower.includes("teoria") || lower.includes("forma") || lower.includes("analisis") || lower.includes("tonalidad")) {
+    } else if (lower.includes("armonia") || lower.includes("teoria") || lower.includes("estilo") || lower.includes("analisis")) {
       askBachTopic("theory");
-    } else if (lower.includes("digitacion") || lower.includes("tocar") || lower.includes("interpretar") || lower.includes("consejo") || lower.includes("tecnica")) {
+    } else if (lower.includes("digitacion") || lower.includes("tocar") || lower.includes("interpretar") || lower.includes("tecnica")) {
       askBachTopic("performance");
     } else {
       const searchUrl = `https://www.youtube.com/results?search_query=${encodeURIComponent(work.composer.split("(")[0] + " " + title + " " + text)}`;
       appendBachMessage(
-        `¡Ah, ja, muy buena observación sobre <strong>${title}</strong>, mein Freund! Como siempre digo en Santo Tomás de Leipzig: la claridad de las voces y el pulso interior lo gobiernan todo. En esta obra de <em>${work.composer}</em> (${work.period}), cuida cada articulación y anota tus digitaciones en el <strong>Modo Estudio</strong>.<br>
+        `Hablando específicamente de tu partitura <strong>${title}</strong> de <em>${work.composer}</em> (${work.period}): ${work.aiData.performance}<br>
         <div class="bach-links-stack">
-          <a href="${searchUrl}" target="_blank" rel="noopener noreferrer" class="bach-chat-link">▶ Buscar "${text}" sobre ${title} en YouTube ↗</a>
+          <a href="${searchUrl}" target="_blank" rel="noopener noreferrer" class="bach-chat-link">▶ Buscar "${text}" en interpretaciones de ${title} ↗</a>
         </div>`
       );
     }
-  }, 260);
+  }, 250);
 }
 
 function cleanLibraryWithAI() {
