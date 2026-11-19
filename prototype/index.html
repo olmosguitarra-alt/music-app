@@ -3,17 +3,16 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-  <title>Atril — Piloto con PDFs Reales</title>
-  <link rel="stylesheet" href="styles.css?v=5" />
+  <title>Atril — Con BachGPT (8-bit Assistant)</title>
+  <link rel="stylesheet" href="styles.css?v=6" />
   <!-- Motores Oficiales para Renderizar (PDF.js) y Particionar/Editar PDFs Reales (pdf-lib) -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf-lib/1.17.1/pdf-lib.min.js"></script>
 </head>
 <body class="palette-luthier">
 
-  <!-- Input oculto para importar 1 o múltiples PDFs reales desde la Tablet o Celular -->
+  <!-- Inputs ocultos para importar PDFs reales desde la Tablet o Celular -->
   <input type="file" id="realPdfFileInput" accept="application/pdf,.pdf" multiple style="display:none" onchange="handleRealPdfUpload(this.files)" />
-  <!-- Input oculto para insertar/agregar páginas desde otro PDF en el Taller -->
   <input type="file" id="appendPdfFileInput" accept="application/pdf,.pdf" style="display:none" onchange="handleAppendPdfPages(this.files)" />
 
   <!-- =================================================================== -->
@@ -53,26 +52,24 @@
   </header>
 
   <!-- =================================================================== -->
-  <!-- 1. MODO BIBLIOTECA CON MOTOR DE PDF REAL + MODO IA                  -->
+  <!-- 1. MODO BIBLIOTECA CON MOTOR DE PDF REAL                            -->
   <!-- =================================================================== -->
   <main id="mode-library" class="canvas-view active">
     <div class="library-stage">
 
       <!-- BARRA SUPERIOR ÚNICA Y MINIMALISTA DE LA BIBLIOTECA -->
       <div class="lib-command-bar">
-        <!-- Botón Llamativo para Importar PDFs Reales desde la Tablet -->
         <button class="btn-import-pdf" onclick="document.getElementById('realPdfFileInput').click()" title="Cargar archivos PDF de tu tablet">
           <svg viewBox="0 0 24 24" class="v-ico"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
           <span>＋ Importar PDF</span>
         </button>
 
-        <!-- Buscador limpio -->
         <div class="glass-search">
           <svg viewBox="0 0 24 24" class="v-ico"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
-          <input type="text" id="searchInput" placeholder="Buscar en tu biblioteca..." oninput="renderLibrary()" />
+          <input type="text" id="searchInput" placeholder="Buscar obra, compositor, BWV..." oninput="renderLibrary()" />
         </div>
 
-        <!-- Botón Desplegable Minimalista de Clasificación + Modo IA -->
+        <!-- Botón Desplegable Minimalista de Clasificación -->
         <div class="classify-dropdown-wrap">
           <button class="glass-dropdown-trigger" id="classifyTriggerBtn" onclick="toggleClassifyMenu(event)">
             <svg viewBox="0 0 24 24" class="v-ico"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>
@@ -103,15 +100,15 @@
 
             <div class="dd-divider"></div>
 
-            <button class="dd-item ai-special" data-cls="ai-mode" onclick="selectClassification('ai-mode', '✦ Modo IA Musical', this)">
+            <button class="dd-item ai-special" onclick="toggleBachGptChat(true); document.getElementById('classifyMenu').classList.add('hidden');">
               <div class="ai-dd-text">
-                <strong>✦ Modo IA Musicológico</strong>
-                <span>Historia, teoría, interpretación y YouTube</span>
+                <strong>💬 Consultar a BachGPT</strong>
+                <span>Abrir asistente musical de 8-bits</span>
               </div>
             </button>
 
             <button class="dd-item subtle-action" onclick="cleanLibraryWithAI()">
-              <span>✦ Normalizar nombres de PDFs con IA</span>
+              <span>✦ Normalizar nombres de PDFs crudos</span>
             </button>
           </div>
         </div>
@@ -129,37 +126,12 @@
         </div>
       </div>
 
-      <!-- Aviso de estado al importar o procesar PDFs -->
       <div class="pilot-status-banner hidden" id="pilotStatusBanner"></div>
 
       <!-- CONTENEDOR PRINCIPAL DE ARCHIVOS -->
       <div id="libraryCatalogContainer">
         <div class="folio-grid" id="scoreList"></div>
       </div>
-
-      <!-- VISTA ESPECIAL: MODO IA MUSICOLÓGICO E INTERPRETATIVO -->
-      <section class="ai-musicology-stage hidden" id="aiMusicologyStage">
-        <div class="ai-stage-header">
-          <div class="ai-title-row">
-            <div>
-              <span class="ai-eyebrow">✦ CONSULTORÍA MUSICAL &amp; REPERTORIO</span>
-              <h3>Análisis Histórico, Teórico e Interpretaciones de Referencia</h3>
-            </div>
-            <button class="btn-back-catalog" onclick="exitAiModeToCatalog()">← Volver a Archivos</button>
-          </div>
-
-          <div class="ai-selector-bar">
-            <select id="aiWorkSelector" class="glass-select" onchange="renderAiMusicologyView(this.value)"></select>
-            <div class="ai-prompt-box">
-              <input type="text" id="aiCustomPrompt" placeholder="Preguntar sobre digitación, ornamentación, tempo o edición..." onkeydown="if(event.key==='Enter') askCustomAiQuestion()" />
-              <button class="btn-ask-ai" onclick="askCustomAiQuestion()">Consultar</button>
-            </div>
-          </div>
-        </div>
-
-        <div class="ai-custom-answer hidden" id="aiCustomAnswerBox"></div>
-        <div class="ai-knowledge-grid" id="aiKnowledgeGrid"></div>
-      </section>
 
     </div>
 
@@ -176,7 +148,6 @@
           <button class="btn-circle-ghost" onclick="closePdfModal()">✕</button>
         </div>
 
-        <!-- Campos rápidos para renombrar y clasificar la obra (con botón de auto-sugerencia IA) -->
         <div class="workshop-meta-grid">
           <div class="wm-field">
             <label>Título de la Obra</label>
@@ -208,7 +179,7 @@
         </div>
 
         <div class="workshop-pages-header">
-          <span>Selecciona páginas tocándolas (o define un rango para extraer un movimiento/obra):</span>
+          <span>Selecciona páginas tocándolas (o define un rango para extraer):</span>
           <div class="range-extract-controls">
             <label>Desde pág.</label>
             <input type="number" id="splitStartPage" min="1" value="1" class="range-num-input" />
@@ -217,7 +188,6 @@
           </div>
         </div>
 
-        <!-- Tira de Páginas Reales del PDF (Toca para seleccionar/deseleccionar) -->
         <div class="folio-strip real-pages-strip" id="workshopPagesStrip"></div>
 
         <div class="linearity-action-bar">
@@ -240,7 +210,7 @@
   </main>
 
   <!-- =================================================================== -->
-  <!-- 2. MODO ESTUDIO (Soporta tanto PDF Real de la Tablet como SVG)      -->
+  <!-- 2. MODO ESTUDIO                                                     -->
   <!-- =================================================================== -->
   <main id="mode-study" class="canvas-view">
     <div class="full-bleed-canvas">
@@ -257,11 +227,8 @@
         </div>
 
         <div class="folio-staff-area" id="studyWrap">
-          <!-- Si la obra es un PDF real importado, se renderiza en este canvas de alta definición -->
           <canvas id="studyPdfRenderCanvas" class="pdf-page-canvas hidden"></canvas>
-          <!-- Si es una obra demo, se muestra el SVG -->
           <div id="studySvg" class="svg-layer"></div>
-          <!-- Capa superior para trazo libre con lápiz y conversión a molde -->
           <canvas id="studyCanvas" class="draw-layer"></canvas>
           <div id="studyMoldLayer" class="mold-layer"></div>
         </div>
@@ -275,7 +242,6 @@
       <button class="invisible-page-zone right" onclick="turnPage(1)" aria-label="Siguiente página">›</button>
     </div>
 
-    <!-- Riel de Herramientas Concepts -->
     <aside class="concepts-tool-rail">
       <button class="rail-tool active" id="btnPen" onclick="setStudyTool('pen')" title="Pluma de trazo libre">
         <svg viewBox="0 0 24 24" class="v-ico"><path d="M12 19l7-7 3 3-7 7-3-3z"/><path d="M18 13l-1.5-7.5L2 2l3.5 14.5L13 18l5-5z"/><path d="M2 2l7.586 7.586"/></svg>
@@ -329,7 +295,7 @@
   </main>
 
   <!-- =================================================================== -->
-  <!-- 3. MODO CONCIERTO (Lee todas las páginas de tu PDF Real)            -->
+  <!-- 3. MODO CONCIERTO                                                   -->
   <!-- =================================================================== -->
   <main id="mode-concert" class="canvas-view">
     <div class="full-bleed-canvas">
@@ -438,6 +404,57 @@
     </div>
   </main>
 
-  <script src="app.js?v=5"></script>
+  <!-- =================================================================== -->
+  <!-- BACHGPT: BOTÓN FLOTANTE 8-BITS & VENTANA DE CHAT CONVERSACIONAL     -->
+  <!-- =================================================================== -->
+  <div class="bachgpt-widget-root">
+
+    <!-- Ventana Flotante de Chat con J. S. Bach (Oculta hasta tocar el icono 8-bit) -->
+    <aside class="bachgpt-chat-window hidden" id="bachGptWindow">
+      <div class="bach-chat-header">
+        <div class="bach-avatar-badge" id="bachHeaderAvatar"></div>
+        <div class="bach-header-info">
+          <div class="bach-name-row">
+            <strong>BachGPT</strong>
+            <span class="bach-8bit-tag">8-BIT KAPELLMEISTER</span>
+          </div>
+          <span class="bach-status-sub" id="bachCurrentWorkLabel">Consultando: Sonata BWV 1034</span>
+        </div>
+        <button class="btn-circle-ghost" onclick="toggleBachGptChat(false)" title="Cerrar chat">✕</button>
+      </div>
+
+      <!-- Selector rápido de sobre qué obra de tu biblioteca quieres platicar con Bach -->
+      <div class="bach-work-context-bar">
+        <label for="bachWorkSelect">Obra:</label>
+        <select id="bachWorkSelect" onchange="changeBachConversationWork(this.value)"></select>
+      </div>
+
+      <!-- Historial de Mensajes de la Conversación con Bach -->
+      <div class="bach-chat-messages" id="bachChatMessages"></div>
+
+      <!-- Sugerencias rápidas de plática -->
+      <div class="bach-quick-prompts">
+        <button class="bach-chip" onclick="askBachTopic('history')">📜 Historia</button>
+        <button class="bach-chip" onclick="askBachTopic('theory')">🎼 Análisis y Teoría</button>
+        <button class="bach-chip" onclick="askBachTopic('performance')">🎸 Digitación e Interpretación</button>
+        <button class="bach-chip" onclick="askBachTopic('links')">▶ YouTube &amp; Ediciones</button>
+      </div>
+
+      <!-- Barra de entrada para platicar libremente con BachGPT -->
+      <div class="bach-chat-input-bar">
+        <input type="text" id="bachUserInput" placeholder="Pregúntale al Maestro Bach..." onkeydown="if(event.key==='Enter') sendUserMessageToBach()" />
+        <button class="bach-send-btn" onclick="sendUserMessageToBach()" aria-label="Enviar">➤</button>
+      </div>
+    </aside>
+
+    <!-- Botón Flotante con el Retrato de J. S. Bach en Arte de 8 Bits -->
+    <button class="bachgpt-fab" id="bachGptFab" onclick="toggleBachGptChat()" title="Platicar con BachGPT">
+      <div class="bach-8bit-icon" id="bachFabIcon"></div>
+      <span class="bach-fab-label">BachGPT</span>
+    </button>
+
+  </div>
+
+  <script src="app.js?v=6"></script>
 </body>
 </html>

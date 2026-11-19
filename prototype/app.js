@@ -631,20 +631,7 @@ function selectClassification(clsKey, labelText, btn) {
   document.querySelectorAll(".dd-item").forEach((item) => item.classList.remove("active"));
   if (btn) btn.classList.add("active");
   document.getElementById("classifyMenu").classList.add("hidden");
-
-  const catalogEl = document.getElementById("libraryCatalogContainer");
-  const aiStageEl = document.getElementById("aiMusicologyStage");
-
-  if (clsKey === "ai-mode") {
-    catalogEl.classList.add("hidden");
-    aiStageEl.classList.remove("hidden");
-    populateAiWorkSelector();
-    renderAiMusicologyView(scores[0].id);
-  } else {
-    aiStageEl.classList.add("hidden");
-    catalogEl.classList.remove("hidden");
-    renderLibrary();
-  }
+  renderLibrary();
 }
 
 function exitAiModeToCatalog() {
@@ -789,109 +776,213 @@ function buildListRowHtml(s) {
 }
 
 // ==========================================================================
-// MODO IA MUSICOLÓGICO
+// BACHGPT: CHATBOT FLOTANTE CON RETRATO EN ARTE DE 8 BITS DE J. S. BACH
 // ==========================================================================
-function populateAiWorkSelector() {
-  const sel = document.getElementById("aiWorkSelector");
+let bachSelectedWorkId = 1;
+let bachGreetingInitialized = false;
+
+// Generador de Retrato en Pixel Art de 8 Bits de J. S. Bach (SVG crispEdges)
+function build8BitBachSvg() {
+  // Matriz 16x16 de pixel art:
+  // . = transparente, W = peluca blanca, G = sombra gris peluca, S = piel rostro,
+  // D = sombra piel, E = ojos/cejas, M = boca/expresión, C = casaca barroca roja/vino,
+  // B = botones dorados, R = chorrera/cuello blanco
+  const grid = [
+    "....WWWWWWWW....",
+    "..WWWWWWWWWWWW..",
+    ".WWWWGGGGGGWWWW.",
+    ".WWWGGGGGGGGWWW.",
+    "WWWWGSSSSSSGWWWW",
+    "WWWGSSSSSSSSGWWW",
+    "WWWGSEESSSSEESWW",
+    "WWWGSSSSSSSSGWWW",
+    "WWGGSSSDDSSSGGWW",
+    "WWGGSSSMMMSSGGWW",
+    "WWWGGSSSSSSGGWWW",
+    ".WWW.RRRRRR.WWW.",
+    "..W.CRRRRRRC.W..",
+    "...CCCRBBRCCC...",
+    "..CCCCRBBRCCCC..",
+    "..CCCCCRRCCCCC.."
+  ];
+
+  const palette = {
+    W: "#f8fafc", // Peluca empolvada blanca
+    G: "#cbd5e1", // Rizos grises de la peluca
+    S: "#f3c69f", // Piel
+    D: "#d99f72", // Sombra nariz/pómulos
+    E: "#1e1b18", // Ojos
+    M: "#9a5b42", // Boca
+    R: "#ffffff", // Chorrera barroca
+    C: "#7c2d12", // Casaca barroca vino/terracota
+    B: "#facc15"  // Botones de oro
+  };
+
+  let rects = "";
+  for (let y = 0; y < 16; y++) {
+    const row = grid[y];
+    for (let x = 0; x < 16; x++) {
+      const ch = row[x];
+      if (ch !== "." && palette[ch]) {
+        rects += `<rect x="${x}" y="${y}" width="1" height="1" fill="${palette[ch]}" />`;
+      }
+    }
+  }
+
+  return `<svg viewBox="0 0 16 16" width="100%" height="100%" shape-rendering="crispEdges" xmlns="http://www.w3.org/2000/svg">${rects}</svg>`;
+}
+
+function initBachGptWidget() {
+  const fabIcon = document.getElementById("bachFabIcon");
+  const headerAvatar = document.getElementById("bachHeaderAvatar");
+  const svg8Bit = build8BitBachSvg();
+  if (fabIcon) fabIcon.innerHTML = svg8Bit;
+  if (headerAvatar) headerAvatar.innerHTML = svg8Bit;
+  populateBachWorkSelect();
+}
+
+function populateBachWorkSelect() {
+  const sel = document.getElementById("bachWorkSelect");
   if (!sel) return;
   sel.innerHTML = scores
-    .map((s) => `<option value="${s.id}">${s.composer} — ${s.clean || s.title}</option>`)
+    .map((s) => `<option value="${s.id}" ${s.id === bachSelectedWorkId ? "selected" : ""}>${s.clean || s.title} (${s.composer.split("(")[0].trim()})</option>`)
     .join("");
+}
+
+function toggleBachGptChat(forceState) {
+  const win = document.getElementById("bachGptWindow");
+  if (!win) return;
+  const shouldOpen = typeof forceState === "boolean" ? forceState : win.classList.contains("hidden");
+
+  if (shouldOpen) {
+    populateBachWorkSelect();
+    win.classList.remove("hidden");
+    if (!bachGreetingInitialized) {
+      bachGreetingInitialized = true;
+      const work = scores.find((s) => s.id === Number(bachSelectedWorkId)) || scores[0];
+      appendBachMessage(
+        `¡Guten Tag, querido colega! Soy <strong>BachGPT</strong>, tu Kapellmeister de 8 bits. Veo que tenemos en el atril <em>"${work.clean || work.title}"</em>. ¿Quieres que platiquemos sobre su historia, su arquitectura contrapuntística, sugerencias de digitación o te comparto grabaciones en YouTube?`
+      );
+    }
+  } else {
+    win.classList.add("hidden");
+  }
 }
 
 function openAiForWork(scoreId) {
-  const aiMenuBtn = document.querySelector('.dd-item[data-cls="ai-mode"]');
-  selectClassification("ai-mode", "✦ Modo IA Musical", aiMenuBtn);
-  const sel = document.getElementById("aiWorkSelector");
+  bachSelectedWorkId = Number(scoreId);
+  toggleBachGptChat(true);
+  const sel = document.getElementById("bachWorkSelect");
   if (sel) sel.value = String(scoreId);
-  renderAiMusicologyView(scoreId);
+  changeBachConversationWork(scoreId);
 }
 
-function renderAiMusicologyView(scoreId) {
-  const work = scores.find((s) => s.id === Number(scoreId)) || scores[0];
-  const grid = document.getElementById("aiKnowledgeGrid");
-  document.getElementById("aiCustomAnswerBox").classList.add("hidden");
+function changeBachConversationWork(scoreId) {
+  bachSelectedWorkId = Number(scoreId);
+  const work = scores.find((s) => s.id === bachSelectedWorkId) || scores[0];
+  const lbl = document.getElementById("bachCurrentWorkLabel");
+  if (lbl) lbl.textContent = `Consultando: ${work.clean || work.title}`;
 
-  const linksHtml = work.aiData.links
-    .map(
-      (lnk) => `
-      <a href="${lnk.url}" target="_blank" rel="noopener noreferrer" class="ai-ext-link">
-        <span>${lnk.label}</span>
-        <span class="ext-arrow">↗</span>
-      </a>
-    `
-    )
-    .join("");
-
-  grid.innerHTML = `
-    <article class="ai-info-card">
-      <div class="ai-card-head">
-        <span class="ai-card-tag">🏛️ CONTEXTO HISTÓRICO &amp; FUENTES</span>
-        <h4>${work.clean || work.title}</h4>
-      </div>
-      <p>${work.aiData.history}</p>
-      <div class="ai-card-meta">
-        <span><strong>Compositor:</strong> ${work.composer}</span>
-        <span><strong>Periodo:</strong> ${work.period}</span>
-      </div>
-    </article>
-
-    <article class="ai-info-card">
-      <div class="ai-card-head">
-        <span class="ai-card-tag">🎼 ANÁLISIS TEÓRICO &amp; ESTRUCTURAL</span>
-        <h4>Forma, Armonía y Textura</h4>
-      </div>
-      <p>${work.aiData.theory}</p>
-      <div class="ai-card-meta">
-        <span><strong>Dotación:</strong> ${work.group}</span>
-        <span><strong>Páginas:</strong> ${work.pages}</span>
-      </div>
-    </article>
-
-    <article class="ai-info-card">
-      <div class="ai-card-head">
-        <span class="ai-card-tag">🎸 CRITERIOS INTERPRETATIVOS &amp; TÉCNICOS</span>
-        <h4>Sugerencias de Estudio y Escenario</h4>
-      </div>
-      <p>${work.aiData.performance}</p>
-      <div class="ai-card-actions">
-        <button class="btn-open-study-from-ai" onclick="openScoreById(${work.id}, 'study')">
-          ✎ Abrir esta partitura en Modo Estudio
-        </button>
-      </div>
-    </article>
-
-    <article class="ai-info-card links-card">
-      <div class="ai-card-head">
-        <span class="ai-card-tag">▶ INTERPRETACIONES EXISTENTES &amp; RECURSOS WEB</span>
-        <h4>Escuchar y Comparar Versiones (YouTube / IMSLP)</h4>
-      </div>
-      <div class="ai-links-list">
-        ${linksHtml}
-      </div>
-    </article>
-  `;
+  appendBachMessage(
+    `¡Ah, excelente elección! Hemos puesto en el facistol <strong>${work.clean || work.title}</strong> de <em>${work.composer}</em> (${work.period}, ${work.group}). Toca uno de los temas de abajo o pregúntame lo que desees sobre esta partitura.`
+  );
 }
 
-function askCustomAiQuestion() {
-  const input = document.getElementById("aiCustomPrompt");
-  const q = (input.value || "").trim();
-  if (!q) return;
-  const sel = document.getElementById("aiWorkSelector");
-  const work = scores.find((s) => s.id === Number(sel.value)) || scores[0];
+function appendUserMessage(text) {
+  const box = document.getElementById("bachChatMessages");
+  if (!box) return;
+  const msg = document.createElement("div");
+  msg.className = "chat-bubble user-bubble";
+  msg.textContent = text;
+  box.appendChild(msg);
+  box.scrollTop = box.scrollHeight;
+}
 
-  const box = document.getElementById("aiCustomAnswerBox");
-  box.classList.remove("hidden");
-  box.innerHTML = `
-    <div class="ai-answer-header">
-      <strong>✦ Respuesta Musicológica IA sobre ${work.clean || work.title}:</strong>
-      <span>Consulta: "${q}"</span>
-    </div>
-    <p>
-      En <em>${work.clean || work.title}</em> (${work.composer}), conviene trabajar la claridad polifónica y el fraseo correspondiente al estilo ${work.period}. Puedes abrir directamente la partitura en el <strong>Modo Estudio</strong> o comparar versiones en YouTube con los enlaces inferiores.
-    </p>
+function appendBachMessage(htmlContent) {
+  const box = document.getElementById("bachChatMessages");
+  if (!box) return;
+  const wrap = document.createElement("div");
+  wrap.className = "bach-msg-row";
+  wrap.innerHTML = `
+    <div class="bach-mini-8bit">${build8BitBachSvg()}</div>
+    <div class="chat-bubble bach-bubble">${htmlContent}</div>
   `;
+  box.appendChild(wrap);
+  box.scrollTop = box.scrollHeight;
+}
+
+function askBachTopic(topic) {
+  const work = scores.find((s) => s.id === Number(bachSelectedWorkId)) || scores[0];
+  const title = work.clean || work.title;
+
+  if (topic === "history") {
+    appendUserMessage(`Maestro Bach, cuéntame la historia de "${title}".`);
+    setTimeout(() => {
+      appendBachMessage(
+        `<strong>📜 Crónica Histórica:</strong><br>${work.aiData.history}<br><small style="opacity:0.75">Periodo: ${work.period} • Autor: ${work.composer}</small>`
+      );
+    }, 220);
+  } else if (topic === "theory") {
+    appendUserMessage(`¿Cómo está construida teórica y formalmente "${title}"?`);
+    setTimeout(() => {
+      appendBachMessage(
+        `<strong>🎼 Arquitectura y Teoría:</strong><br>${work.aiData.theory}<br><small style="opacity:0.75">Dotación: ${work.group} • Extensión: ${work.pages}</small>`
+      );
+    }, 220);
+  } else if (topic === "performance") {
+    appendUserMessage(`¿Qué consejos de digitación e interpretación me das para "${title}"?`);
+    setTimeout(() => {
+      appendBachMessage(
+        `<strong>🎸 Consejo en el Atril:</strong><br>${work.aiData.performance}<br>
+        <button class="bach-inline-btn" onclick="openScoreById(${work.id}, 'study'); toggleBachGptChat(false);">
+          ✎ Abrir partitura en Modo Estudio para anotar
+        </button>`
+      );
+    }, 220);
+  } else if (topic === "links") {
+    appendUserMessage(`Muéstrame interpretaciones en YouTube y ediciones de "${title}".`);
+    const linksHtml = work.aiData.links
+      .map(
+        (lnk) =>
+          `<a href="${lnk.url}" target="_blank" rel="noopener noreferrer" class="bach-chat-link">${lnk.label} ↗</a>`
+      )
+      .join("");
+    setTimeout(() => {
+      appendBachMessage(
+        `<strong>▶ Grabaciones de Referencia y Fuentes Web:</strong><br>Aquí tienes enlaces directos para escuchar y comparar versiones de <em>${title}</em>:<div class="bach-links-stack">${linksHtml}</div>`
+      );
+    }, 220);
+  }
+}
+
+function sendUserMessageToBach() {
+  const input = document.getElementById("bachUserInput");
+  const text = (input.value || "").trim();
+  if (!text) return;
   input.value = "";
+  appendUserMessage(text);
+
+  const work = scores.find((s) => s.id === Number(bachSelectedWorkId)) || scores[0];
+  const title = work.clean || work.title;
+  const lower = text.toLowerCase();
+
+  setTimeout(() => {
+    if (lower.includes("youtube") || lower.includes("video") || lower.includes("escuchar") || lower.includes("grabacion")) {
+      askBachTopic("links");
+    } else if (lower.includes("historia") || lower.includes("origen") || lower.includes("año") || lower.includes("compuso")) {
+      askBachTopic("history");
+    } else if (lower.includes("armonia") || lower.includes("teoria") || lower.includes("forma") || lower.includes("analisis")) {
+      askBachTopic("theory");
+    } else {
+      const searchUrl = `https://www.youtube.com/results?search_query=${encodeURIComponent(work.composer.split("(")[0] + " " + title + " " + text)}`;
+      appendBachMessage(
+        `¡Interesante pregunta sobre <strong>${title}</strong>! Como solía decir en Leipzig: la claridad del contrapunto y la naturalidad del fraseo lo gobiernan todo. En esta obra de <em>${work.composer}</em> (${work.period}), te sugiero cuidar la independencia de las voces y verificar tu digitación en el <strong>Modo Estudio</strong>.<br>
+        <div class="bach-links-stack">
+          <a href="${searchUrl}" target="_blank" rel="noopener noreferrer" class="bach-chat-link">▶ Buscar "${text}" sobre ${title} en YouTube ↗</a>
+        </div>`
+      );
+    }
+  }, 280);
 }
 
 function cleanLibraryWithAI() {
@@ -1348,6 +1439,7 @@ function playEditorNotes() {
 
 window.addEventListener("DOMContentLoaded", async () => {
   await loadSavedPdfsFromDb();
+  initBachGptWidget();
   renderLibrary();
   switchStampTab("guitar");
   document.getElementById("studySvg").innerHTML = buildPortraitScoreSvg(-1);

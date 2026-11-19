@@ -889,221 +889,308 @@ body.palette-linen .pdf-page-canvas {
 }
 
 /* ==========================================================================
-   MODO IA MUSICOLÓGICO E INTERPRETATIVO (Historia, Teoría, Interpretación y Links)
+   BACHGPT: CHATBOT FLOTANTE CON RETRATO EN ARTE DE 8 BITS DE J. S. BACH
    ========================================================================== */
-.ai-musicology-stage {
+.bachgpt-widget-root {
+  position: fixed;
+  bottom: max(18px, env(safe-area-inset-bottom));
+  right: 18px;
+  z-index: 90;
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  align-items: flex-end;
+  gap: 12px;
+  pointer-events: none;
 }
 
-.ai-stage-header {
+.bachgpt-fab {
+  pointer-events: auto;
+  background: var(--glass-bg);
+  backdrop-filter: blur(22px) saturate(160%);
+  -webkit-backdrop-filter: blur(22px) saturate(160%);
+  border: 1.5px solid var(--accent);
+  border-radius: 999px;
+  padding: 6px 14px 6px 8px;
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  cursor: pointer;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.45);
+  transition: transform 0.18s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.18s ease;
+}
+
+.bachgpt-fab:hover {
+  transform: translateY(-2px) scale(1.03);
+  box-shadow: 0 16px 38px rgba(0, 0, 0, 0.55);
+}
+
+.bach-8bit-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: #1e293b;
+  border: 1.5px solid rgba(255, 255, 255, 0.3);
+  padding: 2px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  image-rendering: pixelated;
+}
+
+.bach-fab-label {
+  font-family: "Courier New", Courier, monospace;
+  font-weight: 800;
+  font-size: 13.5px;
+  letter-spacing: 0.4px;
+  color: var(--text-primary);
+}
+
+/* Ventana Flotante de Chat con BachGPT */
+.bachgpt-chat-window {
+  pointer-events: auto;
+  width: 375px;
+  max-width: calc(100vw - 24px);
+  height: 510px;
+  max-height: calc(100dvh - 140px);
+  background: var(--glass-bg);
+  backdrop-filter: blur(26px) saturate(170%);
+  -webkit-backdrop-filter: blur(26px) saturate(170%);
+  border: 1px solid var(--accent);
+  border-radius: 22px;
+  box-shadow: 0 24px 64px rgba(0, 0, 0, 0.55);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  animation: bachPopIn 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes bachPopIn {
+  from { opacity: 0; transform: translateY(14px) scale(0.95); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.bach-chat-header {
+  background: rgba(0, 0, 0, 0.18);
+  border-bottom: 0.5px solid var(--glass-border);
+  padding: 12px 14px;
+  display: flex;
+  align-items: center;
+  gap: 11px;
+}
+
+.bach-avatar-badge {
+  width: 40px;
+  height: 40px;
+  border-radius: 11px;
+  background: #1e293b;
+  border: 1.5px solid var(--accent);
+  padding: 3px;
+  flex-shrink: 0;
+  image-rendering: pixelated;
+}
+
+.bach-header-info {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.bach-name-row {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.bach-name-row strong {
+  font-size: 14.5px;
+  color: var(--text-primary);
+}
+
+.bach-8bit-tag {
+  font-family: "Courier New", monospace;
+  font-size: 9.5px;
+  font-weight: 700;
+  background: var(--accent);
+  color: var(--accent-ink);
+  padding: 1px 6px;
+  border-radius: 4px;
+}
+
+.bach-status-sub {
+  font-size: 11px;
+  color: var(--text-secondary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.bach-work-context-bar {
+  padding: 8px 14px;
+  background: rgba(0, 0, 0, 0.08);
+  border-bottom: 0.5px solid var(--glass-border);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 11.5px;
+  color: var(--text-secondary);
+}
+
+.bach-work-context-bar select {
+  flex: 1;
   background: var(--card-bg);
   border: 0.5px solid var(--glass-border);
-  border-radius: 18px;
-  padding: 18px;
-  display: flex;
-  flex-direction: column;
-  gap: 14px;
+  color: var(--text-primary);
+  padding: 5px 8px;
+  border-radius: 8px;
+  font-size: 12px;
+  outline: none;
 }
 
-.ai-title-row {
+.bach-chat-messages {
+  flex: 1;
+  padding: 14px;
+  overflow-y: auto;
   display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
+  flex-direction: column;
   gap: 12px;
 }
 
-.ai-eyebrow {
-  font-size: 10.5px;
-  font-weight: 700;
-  letter-spacing: 0.9px;
-  color: var(--accent);
+.bach-msg-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
 }
 
-.ai-title-row h3 {
-  font-family: "Georgia", serif;
-  font-size: 18px;
-  margin-top: 3px;
+.bach-mini-8bit {
+  width: 26px;
+  height: 26px;
+  border-radius: 7px;
+  background: #1e293b;
+  border: 1px solid var(--accent);
+  padding: 2px;
+  flex-shrink: 0;
+  margin-top: 2px;
 }
 
-.btn-back-catalog {
-  background: rgba(128, 128, 128, 0.14);
+.chat-bubble {
+  padding: 10px 13px;
+  border-radius: 15px;
+  font-size: 13px;
+  line-height: 1.48;
+  max-width: 86%;
+}
+
+.bach-bubble {
+  background: var(--card-bg);
   border: 0.5px solid var(--glass-border);
   color: var(--text-primary);
-  padding: 8px 14px;
-  border-radius: 10px;
-  font-size: 12.5px;
+  border-top-left-radius: 4px;
+}
+
+.user-bubble {
+  align-self: flex-end;
+  background: var(--accent);
+  color: var(--accent-ink);
+  font-weight: 600;
+  border-bottom-right-radius: 4px;
+}
+
+.bach-links-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 8px;
+}
+
+.bach-chat-link {
+  background: rgba(128, 128, 128, 0.14);
+  border: 0.5px solid var(--glass-border);
+  color: var(--accent);
+  text-decoration: none;
+  padding: 7px 10px;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 600;
+  display: block;
+}
+
+.bach-chat-link:hover {
+  border-color: var(--accent);
+}
+
+.bach-inline-btn {
+  margin-top: 8px;
+  width: 100%;
+  background: var(--accent);
+  color: var(--accent-ink);
+  border: none;
+  padding: 7px 10px;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.bach-quick-prompts {
+  padding: 8px 12px;
+  display: flex;
+  gap: 6px;
+  overflow-x: auto;
+  border-top: 0.5px solid var(--glass-border);
+  scrollbar-width: none;
+}
+
+.bach-quick-prompts::-webkit-scrollbar { display: none; }
+
+.bach-chip {
+  background: var(--card-bg);
+  border: 0.5px solid var(--glass-border);
+  color: var(--text-primary);
+  padding: 6px 11px;
+  border-radius: 999px;
+  font-size: 11.5px;
   font-weight: 600;
   cursor: pointer;
   white-space: nowrap;
 }
 
-.ai-selector-bar {
-  display: flex;
-  gap: 10px;
-  flex-wrap: wrap;
+.bach-chip:hover {
+  border-color: var(--accent);
+  color: var(--accent);
 }
 
-.glass-select {
-  background: var(--bg-canvas);
-  border: 0.5px solid var(--glass-border);
-  color: var(--text-primary);
-  padding: 10px 14px;
-  border-radius: 12px;
-  font-size: 13.5px;
-  font-weight: 600;
-  outline: none;
-  min-width: 240px;
-}
-
-.ai-prompt-box {
-  flex: 1;
+.bach-chat-input-bar {
+  padding: 10px 12px;
+  background: rgba(0, 0, 0, 0.14);
+  border-top: 0.5px solid var(--glass-border);
   display: flex;
   gap: 8px;
-  min-width: 240px;
 }
 
-.ai-prompt-box input {
+.bach-chat-input-bar input {
   flex: 1;
-  background: var(--bg-canvas);
+  background: var(--card-bg);
   border: 0.5px solid var(--glass-border);
   color: var(--text-primary);
-  padding: 10px 14px;
+  padding: 9px 12px;
   border-radius: 12px;
-  font-size: 13.5px;
+  font-size: 13px;
   outline: none;
 }
 
-.btn-ask-ai {
+.bach-send-btn {
+  width: 38px;
+  height: 38px;
+  border-radius: 11px;
   background: var(--accent);
   color: var(--accent-ink);
   border: none;
-  padding: 0 18px;
-  border-radius: 12px;
-  font-size: 13px;
+  font-size: 15px;
   font-weight: 700;
   cursor: pointer;
-}
-
-.ai-custom-answer {
-  background: var(--card-bg);
-  border: 1px solid var(--accent);
-  border-radius: 16px;
-  padding: 16px;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  font-size: 13.5px;
-  line-height: 1.55;
-}
-
-.ai-answer-header {
-  display: flex;
-  justify-content: space-between;
-  color: var(--accent);
-  font-size: 12.5px;
-}
-
-.ai-knowledge-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(290px, 1fr));
-  gap: 14px;
-}
-
-.ai-info-card {
-  background: var(--card-bg);
-  border: 0.5px solid var(--glass-border);
-  border-radius: 16px;
-  padding: 18px;
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-
-.ai-card-head {
-  display: flex;
-  flex-direction: column;
-  gap: 3px;
-  border-bottom: 0.5px solid var(--glass-border);
-  padding-bottom: 8px;
-}
-
-.ai-card-tag {
-  font-size: 10.5px;
-  font-weight: 700;
-  letter-spacing: 0.7px;
-  color: var(--accent);
-}
-
-.ai-card-head h4 {
-  font-family: "Georgia", serif;
-  font-size: 16px;
-}
-
-.ai-info-card p {
-  font-size: 13.5px;
-  line-height: 1.55;
-  color: var(--text-primary);
-  opacity: 0.92;
-}
-
-.ai-card-meta {
-  margin-top: auto;
-  padding-top: 8px;
-  border-top: 0.5px solid var(--glass-border);
-  display: flex;
-  justify-content: space-between;
-  font-size: 12px;
-  color: var(--text-secondary);
-}
-
-.btn-open-study-from-ai {
-  width: 100%;
-  background: rgba(128, 128, 128, 0.14);
-  border: 0.5px solid var(--glass-border);
-  color: var(--text-primary);
-  padding: 10px;
-  border-radius: 10px;
-  font-size: 12.5px;
-  font-weight: 600;
-  cursor: pointer;
-}
-
-.btn-open-study-from-ai:hover {
-  background: var(--accent);
-  color: var(--accent-ink);
-}
-
-.ai-links-list {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.ai-ext-link {
-  background: rgba(128, 128, 128, 0.12);
-  border: 0.5px solid var(--glass-border);
-  color: var(--text-primary);
-  text-decoration: none;
-  padding: 11px 14px;
-  border-radius: 11px;
-  font-size: 13px;
-  font-weight: 600;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  transition: border-color 0.15s ease, background-color 0.15s ease;
-}
-
-.ai-ext-link:hover {
-  border-color: var(--accent);
-  background: rgba(207, 169, 114, 0.15);
-}
-
-.ext-arrow {
-  color: var(--accent);
-  font-weight: 700;
 }
 
 /* Modal Taller PDF */
@@ -1848,6 +1935,16 @@ body.palette-linen .pdf-page-canvas {
     width: calc(100vw - 16px);
     justify-content: flex-start;
     border-radius: 18px;
+  }
+
+  .bachgpt-widget-root {
+    right: 12px;
+    bottom: 72px;
+  }
+
+  .bachgpt-chat-window {
+    width: calc(100vw - 24px);
+    height: 440px;
   }
 
   .folio-strip {
