@@ -3,13 +3,21 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-  <title>Atril — Concepts × StaffPad × Linearity UI</title>
-  <link rel="stylesheet" href="styles.css?v=4" />
+  <title>Atril — Piloto con PDFs Reales</title>
+  <link rel="stylesheet" href="styles.css?v=5" />
+  <!-- Motores Oficiales para Renderizar (PDF.js) y Particionar/Editar PDFs Reales (pdf-lib) -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf-lib/1.17.1/pdf-lib.min.js"></script>
 </head>
 <body class="palette-luthier">
 
+  <!-- Input oculto para importar 1 o múltiples PDFs reales desde la Tablet o Celular -->
+  <input type="file" id="realPdfFileInput" accept="application/pdf,.pdf" multiple style="display:none" onchange="handleRealPdfUpload(this.files)" />
+  <!-- Input oculto para insertar/agregar páginas desde otro PDF en el Taller -->
+  <input type="file" id="appendPdfFileInput" accept="application/pdf,.pdf" style="display:none" onchange="handleAppendPdfPages(this.files)" />
+
   <!-- =================================================================== -->
-  <!-- HUD SUPERIOR FLOTANTE (Estilo Concepts & StaffPad)                  -->
+  <!-- HUD SUPERIOR FLOTANTE                                               -->
   <!-- =================================================================== -->
   <header class="floating-hud-top">
     <div class="glass-pill hud-status" id="hudContextPill">
@@ -45,17 +53,23 @@
   </header>
 
   <!-- =================================================================== -->
-  <!-- 1. MODO BIBLIOTECA AFINADO (Folio/Lista + Desplegable + Modo IA)    -->
+  <!-- 1. MODO BIBLIOTECA CON MOTOR DE PDF REAL + MODO IA                  -->
   <!-- =================================================================== -->
   <main id="mode-library" class="canvas-view active">
     <div class="library-stage">
 
       <!-- BARRA SUPERIOR ÚNICA Y MINIMALISTA DE LA BIBLIOTECA -->
       <div class="lib-command-bar">
+        <!-- Botón Llamativo para Importar PDFs Reales desde la Tablet -->
+        <button class="btn-import-pdf" onclick="document.getElementById('realPdfFileInput').click()" title="Cargar archivos PDF de tu tablet">
+          <svg viewBox="0 0 24 24" class="v-ico"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+          <span>＋ Importar PDF</span>
+        </button>
+
         <!-- Buscador limpio -->
         <div class="glass-search">
           <svg viewBox="0 0 24 24" class="v-ico"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
-          <input type="text" id="searchInput" placeholder="Buscar obra, compositor, BWV..." oninput="renderLibrary()" />
+          <input type="text" id="searchInput" placeholder="Buscar en tu biblioteca..." oninput="renderLibrary()" />
         </div>
 
         <!-- Botón Desplegable Minimalista de Clasificación + Modo IA -->
@@ -66,33 +80,29 @@
             <svg viewBox="0 0 24 24" class="v-ico chevron"><polyline points="6 9 12 15 18 9"/></svg>
           </button>
 
-          <!-- Menú Desplegable Flotante estilo Linearity Curve -->
           <div class="glass-dropdown-menu hidden" id="classifyMenu" onclick="event.stopPropagation()">
             <div class="menu-section-label">ORGANIZAR ARCHIVOS POR</div>
             <button class="dd-item active" data-cls="all" onclick="selectClassification('all', 'Clasificar: Todo', this)">
               <span>Todas las obras (A–Z)</span>
-              <small>6</small>
+            </button>
+            <button class="dd-item" data-cls="real-only" onclick="selectClassification('real-only', 'Mis PDFs de la Tablet', this)">
+              <span>📄 Solo mis PDFs importados</span>
             </button>
             <button class="dd-item" data-cls="composer" onclick="selectClassification('composer', 'Por Compositor', this)">
               <span>Compositor</span>
-              <small>4</small>
             </button>
             <button class="dd-item" data-cls="period" onclick="selectClassification('period', 'Por Periodo', this)">
               <span>Periodo Histórico</span>
-              <small>2</small>
             </button>
             <button class="dd-item" data-cls="instrumentation" onclick="selectClassification('instrumentation', 'Por Dotación', this)">
               <span>Dotación Instrumental</span>
-              <small>3</small>
             </button>
             <button class="dd-item" data-cls="programs" onclick="selectClassification('programs', 'Programas', this)">
               <span>Programas de Concierto</span>
-              <small>3</small>
             </button>
 
             <div class="dd-divider"></div>
 
-            <!-- Opción Especial: Modo IA (Consultoría Histórica, Teórica e Interpretaciones) -->
             <button class="dd-item ai-special" data-cls="ai-mode" onclick="selectClassification('ai-mode', '✦ Modo IA Musical', this)">
               <div class="ai-dd-text">
                 <strong>✦ Modo IA Musicológico</strong>
@@ -101,32 +111,33 @@
             </button>
 
             <button class="dd-item subtle-action" onclick="cleanLibraryWithAI()">
-              <span>✦ Normalizar nombres de PDFs crudos</span>
+              <span>✦ Normalizar nombres de PDFs con IA</span>
             </button>
           </div>
         </div>
 
-        <!-- Botón Discreto y Elegante para alternar Vista Folio (⊞) vs Vista Lista (☰) -->
+        <!-- Botón Discreto para alternar Vista Folio (⊞) vs Vista Lista (☰) -->
         <div class="view-toggle-pill" id="viewTogglePill" title="Alternar vista Folio / Lista">
-          <button class="vt-btn active" id="btnViewFolio" onclick="setLibraryViewMode('folio')" aria-label="Modo Folio con previsualización">
+          <button class="vt-btn active" id="btnViewFolio" onclick="setLibraryViewMode('folio')" aria-label="Modo Folio">
             <svg viewBox="0 0 24 24" class="v-ico"><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="9" rx="1.5"/><rect x="3" y="15" width="7" height="6" rx="1.5"/><rect x="14" y="15" width="7" height="6" rx="1.5"/></svg>
             <span class="vt-label">Folio</span>
           </button>
-          <button class="vt-btn" id="btnViewList" onclick="setLibraryViewMode('list')" aria-label="Modo Lista con detalles">
+          <button class="vt-btn" id="btnViewList" onclick="setLibraryViewMode('list')" aria-label="Modo Lista">
             <svg viewBox="0 0 24 24" class="v-ico"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
             <span class="vt-label">Lista</span>
           </button>
         </div>
       </div>
 
-      <!-- CONTENEDOR PRINCIPAL DE ARCHIVOS (Cambia entre Modo Folio y Modo Lista agrupada) -->
+      <!-- Aviso de estado al importar o procesar PDFs -->
+      <div class="pilot-status-banner hidden" id="pilotStatusBanner"></div>
+
+      <!-- CONTENEDOR PRINCIPAL DE ARCHIVOS -->
       <div id="libraryCatalogContainer">
         <div class="folio-grid" id="scoreList"></div>
       </div>
 
-      <!-- =============================================================== -->
-      <!-- VISTA ESPECIAL: MODO IA MUSICOLÓGICO E INTERPRETATIVO           -->
-      <!-- =============================================================== -->
+      <!-- VISTA ESPECIAL: MODO IA MUSICOLÓGICO E INTERPRETATIVO -->
       <section class="ai-musicology-stage hidden" id="aiMusicologyStage">
         <div class="ai-stage-header">
           <div class="ai-title-row">
@@ -137,77 +148,90 @@
             <button class="btn-back-catalog" onclick="exitAiModeToCatalog()">← Volver a Archivos</button>
           </div>
 
-          <!-- Selector de Obra a Consultar + Pregunta Libre a la IA -->
           <div class="ai-selector-bar">
-            <select id="aiWorkSelector" class="glass-select" onchange="renderAiMusicologyView(this.value)">
-              <!-- Llenado dinámicamente con las obras de la biblioteca -->
-            </select>
+            <select id="aiWorkSelector" class="glass-select" onchange="renderAiMusicologyView(this.value)"></select>
             <div class="ai-prompt-box">
-              <input type="text" id="aiCustomPrompt" placeholder="Preguntar a la IA sobre digitación, ornamentación, tempo o edición..." onkeydown="if(event.key==='Enter') askCustomAiQuestion()" />
+              <input type="text" id="aiCustomPrompt" placeholder="Preguntar sobre digitación, ornamentación, tempo o edición..." onkeydown="if(event.key==='Enter') askCustomAiQuestion()" />
               <button class="btn-ask-ai" onclick="askCustomAiQuestion()">Consultar</button>
             </div>
           </div>
         </div>
 
-        <!-- Respuesta personalizada si el usuario hace una pregunta libre -->
         <div class="ai-custom-answer hidden" id="aiCustomAnswerBox"></div>
-
-        <!-- Tarjetas de Consulta Profunda: Historia, Teoría, Interpretación y Links YouTube/Web -->
         <div class="ai-knowledge-grid" id="aiKnowledgeGrid"></div>
       </section>
 
     </div>
 
-    <!-- Inspector Flotante de Taller PDF -->
+    <!-- ================================================================= -->
+    <!-- TALLER DE PDF REAL (Particionar, Quitar/Agregar Páginas, Renombrar)-->
+    <!-- ================================================================= -->
     <div class="modal-backdrop hidden" id="pdfModal" onclick="closePdfModal(event)">
-      <div class="linearity-inspector-modal" onclick="event.stopPropagation()">
+      <div class="linearity-inspector-modal workshop-wide" onclick="event.stopPropagation()">
         <div class="insp-head">
           <div>
-            <span class="insp-eyebrow">TALLER DE PARTITURA PDF</span>
+            <span class="insp-eyebrow">✂ TALLER DE PARTITURA PDF &amp; METADATOS</span>
             <h3 id="modalScoreTitle">Sonata BWV 1034</h3>
           </div>
           <button class="btn-circle-ghost" onclick="closePdfModal()">✕</button>
         </div>
 
-        <div class="folio-strip">
-          <div class="folio-page-thumb active" onclick="this.classList.toggle('active')">
-            <div class="mini-staff-lines"></div>
-            <span>Pág. 1</span>
-            <small>I. Adagio</small>
+        <!-- Campos rápidos para renombrar y clasificar la obra (con botón de auto-sugerencia IA) -->
+        <div class="workshop-meta-grid">
+          <div class="wm-field">
+            <label>Título de la Obra</label>
+            <input type="text" id="wmTitleInput" />
           </div>
-          <div class="folio-page-thumb active" onclick="this.classList.toggle('active')">
-            <div class="mini-staff-lines"></div>
-            <span>Pág. 2</span>
-            <small>II. Allegro</small>
+          <div class="wm-field">
+            <label>Compositor</label>
+            <input type="text" id="wmComposerInput" />
           </div>
-          <div class="folio-page-thumb" onclick="this.classList.toggle('active')">
-            <div class="mini-staff-lines"></div>
-            <span>Pág. 3</span>
-            <small>III. Andante</small>
+          <div class="wm-field">
+            <label>Periodo Histórico</label>
+            <select id="wmPeriodInput">
+              <option value="Renacimiento">Renacimiento</option>
+              <option value="Barroco">Barroco</option>
+              <option value="Clasicismo">Clasicismo</option>
+              <option value="Romanticismo">Romanticismo</option>
+              <option value="Siglo XX">Siglo XX / Contemporáneo</option>
+            </select>
           </div>
-          <div class="folio-page-thumb" onclick="this.classList.toggle('active')">
-            <div class="mini-staff-lines"></div>
-            <span>Pág. 4</span>
-            <small>IV. Allegro</small>
+          <div class="wm-field">
+            <label>Dotación Instrumental</label>
+            <select id="wmGroupInput">
+              <option value="Guitarra Sola">Guitarra Sola</option>
+              <option value="Dúo / Cámara">Dúo / Cámara</option>
+              <option value="Guitarra y Orquesta">Guitarra y Orquesta</option>
+              <option value="Otro Instrumento">Otro Instrumento</option>
+            </select>
           </div>
         </div>
 
+        <div class="workshop-pages-header">
+          <span>Selecciona páginas tocándolas (o define un rango para extraer un movimiento/obra):</span>
+          <div class="range-extract-controls">
+            <label>Desde pág.</label>
+            <input type="number" id="splitStartPage" min="1" value="1" class="range-num-input" />
+            <label>hasta</label>
+            <input type="number" id="splitEndPage" min="1" value="2" class="range-num-input" />
+          </div>
+        </div>
+
+        <!-- Tira de Páginas Reales del PDF (Toca para seleccionar/deseleccionar) -->
+        <div class="folio-strip real-pages-strip" id="workshopPagesStrip"></div>
+
         <div class="linearity-action-bar">
-          <button class="lin-btn" onclick="triggerPdfToast('Páginas seleccionadas extraídas como obra independiente')">
-            <svg viewBox="0 0 24 24" class="v-ico"><circle cx="6" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><line x1="20" y1="4" x2="8.12" y2="15.88"/><line x1="14.47" y1="14.48" x2="20" y2="20"/><line x1="8.12" y1="8.12" x2="12" y2="12"/></svg>
-            <span>Particionar</span>
+          <button class="lin-btn accent" onclick="saveWorkshopMetadata()">
+            <span>✓ Guardar Nombre y Clasificación</span>
           </button>
-          <button class="lin-btn" onclick="triggerPdfToast('Página insertada en el folio')">
-            <svg viewBox="0 0 24 24" class="v-ico"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-            <span>Insertar Pág.</span>
+          <button class="lin-btn" onclick="splitRealPdfRange()">
+            <span>✂ Particionar Rango como Nueva Obra</span>
           </button>
-          <button class="lin-btn" onclick="triggerPdfToast('Páginas descartadas del documento')">
-            <svg viewBox="0 0 24 24" class="v-ico"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/></svg>
-            <span>Quitar Pág.</span>
+          <button class="lin-btn" onclick="deleteSelectedPdfPages()">
+            <span>🗑️ Quitar Páginas Seleccionadas</span>
           </button>
-          <button class="lin-btn accent" onclick="triggerPdfToast('Metadatos y título normalizados por IA')">
-            <svg viewBox="0 0 24 24" class="v-ico"><path d="m12 3-1.9 5.8a2 2 0 0 1-1.3 1.3L3 12l5.8 1.9a2 2 0 0 1 1.3 1.3L12 21l1.9-5.8a2 2 0 0 1 1.3-1.3L21 12l-5.8-1.9a2 2 0 0 1-1.3-1.3Z"/></svg>
-            <span>Normalizar IA</span>
+          <button class="lin-btn" onclick="document.getElementById('appendPdfFileInput').click()">
+            <span>＋ Agregar Páginas de otro PDF</span>
           </button>
         </div>
         <div class="insp-feedback" id="pdfToast"></div>
@@ -216,33 +240,42 @@
   </main>
 
   <!-- =================================================================== -->
-  <!-- 2. MODO ESTUDIO (Lienzo 100% + Paleta Concepts + Linearity Curve)   -->
+  <!-- 2. MODO ESTUDIO (Soporta tanto PDF Real de la Tablet como SVG)      -->
   <!-- =================================================================== -->
   <main id="mode-study" class="canvas-view">
     <div class="full-bleed-canvas">
+      <button class="invisible-page-zone left" onclick="turnPage(-1)" aria-label="Página anterior">‹</button>
+
       <div class="score-folio" id="studySheet">
-        <div class="folio-header">
-          <span class="folio-meta">transcr. David Russell</span>
+        <div class="folio-header" id="studyFolioHeader">
+          <span class="folio-meta" id="studyMetaLeft">transcr. David Russell</span>
           <div class="folio-title">
-            <h2>SONATE BWV 1034</h2>
-            <span>I. Adagio ma non tanto</span>
+            <h2 id="studyTitleHeading">SONATE BWV 1034</h2>
+            <span id="studySubHeading">I. Adagio ma non tanto</span>
           </div>
-          <span class="folio-meta">J. S. Bach (1685–1750)</span>
+          <span class="folio-meta" id="studyMetaRight">Pág. 1 / 10</span>
         </div>
 
         <div class="folio-staff-area" id="studyWrap">
+          <!-- Si la obra es un PDF real importado, se renderiza en este canvas de alta definición -->
+          <canvas id="studyPdfRenderCanvas" class="pdf-page-canvas hidden"></canvas>
+          <!-- Si es una obra demo, se muestra el SVG -->
           <div id="studySvg" class="svg-layer"></div>
+          <!-- Capa superior para trazo libre con lápiz y conversión a molde -->
           <canvas id="studyCanvas" class="draw-layer"></canvas>
           <div id="studyMoldLayer" class="mold-layer"></div>
         </div>
 
         <div class="folio-footer">
-          <span>Edición Urtext • 6ª en Re</span>
-          <span>Folio 1 / 10</span>
+          <span id="studyFooterLeft">Modo Estudio • Lápiz Activo</span>
+          <span id="studyFooterRight">Folio 1 / 10</span>
         </div>
       </div>
+
+      <button class="invisible-page-zone right" onclick="turnPage(1)" aria-label="Siguiente página">›</button>
     </div>
 
+    <!-- Riel de Herramientas Concepts -->
     <aside class="concepts-tool-rail">
       <button class="rail-tool active" id="btnPen" onclick="setStudyTool('pen')" title="Pluma de trazo libre">
         <svg viewBox="0 0 24 24" class="v-ico"><path d="M12 19l7-7 3 3-7 7-3-3z"/><path d="M18 13l-1.5-7.5L2 2l3.5 14.5L13 18l5-5z"/><path d="M2 2l7.586 7.586"/></svg>
@@ -296,28 +329,29 @@
   </main>
 
   <!-- =================================================================== -->
-  <!-- 3. MODO CONCIERTO                                                   -->
+  <!-- 3. MODO CONCIERTO (Lee todas las páginas de tu PDF Real)            -->
   <!-- =================================================================== -->
   <main id="mode-concert" class="canvas-view">
     <div class="full-bleed-canvas">
       <button class="invisible-page-zone left" onclick="turnPage(-1)" aria-label="Página anterior">‹</button>
 
       <div class="score-folio" id="concertSheet">
-        <div class="folio-header">
-          <span class="folio-meta">transcr. David Russell</span>
+        <div class="folio-header" id="concertFolioHeader">
+          <span class="folio-meta" id="concertMetaLeft">transcr. David Russell</span>
           <div class="folio-title">
-            <h2>SONATE BWV 1034</h2>
+            <h2 id="concertTitleHeading">SONATE BWV 1034</h2>
             <span id="concertSub">I. Adagio ma non tanto</span>
           </div>
           <span class="folio-meta" id="concertPageNum">Pág. 1 / 10</span>
         </div>
 
-        <div class="folio-staff-area">
+        <div class="folio-staff-area" id="concertWrap">
+          <canvas id="concertPdfRenderCanvas" class="pdf-page-canvas hidden"></canvas>
           <div id="concertSvg" class="svg-layer"></div>
         </div>
 
         <div class="folio-footer">
-          <span>Programa: Bach Recital</span>
+          <span id="concertFooterLeft">Programa: Bach Recital</span>
           <span id="concertTransitionTag">Hoja Parada</span>
         </div>
       </div>
@@ -404,6 +438,6 @@
     </div>
   </main>
 
-  <script src="app.js?v=4"></script>
+  <script src="app.js?v=5"></script>
 </body>
 </html>

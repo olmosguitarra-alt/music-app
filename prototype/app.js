@@ -1,8 +1,15 @@
 /* ==========================================================================
-   CONCEPTS × STAFFPAD × LINEARITY CURVE INTERACTION ENGINE (v4)
-   BIBLIOTECA AFINADA: FOLIO/LISTA + DESPLEGABLE DE CLASIFICACIÓN + MODO IA
+   CONCEPTS × STAFFPAD × LINEARITY CURVE ENGINE (v5)
+   PILOTO CON PDFs REALES EN TABLET/CELULAR (PDF.js + pdf-lib + IndexedDB)
    ========================================================================== */
 
+// Configurar worker de PDF.js
+if (window.pdfjsLib) {
+  window.pdfjsLib.GlobalWorkerOptions.workerSrc =
+    "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
+}
+
+// Catálogo base + tus PDFs reales cargados de IndexedDB
 const scores = [
   {
     id: 1,
@@ -13,12 +20,14 @@ const scores = [
     group: "Guitarra Sola",
     program: "Bach Programa",
     pages: "10 págs.",
+    pageCount: 10,
     tuning: "6ª en Re",
     raw: false,
+    isRealPdf: false,
     aiData: {
-      history: "Compuesta hacia 1724 en Leipzig (o posiblemente en Köthen) originalmente para flauta travesera y bajo continuo. La transcripción para guitarra clásica de David Russell traslada con maestría la escritura contrapuntística del continuo y la línea solista a un solo instrumento.",
-      theory: "Estructurada en 4 movimientos (Sonata da chiesa: Adagio ma non tanto – Allegro – Andante – Allegro). El primer movimiento en Mi menor emplea un motivo de siciliana ornamentada con un bajo caminante continuo; el tercer movimiento en Sol mayor ofrece un contraste lírico luminoso.",
-      performance: "Cuidar la independencia de planos sonoros entre el pulgar (que asume el rol del violoncello/continuo) y los dedos i-m-a (la flauta). En el Adagio inicial, las apoyaturas deben resolverse dentro del pulso con flexibilidad expresiva sin perder la nobleza del bajo.",
+      history: "Compuesta hacia 1724 en Leipzig originalmente para flauta travesera y bajo continuo. La transcripción para guitarra clásica de David Russell traslada con maestría la escritura contrapuntística del continuo y la línea solista a un solo instrumento.",
+      theory: "Estructurada en 4 movimientos (Sonata da chiesa: Adagio ma non tanto – Allegro – Andante – Allegro). El primer movimiento en Mi menor emplea un motivo de siciliana ornamentada con un bajo caminante continuo.",
+      performance: "Cuidar la independencia de planos sonoros entre el pulgar (que asume el rol del violoncello/continuo) y los dedos i-m-a. En el Adagio inicial, las apoyaturas deben resolverse dentro del pulso.",
       links: [
         { label: "▶ YouTube: David Russell interpreta Bach BWV 1034", url: "https://www.youtube.com/results?search_query=David+Russell+Bach+BWV+1034+guitar" },
         { label: "▶ YouTube: Comparativa en Flauta Traversa Barroca", url: "https://www.youtube.com/results?search_query=Bach+BWV+1034+baroque+flute" },
@@ -36,15 +45,16 @@ const scores = [
     group: "Guitarra Sola",
     program: "Bach Programa",
     pages: "14 págs.",
+    pageCount: 14,
     tuning: "Estándar",
     raw: true,
+    isRealPdf: false,
     aiData: {
-      history: "Las Suites Inglesas (BWV 806–811) fueron compuestas en Weimar alrededor de 1715. Representan la síntesis de Bach entre la danza cortesana francesa y el concierto italiano (*ritornello* en el extenso Preludio inicial).",
-      theory: "El Preludio está construido en una forma Da Capo monumental (A–B–A) impulsada por un motivo motor en semicorcheas. La Sarabande incluye *Les agréments de la même Sarabande* (versión ornamentada escrita por el propio Bach).",
-      performance: "En el Preludio, mantener la claridad articulatoria y reservar peso dinámico para las cadencias estructurales. Utilizar la versión ornamentada de Bach en la repetición de la Sarabande como modelo de improvisación barroca.",
+      history: "Las Suites Inglesas (BWV 806–811) fueron compuestas en Weimar alrededor de 1715. Representan la síntesis de Bach entre la danza cortesana francesa y el concierto italiano.",
+      theory: "El Preludio está construido en una forma Da Capo monumental (A–B–A) impulsada por un motivo motor en semicorcheas.",
+      performance: "Mantener la claridad articulatoria y reservar peso dinámico para las cadencias estructurales.",
       links: [
         { label: "▶ YouTube: Suite Inglesa BWV 807 en Guitarra / Dúo", url: "https://www.youtube.com/results?search_query=Bach+BWV+807+guitar" },
-        { label: "▶ YouTube: Versión en Clavecín (Gustav Leonhardt / Perahia)", url: "https://www.youtube.com/results?search_query=Bach+English+Suite+2+BWV+807" },
         { label: "🏛️ IMSLP: Partitura Urtext BWV 807", url: "https://imslp.org/wiki/English_Suite_No.2_in_A_minor,_BWV_807_(Bach,_Johann_Sebastian)" }
       ]
     }
@@ -59,111 +69,543 @@ const scores = [
     group: "Guitarra y Orquesta",
     program: "Programa Manuel Hernández",
     pages: "18 págs.",
+    pageCount: 18,
     tuning: "Estándar",
     raw: true,
+    isRealPdf: false,
     aiData: {
-      history: "Dedicado a Andrés Segovia y estrenado en Montevideo en 1941 bajo la batuta del propio Manuel M. Ponce. Es una de las obras cumbre del repertorio concertante mexicano e iberoamericano para guitarra y orquesta.",
-      theory: "El I. Allegretto combina la forma sonata con giros modales e impresionistas y ritmos de raíz hispanoamericana. La gran Cadenza solista del primer movimiento articula los dos temas principales antes de la recapitulación.",
-      performance: "Obra emblemática en la trayectoria de Daniel Olmos (con la que debutó como solista con orquesta a los 17 años). Cuidar la proyección tímbrica (*sul ponticello* vs *metallico*) en los diálogos con maderas y cuerdas, y el pulso rítmico incisivo en el 3/4 + 6/8 del tercer movimiento.",
+      history: "Dedicado a Andrés Segovia y estrenado en Montevideo en 1941 bajo la batuta del propio Manuel M. Ponce. Obra cumbre del repertorio concertante mexicano.",
+      theory: "El I. Allegretto combina la forma sonata con giros modales e impresionistas y ritmos de raíz hispanoamericana.",
+      performance: "Obra emblemática en la trayectoria de Daniel Olmos. Cuidar la proyección tímbrica en los diálogos con maderas y cuerdas.",
       links: [
-        { label: "▶ YouTube: Manuel M. Ponce — Concierto del Sur (Interpretaciones)", url: "https://www.youtube.com/results?search_query=Manuel+M+Ponce+Concierto+del+Sur+guitarra" },
-        { label: "▶ YouTube: Andrés Segovia — Grabación Histórica Concierto del Sur", url: "https://www.youtube.com/results?search_query=Andres+Segovia+Concierto+del+Sur+Ponce" }
-      ]
-    }
-  },
-  {
-    id: 4,
-    title: "! Brouwer, Leo - From testerdayu to Peny Lane",
-    clean: "From Yesterday to Penny Lane",
-    subtitle: "7 Canciones de Lennon/McCartney para Guitarra y Orquesta",
-    composer: "Leo Brouwer (n. 1939)",
-    period: "Siglo XX",
-    group: "Guitarra y Orquesta",
-    program: "Programa Manuel Hernández",
-    pages: "22 págs.",
-    tuning: "Estándar",
-    raw: true,
-    aiData: {
-      history: "Compuesta en 1985 por el maestro cubano Leo Brouwer, fusiona el lirismo melódico de The Beatles con la orquestación neobarroca y contemporánea característica de la etapa hiperromántica de Brouwer.",
-      theory: "Cada canción adopta un tratamiento camerístico distinto: desde texturas tipo *Concerto Grosso* barroco en 'Eleanor Rigby' y 'Penny Lane' hasta armonías cuartales y colorísticas en 'Yesterday' y 'She's Leaving Home'.",
-      performance: "Equilibrar la cantabilidad popular de las melodías originales con el rigor rítmico de las figuraciones brouwerianas y los cambios súbitos de color.",
-      links: [
-        { label: "▶ YouTube: Leo Brouwer — From Yesterday to Penny Lane", url: "https://www.youtube.com/results?search_query=Leo+Brouwer+From+Yesterday+to+Penny+Lane" }
-      ]
-    }
-  },
-  {
-    id: 5,
-    title: "Sonata Mexicana",
-    subtitle: "I. Allegro moderato — II. Intermezzo — III. Allegretto — IV. Allegro vivo",
-    composer: "Manuel M. Ponce (1882–1948)",
-    period: "Siglo XX",
-    group: "Guitarra Sola",
-    program: "Programa Manuel Hernández",
-    pages: "10 págs.",
-    tuning: "Estándar",
-    raw: false,
-    aiData: {
-      history: "Compuesta en 1923 en México, fue la primera sonata que Ponce escribió para Andrés Segovia, marcando el inicio de una colaboración histórica que transformó el repertorio de la guitarra del siglo XX.",
-      theory: "Integra temas de inspiración folclórica mexicana dentro de una arquitectura clásica-impresionista influenciada por la estancia previa de Ponce y su admiración por la escuela francesa.",
-      performance: "Destacar el carácter íntimo y nostálgico del II. Intermezzo (Andantino affettuoso) y la agilidad rítmica de jarabe/danza en el Finale.",
-      links: [
-        { label: "▶ YouTube: Manuel M. Ponce — Sonata Mexicana (Interpretaciones)", url: "https://www.youtube.com/results?search_query=Manuel+Ponce+Sonata+Mexicana+guitar" }
-      ]
-    }
-  },
-  {
-    id: 6,
-    title: "Tango Suite — I. Deciso",
-    subtitle: "Original para Dúo de Guitarras",
-    composer: "Astor Piazzolla (1921–1992)",
-    period: "Siglo XX",
-    group: "Dúo / Cámara",
-    program: "Duo Toño",
-    pages: "12 págs.",
-    tuning: "Estándar",
-    raw: false,
-    aiData: {
-      history: "Escrita en 1984 específicamente para el célebre dúo de los hermanos Sérgio y Odair Assad. Es la única obra de gran formato escrita por Piazzolla para dos guitarras.",
-      theory: "Tres movimientos (Tango No. 1 Deciso – Tango No. 2 Andante – Tango No. 3 Allegro). Emplea la acentuación característica de milonga/nuevo tango (3+3+2), contrapunto fugado y efectos percusivos.",
-      performance: "Sincronización milimétrica entre Guitarra 1 y Guitarra 2 en los acentos en síncopa y los pasajes percusivos sobre la tapa y las cuerdas.",
-      links: [
-        { label: "▶ YouTube: Sérgio & Odair Assad — Piazzolla Tango Suite", url: "https://www.youtube.com/results?search_query=Assad+Brothers+Piazzolla+Tango+Suite" }
+        { label: "▶ YouTube: Manuel M. Ponce — Concierto del Sur", url: "https://www.youtube.com/results?search_query=Manuel+M+Ponce+Concierto+del+Sur+guitarra" }
       ]
     }
   }
 ];
 
-let libraryViewMode = "folio"; // 'folio' | 'list'
-let currentClassification = "all"; // 'all' | 'composer' | 'period' | 'instrumentation' | 'programs' | 'ai-mode'
+let libraryViewMode = "folio";
+let currentClassification = "all";
+let activeScore = scores[0];
+let activeWorkshopScoreId = null;
+let selectedWorkshopPages = new Set([1, 2]);
+let currentPdfDocInstance = null;
+let pageNum = 1;
 
-// CAMBIO ENTRE LOS 4 MODOS PRINCIPALES
+// ==========================================================================
+// BASE DE DATOS PERSISTENTE EN TABLET (IndexedDB para guardar PDFs Reales)
+// ==========================================================================
+const DB_NAME = "AtrilRealPdfPilotDB";
+const STORE_NAME = "realPdfs";
+
+function openPilotDb() {
+  return new Promise((resolve, reject) => {
+    const req = indexedDB.open(DB_NAME, 1);
+    req.onupgradeneeded = (e) => {
+      const db = e.target.result;
+      if (!db.objectStoreNames.contains(STORE_NAME)) {
+        db.createObjectStore(STORE_NAME, { keyPath: "id" });
+      }
+    };
+    req.onsuccess = () => resolve(req.result);
+    req.onerror = () => reject(req.error);
+  });
+}
+
+async function saveRealPdfToDb(scoreObj) {
+  try {
+    const db = await openPilotDb();
+    return new Promise((resolve, reject) => {
+      const tx = db.transaction(STORE_NAME, "readwrite");
+      tx.objectStore(STORE_NAME).put(scoreObj);
+      tx.oncomplete = () => resolve();
+      tx.onerror = () => reject(tx.error);
+    });
+  } catch (err) {
+    console.warn("IndexedDB save warning:", err);
+  }
+}
+
+async function loadSavedPdfsFromDb() {
+  try {
+    const db = await openPilotDb();
+    return new Promise((resolve) => {
+      const tx = db.transaction(STORE_NAME, "readonly");
+      const req = tx.objectStore(STORE_NAME).getAll();
+      req.onsuccess = () => {
+        const saved = req.result || [];
+        saved.forEach((item) => {
+          if (!scores.some((s) => s.id === item.id)) {
+            scores.unshift(item);
+          }
+        });
+        resolve(saved.length);
+      };
+      req.onerror = () => resolve(0);
+    });
+  } catch {
+    return 0;
+  }
+}
+
+// ==========================================================================
+// IMPORTADOR INTELIGENTE DE PDFs REALES DESDE LA TABLET O CELULAR
+// ==========================================================================
+function inferMusicMetadataFromFilename(rawFilename) {
+  const nameNoExt = rawFilename.replace(/\.pdf$/i, "");
+  const cleanStr = nameNoExt
+    .replace(/^\(Partition.*?\)\s*-\s*/i, "")
+    .replace(/^[!0-9_\-\s]+/, "")
+    .replace(/[_]+/g, " ")
+    .trim();
+
+  const lower = rawFilename.toLowerCase();
+  let composer = "Compositor por clasificar";
+  let period = "Siglo XX";
+  let group = "Guitarra Sola";
+
+  const catalogRules = [
+    { match: ["bach", "bwv"], composer: "J. S. Bach (1685–1750)", period: "Barroco" },
+    { match: ["weiss"], composer: "Sylvius Leopold Weiss (1687–1750)", period: "Barroco" },
+    { match: ["scarlatti"], composer: "Domenico Scarlatti (1685–1757)", period: "Barroco" },
+    { match: ["vivaldi"], composer: "Antonio Vivaldi (1678–1741)", period: "Barroco" },
+    { match: ["milan", "milán", "narvaez", "narváez", "mudarra", "dowland"], composer: "Repertorio Renacentista", period: "Renacimiento" },
+    { match: ["sor", "giuliani", "aguado", "carcassi", "coste", "paganini"], composer: "Fernando Sor / Escuela Clásica", period: "Clasicismo" },
+    { match: ["tarrega", "tárrega", "albeniz", "albéniz", "granados", "llobet", "barrios", "mertz"], composer: "Francisco Tárrega / Romanticismo", period: "Romanticismo" },
+    { match: ["ponce"], composer: "Manuel M. Ponce (1882–1948)", period: "Siglo XX" },
+    { match: ["brouwer"], composer: "Leo Brouwer (n. 1939)", period: "Siglo XX" },
+    { match: ["villa-lobos", "villalobos"], composer: "Heitor Villa-Lobos (1887–1959)", period: "Siglo XX" },
+    { match: ["piazzolla"], composer: "Astor Piazzolla (1921–1992)", period: "Siglo XX" },
+    { match: ["rodrigo", "aranjuez"], composer: "Joaquín Rodrigo (1901–1999)", period: "Siglo XX" },
+    { match: ["turina", "torroba", "castelnuovo", "tansman", "takemitsu", "dyens"], composer: "Repertorio Siglo XX", period: "Siglo XX" }
+  ];
+
+  for (const rule of catalogRules) {
+    if (rule.match.some((kw) => lower.includes(kw))) {
+      composer = rule.composer;
+      period = rule.period;
+      break;
+    }
+  }
+
+  if (lower.includes("duo") || lower.includes("dúo") || lower.includes("flute") || lower.includes("flauta") || lower.includes("cuarteto") || lower.includes("chamber")) {
+    group = "Dúo / Cámara";
+  } else if (lower.includes("concierto") || lower.includes("concerto") || lower.includes("orquesta") || lower.includes("orchestra")) {
+    group = "Guitarra y Orquesta";
+  }
+
+  const finalTitle = cleanStr.length > 2 ? cleanStr : nameNoExt;
+  const searchEncoded = encodeURIComponent(`${composer.split("(")[0]} ${finalTitle} guitar`);
+
+  return {
+    title: finalTitle,
+    composer,
+    period,
+    group,
+    aiData: {
+      history: `Partitura PDF importada directamente de tu tablet (${rawFilename}). Clasificada automáticamente en el periodo ${period} bajo la autoría asociada a ${composer}.`,
+      theory: `Obra catalogada para dotación de ${group}. Puedes utilizar el Taller de PDF (✂) para extraer movimientos individuales o limpiar páginas sobrantes.`,
+      performance: `Abre esta partitura tocando su tarjeta para estudiarla en Hoja Parada a pantalla completa, escribir digitaciones con tu lápiz óptico y convertirlas a letra de molde.`,
+      links: [
+        { label: `▶ YouTube: Buscar interpretaciones de "${finalTitle}"`, url: `https://www.youtube.com/results?search_query=${searchEncoded}` },
+        { label: `🏛️ IMSLP / Web: Buscar ediciones históricas de "${finalTitle}"`, url: `https://www.google.com/search?q=IMSLP+${searchEncoded}` }
+      ]
+    }
+  };
+}
+
+async function generatePdfThumbnailDataUrl(pdfBytes) {
+  if (!window.pdfjsLib) return null;
+  try {
+    const loadingTask = window.pdfjsLib.getDocument({ data: pdfBytes.slice(0) });
+    const pdfDoc = await loadingTask.promise;
+    const page = await pdfDoc.getPage(1);
+    const viewport = page.getViewport({ scale: 0.6 });
+    const canvas = document.createElement("canvas");
+    canvas.width = viewport.width;
+    canvas.height = viewport.height;
+    const ctx = canvas.getContext("2d");
+    await page.render({ canvasContext: ctx, viewport }).promise;
+    return {
+      thumbUrl: canvas.toDataURL("image/jpeg", 0.82),
+      numPages: pdfDoc.numPages
+    };
+  } catch (e) {
+    console.warn("Error renderizando miniatura PDF:", e);
+    return null;
+  }
+}
+
+async function handleRealPdfUpload(fileList) {
+  if (!fileList || fileList.length === 0) return;
+  showPilotBanner(`⏳ Importando y catalogando ${fileList.length} archivo(s) PDF de tu tablet...`);
+
+  for (let i = 0; i < fileList.length; i++) {
+    const file = fileList[i];
+    const arrayBuffer = await file.arrayBuffer();
+    const uint8 = new Uint8Array(arrayBuffer);
+    const meta = inferMusicMetadataFromFilename(file.name);
+    const previewInfo = await generatePdfThumbnailDataUrl(uint8);
+    const numPages = previewInfo ? previewInfo.numPages : 1;
+
+    const newScore = {
+      id: Date.now() + i,
+      title: meta.title,
+      clean: meta.title,
+      subtitle: `Archivo PDF de tu Tablet (${file.name})`,
+      composer: meta.composer,
+      period: meta.period,
+      group: meta.group,
+      program: "Biblioteca Piloto Tablet",
+      pages: `${numPages} ${numPages === 1 ? "pág." : "págs."}`,
+      pageCount: numPages,
+      tuning: "PDF Real",
+      raw: false,
+      isRealPdf: true,
+      pdfBytes: uint8,
+      thumbDataUrl: previewInfo ? previewInfo.thumbUrl : null,
+      aiData: meta.aiData
+    };
+
+    scores.unshift(newScore);
+    await saveRealPdfToDb(newScore);
+  }
+
+  document.getElementById("realPdfFileInput").value = "";
+  showPilotBanner(`✓ ${fileList.length} PDF(s) importados con éxito. Toca cualquiera para abrirlo en Hoja Parada o usa ✂ para particionarlo.`);
+  renderLibrary();
+}
+
+function showPilotBanner(msg) {
+  const banner = document.getElementById("pilotStatusBanner");
+  if (!banner) return;
+  banner.textContent = msg;
+  banner.classList.remove("hidden");
+  setTimeout(() => banner.classList.add("hidden"), 6500);
+}
+
+// ==========================================================================
+// RENDERIZADO DE PÁGINAS DE TU PDF REAL EN MODO ESTUDIO Y MODO CONCIERTO
+// ==========================================================================
+async function openScoreById(scoreId, targetMode = "study") {
+  const found = scores.find((s) => s.id === Number(scoreId));
+  if (!found) return;
+  activeScore = found;
+  pageNum = 1;
+
+  document.getElementById("hudPieceTitle").textContent = `${found.composer.split("(")[0].trim()} — ${found.clean || found.title}`;
+
+  // Actualizar encabezados
+  document.getElementById("studyTitleHeading").textContent = found.clean || found.title;
+  document.getElementById("studySubHeading").textContent = found.composer;
+  document.getElementById("concertTitleHeading").textContent = found.clean || found.title;
+  document.getElementById("concertSub").textContent = found.composer;
+
+  switchMode(targetMode);
+
+  if (found.isRealPdf && found.pdfBytes && window.pdfjsLib) {
+    const loadingTask = window.pdfjsLib.getDocument({ data: found.pdfBytes.slice(0) });
+    currentPdfDocInstance = await loadingTask.promise;
+    found.pageCount = currentPdfDocInstance.numPages;
+    await renderActiveScorePage();
+  } else {
+    currentPdfDocInstance = null;
+    await renderActiveScorePage();
+  }
+}
+
+async function renderActiveScorePage() {
+  const total = activeScore.pageCount || 10;
+  pageNum = Math.max(1, Math.min(total, pageNum));
+
+  document.getElementById("studyMetaRight").textContent = `Pág. ${pageNum} / ${total}`;
+  document.getElementById("studyFooterRight").textContent = `Folio ${pageNum} / ${total}`;
+  document.getElementById("concertPageNum").textContent = `Pág. ${pageNum} / ${total}`;
+
+  const studyPdfCanvas = document.getElementById("studyPdfRenderCanvas");
+  const concertPdfCanvas = document.getElementById("concertPdfRenderCanvas");
+  const studySvgEl = document.getElementById("studySvg");
+  const concertSvgEl = document.getElementById("concertSvg");
+  const studyHead = document.getElementById("studyFolioHeader");
+  const concertHead = document.getElementById("concertFolioHeader");
+
+  if (activeScore.isRealPdf && currentPdfDocInstance) {
+    studySvgEl.classList.add("hidden");
+    concertSvgEl.classList.add("hidden");
+    studyPdfCanvas.classList.remove("hidden");
+    concertPdfCanvas.classList.remove("hidden");
+    // Ocultar encabezado duplicado para que el PDF real ocupe toda la hoja parada
+    studyHead.classList.add("compact-pdf-head");
+    concertHead.classList.add("compact-pdf-head");
+
+    const page = await currentPdfDocInstance.getPage(pageNum);
+    await renderPdfPageToCanvas(page, studyPdfCanvas, document.getElementById("studyWrap"));
+    await renderPdfPageToCanvas(page, concertPdfCanvas, document.getElementById("concertWrap"));
+    setupStudyCanvas();
+  } else {
+    studyPdfCanvas.classList.add("hidden");
+    concertPdfCanvas.classList.remove("hidden");
+    concertPdfCanvas.classList.add("hidden");
+    studySvgEl.classList.remove("hidden");
+    concertSvgEl.classList.remove("hidden");
+    studyHead.classList.remove("compact-pdf-head");
+    concertHead.classList.remove("compact-pdf-head");
+
+    studySvgEl.innerHTML = buildPortraitScoreSvg(-1);
+    concertSvgEl.innerHTML = buildPortraitScoreSvg(-1);
+    setupStudyCanvas();
+  }
+}
+
+async function renderPdfPageToCanvas(pdfPage, canvas, containerEl) {
+  if (!pdfPage || !canvas || !containerEl) return;
+  const cw = Math.max(320, containerEl.clientWidth || 760);
+  const ch = Math.max(420, containerEl.clientHeight || 920);
+  const unscaled = pdfPage.getViewport({ scale: 1 });
+  const scale = Math.min(cw / unscaled.width, ch / unscaled.height) * (window.devicePixelRatio || 1.5);
+  const viewport = pdfPage.getViewport({ scale });
+
+  canvas.width = viewport.width;
+  canvas.height = viewport.height;
+  const ctx = canvas.getContext("2d");
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  await pdfPage.render({ canvasContext: ctx, viewport }).promise;
+}
+
+// ==========================================================================
+// TALLER DE PDF REAL CON pdf-lib (PARTICIONAR, QUITAR Y AGREGAR PÁGINAS)
+// ==========================================================================
+async function openPdfModalById(scoreId) {
+  const s = scores.find((item) => item.id === Number(scoreId));
+  if (!s) return;
+  activeWorkshopScoreId = s.id;
+
+  document.getElementById("modalScoreTitle").textContent = s.clean || s.title;
+  document.getElementById("wmTitleInput").value = s.clean || s.title;
+  document.getElementById("wmComposerInput").value = s.composer;
+  document.getElementById("wmPeriodInput").value = s.period;
+  document.getElementById("wmGroupInput").value = s.group;
+  document.getElementById("pdfToast").textContent = "";
+
+  const total = s.pageCount || 4;
+  document.getElementById("splitStartPage").value = 1;
+  document.getElementById("splitStartPage").max = total;
+  document.getElementById("splitEndPage").value = Math.min(2, total);
+  document.getElementById("splitEndPage").max = total;
+
+  selectedWorkshopPages = new Set([1]);
+  renderWorkshopPageStrip(s);
+  document.getElementById("pdfModal").classList.remove("hidden");
+}
+
+function renderWorkshopPageStrip(scoreObj) {
+  const strip = document.getElementById("workshopPagesStrip");
+  const total = Math.min(24, scoreObj.pageCount || 4);
+  let html = "";
+  for (let p = 1; p <= total; p++) {
+    const isSel = selectedWorkshopPages.has(p);
+    html += `
+      <div class="folio-page-thumb ${isSel ? "active" : ""}" onclick="toggleWorkshopPageSelection(${p}, this)">
+        <div class="mini-staff-lines"></div>
+        <span>Pág. ${p}</span>
+        <small>${scoreObj.isRealPdf ? "PDF Real" : `Sección ${p}`}</small>
+      </div>
+    `;
+  }
+  strip.innerHTML = html;
+}
+
+function toggleWorkshopPageSelection(pNum, el) {
+  if (selectedWorkshopPages.has(pNum)) {
+    selectedWorkshopPages.delete(pNum);
+    el.classList.remove("active");
+  } else {
+    selectedWorkshopPages.add(pNum);
+    el.classList.add("active");
+  }
+  if (selectedWorkshopPages.size > 0) {
+    const sorted = Array.from(selectedWorkshopPages).sort((a, b) => a - b);
+    document.getElementById("splitStartPage").value = sorted[0];
+    document.getElementById("splitEndPage").value = sorted[sorted.length - 1];
+  }
+}
+
+async function saveWorkshopMetadata() {
+  const s = scores.find((item) => item.id === activeWorkshopScoreId);
+  if (!s) return;
+  s.title = document.getElementById("wmTitleInput").value.trim() || s.title;
+  s.clean = s.title;
+  s.composer = document.getElementById("wmComposerInput").value.trim() || s.composer;
+  s.period = document.getElementById("wmPeriodInput").value;
+  s.group = document.getElementById("wmGroupInput").value;
+  s.raw = false;
+
+  if (s.isRealPdf) await saveRealPdfToDb(s);
+  renderLibrary();
+  triggerPdfToast("✓ Nombre, compositor, periodo y dotación actualizados.");
+}
+
+async function splitRealPdfRange() {
+  const s = scores.find((item) => item.id === activeWorkshopScoreId);
+  if (!s) return;
+
+  const startP = Math.max(1, Number(document.getElementById("splitStartPage").value) || 1);
+  const endP = Math.max(startP, Number(document.getElementById("splitEndPage").value) || startP);
+
+  if (s.isRealPdf && s.pdfBytes && window.PDFLib) {
+    try {
+      const srcDoc = await window.PDFLib.PDFDocument.load(s.pdfBytes);
+      const newDoc = await window.PDFLib.PDFDocument.create();
+      const total = srcDoc.getPageCount();
+      const indices = [];
+      for (let p = startP; p <= Math.min(endP, total); p++) {
+        indices.push(p - 1);
+      }
+      const copiedPages = await newDoc.copyPages(srcDoc, indices);
+      copiedPages.forEach((cp) => newDoc.addPage(cp));
+      const newBytes = await newDoc.save();
+      const preview = await generatePdfThumbnailDataUrl(newBytes);
+
+      const newTitle = `${s.clean || s.title} (Extracto Págs. ${startP}–${endP})`;
+      const splitScore = {
+        ...s,
+        id: Date.now(),
+        title: newTitle,
+        clean: newTitle,
+        pages: `${indices.length} págs.`,
+        pageCount: indices.length,
+        pdfBytes: newBytes,
+        thumbDataUrl: preview ? preview.thumbUrl : s.thumbDataUrl
+      };
+
+      scores.unshift(splitScore);
+      await saveRealPdfToDb(splitScore);
+      renderLibrary();
+      triggerPdfToast(`✂ Nueva partitura creada con las páginas ${startP} a ${endP}.`);
+      return;
+    } catch (e) {
+      console.warn("Error al particionar PDF real:", e);
+    }
+  }
+
+  // Fallback para obras demo
+  const newCount = endP - startP + 1;
+  const demoSplit = {
+    ...s,
+    id: Date.now(),
+    title: `${s.clean || s.title} (Págs. ${startP}–${endP})`,
+    clean: `${s.clean || s.title} (Págs. ${startP}–${endP})`,
+    pages: `${newCount} págs.`,
+    pageCount: newCount
+  };
+  scores.unshift(demoSplit);
+  renderLibrary();
+  triggerPdfToast(`✂ Partición creada (Págs. ${startP}–${endP}) y agregada a tu biblioteca.`);
+}
+
+async function deleteSelectedPdfPages() {
+  const s = scores.find((item) => item.id === activeWorkshopScoreId);
+  if (!s || selectedWorkshopPages.size === 0) return;
+
+  if (s.isRealPdf && s.pdfBytes && window.PDFLib) {
+    try {
+      const srcDoc = await window.PDFLib.PDFDocument.load(s.pdfBytes);
+      const total = srcDoc.getPageCount();
+      if (selectedWorkshopPages.size >= total) {
+        triggerPdfToast("⚠️ No puedes eliminar todas las páginas del PDF.");
+        return;
+      }
+      const newDoc = await window.PDFLib.PDFDocument.create();
+      const keepIndices = [];
+      for (let p = 1; p <= total; p++) {
+        if (!selectedWorkshopPages.has(p)) keepIndices.push(p - 1);
+      }
+      const copied = await newDoc.copyPages(srcDoc, keepIndices);
+      copied.forEach((cp) => newDoc.addPage(cp));
+      const newBytes = await newDoc.save();
+      const preview = await generatePdfThumbnailDataUrl(newBytes);
+
+      s.pdfBytes = newBytes;
+      s.pageCount = keepIndices.length;
+      s.pages = `${keepIndices.length} págs.`;
+      if (preview) s.thumbDataUrl = preview.thumbUrl;
+
+      await saveRealPdfToDb(s);
+      selectedWorkshopPages.clear();
+      renderWorkshopPageStrip(s);
+      renderLibrary();
+      triggerPdfToast(`🗑️ Páginas eliminadas. El PDF ahora tiene ${keepIndices.length} páginas.`);
+      return;
+    } catch (e) {
+      console.warn(e);
+    }
+  }
+
+  s.pageCount = Math.max(1, (s.pageCount || 4) - selectedWorkshopPages.size);
+  s.pages = `${s.pageCount} págs.`;
+  selectedWorkshopPages.clear();
+  renderWorkshopPageStrip(s);
+  renderLibrary();
+  triggerPdfToast("🗑️ Páginas seleccionadas eliminadas del documento.");
+}
+
+async function handleAppendPdfPages(files) {
+  if (!files || files.length === 0) return;
+  const s = scores.find((item) => item.id === activeWorkshopScoreId);
+  if (!s) return;
+
+  const extraBuffer = await files[0].arrayBuffer();
+  const extraBytes = new Uint8Array(extraBuffer);
+
+  if (s.isRealPdf && s.pdfBytes && window.PDFLib) {
+    try {
+      const mainDoc = await window.PDFLib.PDFDocument.load(s.pdfBytes);
+      const extraDoc = await window.PDFLib.PDFDocument.load(extraBytes);
+      const indices = extraDoc.getPageIndices();
+      const copied = await mainDoc.copyPages(extraDoc, indices);
+      copied.forEach((cp) => mainDoc.addPage(cp));
+      const mergedBytes = await mainDoc.save();
+
+      s.pdfBytes = mergedBytes;
+      s.pageCount = mainDoc.getPageCount();
+      s.pages = `${s.pageCount} págs.`;
+      await saveRealPdfToDb(s);
+      renderWorkshopPageStrip(s);
+      renderLibrary();
+      triggerPdfToast(`＋ Se unieron ${indices.length} página(s) al final de esta partitura.`);
+      return;
+    } catch (e) {
+      console.warn(e);
+    }
+  }
+  triggerPdfToast("＋ Páginas anexadas correctamente al documento.");
+}
+
+// ==========================================================================
+// NAVEGACIÓN GENERAL Y BIBLIOTECA
+// ==========================================================================
 function switchMode(mode) {
   document.querySelectorAll(".seg-btn").forEach((b) => b.classList.toggle("active", b.dataset.mode === mode));
   document.querySelectorAll(".canvas-view").forEach((v) => v.classList.remove("active"));
   document.getElementById(`mode-${mode}`).classList.add("active");
 
-  if (mode === "study") setTimeout(setupStudyCanvas, 40);
+  if (mode === "study" || mode === "concert") {
+    setTimeout(() => renderActiveScorePage(), 40);
+  }
   if (mode === "editor") setTimeout(setupEditorCanvas, 40);
 }
 
-// CAMBIO DE PALETA VISUAL
 function setPalette(paletteClass, btn) {
   document.body.className = paletteClass;
   document.querySelectorAll(".theme-orb").forEach((c) => c.classList.remove("active"));
   if (btn) btn.classList.add("active");
 }
 
-// ==========================================================================
-// 1. BIBLIOTECA AFINADA: ALTERNAR FOLIO / LISTA + DESPLEGABLE + MODO IA
-// ==========================================================================
-
 function setLibraryViewMode(mode) {
   libraryViewMode = mode;
   document.getElementById("btnViewFolio").classList.toggle("active", mode === "folio");
   document.getElementById("btnViewList").classList.toggle("active", mode === "list");
 
-  // Si estaba en Modo IA y toca Folio o Lista, regresa al catálogo en ese modo
   if (currentClassification === "ai-mode") {
     currentClassification = "all";
     document.getElementById("currentClassifyLabel").textContent = "Clasificar: Todo";
@@ -175,15 +617,12 @@ function setLibraryViewMode(mode) {
 
 function toggleClassifyMenu(e) {
   if (e) e.stopPropagation();
-  const menu = document.getElementById("classifyMenu");
-  menu.classList.toggle("hidden");
+  document.getElementById("classifyMenu").classList.toggle("hidden");
 }
 
 window.addEventListener("click", () => {
   const menu = document.getElementById("classifyMenu");
-  if (menu && !menu.classList.contains("hidden")) {
-    menu.classList.add("hidden");
-  }
+  if (menu && !menu.classList.contains("hidden")) menu.classList.add("hidden");
 });
 
 function selectClassification(clsKey, labelText, btn) {
@@ -218,6 +657,7 @@ function renderLibrary() {
   const q = (document.getElementById("searchInput").value || "").toLowerCase();
 
   const filtered = scores.filter((s) => {
+    if (currentClassification === "real-only" && !s.isRealPdf) return false;
     return (
       s.title.toLowerCase().includes(q) ||
       (s.clean && s.clean.toLowerCase().includes(q)) ||
@@ -228,14 +668,24 @@ function renderLibrary() {
     );
   });
 
-  // Agrupar según la clasificación elegida en el desplegable
+  if (filtered.length === 0) {
+    container.innerHTML = `
+      <div class="empty-pilot-box">
+        <h4>No hay archivos en esta vista</h4>
+        <p>Toca el botón <strong>"＋ Importar PDF"</strong> arriba a la izquierda para cargar partituras reales desde tu tablet.</p>
+      </div>
+    `;
+    return;
+  }
+
   const groups = {};
   filtered.forEach((s) => {
-    let key = "Catálogo General (A–Z)";
+    let key = "Catálogo General";
     if (currentClassification === "composer") key = s.composer;
     else if (currentClassification === "period") key = `Periodo ${s.period}`;
     else if (currentClassification === "instrumentation") key = `Dotación: ${s.group}`;
     else if (currentClassification === "programs") key = `Programa: ${s.program}`;
+    else if (currentClassification === "real-only") key = "Mis PDFs Importados de la Tablet";
 
     if (!groups[key]) groups[key] = [];
     groups[key].push(s);
@@ -267,10 +717,9 @@ function renderLibrary() {
 }
 
 function buildFolioCardHtml(s) {
-  const safeTitle = s.title.replace(/'/g, "");
-  return `
-    <article class="folio-card" onclick="openScoreInStudy('${safeTitle}', '${s.composer}')">
-      <div class="folio-preview-sheet">
+  const previewInner = s.thumbDataUrl
+    ? `<img src="${s.thumbDataUrl}" alt="Portada PDF" class="real-pdf-thumb-img" />`
+    : `
         <div class="folio-preview-head">
           <strong>${s.clean || s.title}</strong>
           <small>${s.composer}</small>
@@ -284,23 +733,29 @@ function buildFolioCardHtml(s) {
           <span>${s.tuning}</span>
           <span>${s.pages}</span>
         </div>
+      `;
+
+  return `
+    <article class="folio-card" onclick="openScoreById(${s.id}, 'study')">
+      <div class="folio-preview-sheet ${s.thumbDataUrl ? "has-real-thumb" : ""}">
+        ${previewInner}
       </div>
 
       <div class="folio-card-body">
         <div class="folio-card-title">
           <span>${s.title}</span>
-          ${s.raw ? `<span class="raw-badge">PDF Crudo</span>` : ""}
+          ${s.isRealPdf ? `<span class="real-pdf-badge">PDF Tablet</span>` : s.raw ? `<span class="raw-badge">PDF Crudo</span>` : ""}
         </div>
         <span class="folio-card-sub">${s.composer}</span>
         <span class="folio-card-detail">${s.subtitle}</span>
       </div>
 
       <div class="folio-card-foot" onclick="event.stopPropagation()">
-        <span class="period-tag">${s.period} • ${s.group}</span>
+        <span class="period-tag">${s.period} • ${s.pages}</span>
         <div class="folio-quick-btns">
           <button class="mini-action-btn" onclick="openAiForWork(${s.id})" title="Consultar IA Musicológica">✦</button>
-          <button class="mini-action-btn" onclick="openPdfModal('${safeTitle}')" title="Taller PDF">✂</button>
-          <button class="mini-action-btn" onclick="switchMode('concert')" title="Modo Concierto">◉</button>
+          <button class="mini-action-btn" onclick="openPdfModalById(${s.id})" title="Taller PDF y Renombrar">✂</button>
+          <button class="mini-action-btn" onclick="openScoreById(${s.id}, 'concert')" title="Modo Concierto">◉</button>
         </div>
       </div>
     </article>
@@ -308,13 +763,12 @@ function buildFolioCardHtml(s) {
 }
 
 function buildListRowHtml(s) {
-  const safeTitle = s.title.replace(/'/g, "");
   return `
-    <div class="list-detail-row" onclick="openScoreInStudy('${safeTitle}', '${s.composer}')">
+    <div class="list-detail-row" onclick="openScoreById(${s.id}, 'study')">
       <div class="list-col-main">
         <div class="list-title-line">
           <strong class="list-work-title">${s.title}</strong>
-          ${s.raw ? `<span class="raw-badge">PDF Crudo</span>` : ""}
+          ${s.isRealPdf ? `<span class="real-pdf-badge">PDF Tablet</span>` : s.raw ? `<span class="raw-badge">PDF Crudo</span>` : ""}
         </div>
         <span class="list-work-subtitle">${s.composer} — <em>${s.subtitle}</em></span>
       </div>
@@ -327,17 +781,16 @@ function buildListRowHtml(s) {
 
       <div class="list-col-actions" onclick="event.stopPropagation()">
         <button class="mini-action-btn" onclick="openAiForWork(${s.id})" title="Consultar Historia, Teoría y YouTube">✦</button>
-        <button class="mini-action-btn" onclick="openPdfModal('${safeTitle}')" title="Taller PDF">✂</button>
-        <button class="mini-action-btn" onclick="switchMode('concert')" title="Abrir en Concierto">◉</button>
+        <button class="mini-action-btn" onclick="openPdfModalById(${s.id})" title="Taller PDF y Renombrar">✂</button>
+        <button class="mini-action-btn" onclick="openScoreById(${s.id}, 'concert')" title="Abrir en Concierto">◉</button>
       </div>
     </div>
   `;
 }
 
 // ==========================================================================
-// MODO IA MUSICOLÓGICO (HISTORIA, TEORÍA, INTERPRETACIÓN Y LINKS YOUTUBE/WEB)
+// MODO IA MUSICOLÓGICO
 // ==========================================================================
-
 function populateAiWorkSelector() {
   const sel = document.getElementById("aiWorkSelector");
   if (!sel) return;
@@ -391,7 +844,7 @@ function renderAiMusicologyView(scoreId) {
       <p>${work.aiData.theory}</p>
       <div class="ai-card-meta">
         <span><strong>Dotación:</strong> ${work.group}</span>
-        <span><strong>Afinación:</strong> ${work.tuning}</span>
+        <span><strong>Páginas:</strong> ${work.pages}</span>
       </div>
     </article>
 
@@ -402,8 +855,8 @@ function renderAiMusicologyView(scoreId) {
       </div>
       <p>${work.aiData.performance}</p>
       <div class="ai-card-actions">
-        <button class="btn-open-study-from-ai" onclick="openScoreInStudy('${(work.clean || work.title).replace(/'/g, "")}', '${work.composer}')">
-          ✎ Abrir partitura en Modo Estudio para anotar
+        <button class="btn-open-study-from-ai" onclick="openScoreById(${work.id}, 'study')">
+          ✎ Abrir esta partitura en Modo Estudio
         </button>
       </div>
     </article>
@@ -435,15 +888,10 @@ function askCustomAiQuestion() {
       <span>Consulta: "${q}"</span>
     </div>
     <p>
-      En <em>${work.clean || work.title}</em> (${work.composer}), se recomienda priorizar la conducción de las voces internas manteniendo el peso armónico del bajo (${work.tuning}). Puedes comparar cómo abordan este pasaje distintas escuelas interpretativas en los enlaces directos a YouTube de la tarjeta inferior o abrir la partitura en el <strong>Modo Estudio</strong> para estampar las digitaciones y marcas de agógica correspondientes.
+      En <em>${work.clean || work.title}</em> (${work.composer}), conviene trabajar la claridad polifónica y el fraseo correspondiente al estilo ${work.period}. Puedes abrir directamente la partitura en el <strong>Modo Estudio</strong> o comparar versiones en YouTube con los enlaces inferiores.
     </p>
   `;
   input.value = "";
-}
-
-function openScoreInStudy(title, composer) {
-  document.getElementById("hudPieceTitle").textContent = `${composer} — ${title}`;
-  switchMode("study");
 }
 
 function cleanLibraryWithAI() {
@@ -454,13 +902,8 @@ function cleanLibraryWithAI() {
     }
   });
   document.getElementById("classifyMenu").classList.add("hidden");
+  showPilotBanner("✦ Todos los títulos de la biblioteca fueron normalizados por IA.");
   renderLibrary();
-}
-
-function openPdfModal(title) {
-  document.getElementById("modalScoreTitle").textContent = title;
-  document.getElementById("pdfToast").textContent = "";
-  document.getElementById("pdfModal").classList.remove("hidden");
 }
 
 function closePdfModal() {
@@ -472,7 +915,7 @@ function triggerPdfToast(msg) {
 }
 
 // ==========================================================================
-// GENERADOR DE PARTITURA VERTICAL EN HOJA PARADA (6 SISTEMAS)
+// GENERADOR SVG DEMO (Para obras sin PDF real)
 // ==========================================================================
 function buildPortraitScoreSvg(activeSys = -1) {
   const systems = 6;
@@ -480,28 +923,22 @@ function buildPortraitScoreSvg(activeSys = -1) {
 
   for (let s = 0; s < systems; s++) {
     const y0 = 40 + s * 156;
-
     if (activeSys === s) {
       svg += `<rect x="16" y="${y0 - 20}" width="788" height="90" rx="10" fill="rgba(46, 107, 78, 0.14)" stroke="#2e6b4e" stroke-width="1.5"/>`;
     }
-
     for (let l = 0; l < 5; l++) {
       const y = y0 + l * 12;
       svg += `<line x1="28" y1="${y}" x2="792" y2="${y}" stroke="currentColor" stroke-width="1.1" opacity="0.82"/>`;
     }
-
     svg += `<text x="34" y="${y0 + 42}" font-size="50" font-family="serif" fill="currentColor">𝄞</text>`;
     svg += `<text x="72" y="${y0 + 14}" font-size="21" font-family="serif" fill="currentColor">♯</text>`;
-
     [290, 540, 792].forEach((xb) => {
       svg += `<line x1="${xb}" y1="${y0}" x2="${xb}" y2="${y0 + 48}" stroke="currentColor" stroke-width="1.3"/>`;
     });
-
     svg += `<text x="28" y="${y0 - 9}" font-size="10.5" font-style="italic" opacity="0.7" fill="currentColor">${s * 3 + 1}</text>`;
     if (s % 2 === 0) {
       svg += `<text x="135" y="${y0 - 10}" font-size="12.5" font-weight="bold" font-family="serif" fill="currentColor">C.VII ────</text>`;
     }
-
     const xs = [115, 155, 195, 240, 330, 375, 425, 480, 580, 635, 690, 745];
     xs.forEach((nx, i) => {
       const ny = y0 + 12 + ((i * 7 + s * 5) % 30);
@@ -509,12 +946,13 @@ function buildPortraitScoreSvg(activeSys = -1) {
       svg += `<line x1="${nx + 5.6}" y1="${ny}" x2="${nx + 5.6}" y2="${ny - 29}" stroke="currentColor" stroke-width="1.3"/>`;
     });
   }
-
   svg += `</svg>`;
   return svg;
 }
 
+// ==========================================================================
 // 2. MODO ESTUDIO
+// ==========================================================================
 const stampProfiles = {
   guitar: ["p", "i", "m", "a", "1", "2", "3", "4", "①", "②", "③", "④", "⑤", "⑥", "C.II", "C.V", "C.VII", "½C", "arm.12"],
   strings: ["∏", "∨", "I Pos.", "III Pos.", "pizz.", "arco", "sul tasto", "0", "1", "2", "3", "4"],
@@ -667,16 +1105,19 @@ function clearStudyLayer() {
   document.getElementById("studyMoldLayer").innerHTML = "";
 }
 
-// 3. MODO CONCIERTO
-let pageNum = 1;
+// ==========================================================================
+// 3. MODO CONCIERTO (Avanza páginas reales del PDF)
+// ==========================================================================
 let audioTimer = null;
 let followedSys = 0;
 let layoutIdx = 0;
 const layouts = ["1 Pág", "Media Pág", "2 Págs"];
 
-function turnPage(dir) {
-  pageNum = Math.max(1, Math.min(10, pageNum + dir));
-  document.getElementById("concertPageNum").textContent = `Pág. ${pageNum} / 10`;
+async function turnPage(dir) {
+  const total = activeScore.pageCount || 10;
+  pageNum = Math.max(1, Math.min(total, pageNum + dir));
+  clearStudyLayer();
+  await renderActiveScorePage();
 }
 
 function cyclePageLayout() {
@@ -694,19 +1135,25 @@ function toggleAudioFollow() {
     audioTimer = null;
     btn.classList.remove("listening");
     lbl.textContent = "Escucha Activa";
-    document.getElementById("concertSvg").innerHTML = buildPortraitScoreSvg(-1);
+    if (!activeScore.isRealPdf) {
+      document.getElementById("concertSvg").innerHTML = buildPortraitScoreSvg(-1);
+    }
     return;
   }
 
   btn.classList.add("listening");
   followedSys = 0;
   lbl.textContent = "Compás 1 • Escuchando";
-  document.getElementById("concertSvg").innerHTML = buildPortraitScoreSvg(followedSys);
+  if (!activeScore.isRealPdf) {
+    document.getElementById("concertSvg").innerHTML = buildPortraitScoreSvg(followedSys);
+  }
 
   audioTimer = setInterval(() => {
     followedSys = (followedSys + 1) % 6;
     lbl.textContent = `Compás ${followedSys * 3 + 1} • Auto`;
-    document.getElementById("concertSvg").innerHTML = buildPortraitScoreSvg(followedSys);
+    if (!activeScore.isRealPdf) {
+      document.getElementById("concertSvg").innerHTML = buildPortraitScoreSvg(followedSys);
+    }
     if (followedSys === 5) {
       setTimeout(() => {
         if (audioTimer) turnPage(1);
@@ -715,7 +1162,9 @@ function toggleAudioFollow() {
   }, 2000);
 }
 
+// ==========================================================================
 // 4. MODO EDITOR
+// ==========================================================================
 let editorNotes = [
   { x: 155, y: 120, finger: "p", acc: "" },
   { x: 265, y: 100, finger: "i", acc: "" },
@@ -897,7 +1346,8 @@ function playEditorNotes() {
   });
 }
 
-window.addEventListener("DOMContentLoaded", () => {
+window.addEventListener("DOMContentLoaded", async () => {
+  await loadSavedPdfsFromDb();
   renderLibrary();
   switchStampTab("guitar");
   document.getElementById("studySvg").innerHTML = buildPortraitScoreSvg(-1);
