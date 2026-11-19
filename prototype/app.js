@@ -783,12 +783,18 @@ function buildListRowHtml(s) {
 // ==========================================================================
 let bachContextMode = "general"; // 'general' | 'work' | 'notebook'
 let bachSelectedWorkId = 1;
-let bachVoiceEnabled = true;
+// Por defecto BachGPT inicia en modo lectura silenciosa (sin voz activada) para no interrumpir al músico
+let bachVoiceEnabled = false;
 let bachSpeechRecognition = null;
 let isBachListeningMic = false;
 let bachMouthAnimTimer = null;
 let currentBachAudioSource = null;
 let bachAudioCtx = null;
+let bachTtsFetchAbortController = null;
+let bachGeneralInitialized = false;
+let bachNotebookInitialized = false;
+let bachLastInitializedWorkId = null;
+let bachSpokenMessagesHistory = [];
 
 // Llave de Gemini API integrada para Voz Neuronal Realista (Charon) + Cerebro Real de BachGPT
 const _gkParts = ["AQ.Ab8RN6LPUtB6Nioi", "-pSXytceVM2YCGkxYy2", "BM3OYpwUUnTIcmg"];
@@ -907,11 +913,19 @@ function germanizeSpanishTextForSpeech(cleanText) {
   return txt;
 }
 
-// MOTOR DE VOZ NEURONAL REALISTA DE GEMINI (gemini-2.5-flash-preview-tts con voz grave 'Charon')
+// MOTOR DE VOZ NEURONAL REALISTA DE GEMINI (Voz unificada 'Charon', sin voz en off, sin cortes y con fade-out anti-hiss)
 function stopActiveBachAudio() {
+  if (bachTtsFetchAbortController) {
+    try {
+      bachTtsFetchAbortController.abort();
+    } catch {}
+    bachTtsFetchAbortController = null;
+  }
   if (currentBachAudioSource) {
     try {
+      currentBachAudioSource.onended = null;
       currentBachAudioSource.stop();
+      currentBachAudioSource.disconnect();
     } catch {}
     currentBachAudioSource = null;
   }
@@ -922,13 +936,41 @@ function stopActiveBachAudio() {
 }
 
 function cleanHtmlForTtsReading(htmlMessage) {
-  return htmlMessage
+  let clean = htmlMessage
     .replace(/<button[\s\S]*?<\/button>/gi, "")
     .replace(/<a[\s\S]*?<\/a>/gi, "")
+    .replace(/<small[\s\S]*?<\/small>/gi, "")
     .replace(/<[^>]+>/g, " ")
-    .replace(/[📜🎼🎸▶🏛️✦💬🔊🎙️↗🌐📖🧭📑🔑❓]/g, "")
+    .replace(/[📜🎼🎸▶🏛️✦💬🔊🎙️↗🌐📖🧭📑🔑❓•]/g, "")
     .replace(/\s+/g, " ")
     .trim();
+
+  // Cortar únicamente en un punto final o cierre de oración completo para que NUNCA se corte a mitad de frase
+  if (clean.length > 420) {
+    const sub = clean.slice(0, 420);
+    const lastEnd = Math.max(sub.lastIndexOf(". "), sub.lastIndexOf("! "), sub.lastIndexOf("? "));
+    if (lastEnd > 80) {
+      clean = sub.slice(0, lastEnd + 1);
+    }
+  }
+  return clean;
+}
+
+// Fonética unificada sutil para que el modelo TTS de Gemini pronuncie SIEMPRE con el mismo acento alemán constante
+// sin tener que meter instrucciones de "voz en off" dentro del texto
+function applyConsistentGermanAccentPhonetics(text) {
+  return text
+    .replace(/\bBWV\b/g, "B V V")
+    .replace(/\bGuten Tag\b/gi, "Gúten Tak")
+    .replace(/\bmein lieber Kollege\b/gi, "main líber Kolégue")
+    .replace(/\bmein Kollege\b/gi, "main Kolégue")
+    .replace(/\bmein Freund\b/gi, "main Froind")
+    .replace(/\bwunderbar\b/gi, "vúnderbar")
+    .replace(/\bnatürlich\b/gi, "natúrlij")
+    .replace(/\bWillkommen\b/gi, "Vilkómen")
+    .replace(/\bKapellmeister\b/gi, "Kapélmaister")
+    .replace(/\bLeipzig\b/gi, "Láiptsik")
+    .replace(/\bBach\b/g, "Baj");
 }
 
 async function playPcm24kBase64(base64Pcm) {
@@ -942,25 +984,50 @@ async function playPcm24kBase64(base64Pcm) {
   }
 
   const binaryStr = atob(base64Pcm);
-  const len = binaryStr.length;
-  const bytes = new Uint8Array(len);
-  for (let i = 0; i < len; i++) {
+  // Asegurar longitud par de bytes para Int16 PCM sin byte huérfano al final (que causa chasquido/hiss)
+  const evenByteLen = binaryStr.length - (binaryStr.length % 2);
+  const bytes = new Uint8Array(evenByteLen);
+  for (let i = 0; i < evenByteLen; i++) {
     bytes[i] = binaryStr.charCodeAt(i);
   }
 
-  const int16 = new Int16Array(bytes.buffer);
-  const float32 = new Float32Array(int16.length);
-  for (let i = 0; i < int16.length; i++) {
-    float32[i] = int16[i] / 32768.0;
+  const int16 = new Int16Array(bytes.buffer, 0, evenByteLen / 2);
+  const totalSamples = int16.length;
+
+  // Recortar cola final de ruido blanco/artefacto de fin de bloque del codec TTS (últimos ~45ms)
+  // y aplicar fade-in (15ms) + fade-out suave (85ms) para eliminar el hiss/corto final al 100%
+  const trimTailSamples = Math.min(1080, Math.floor(totalSamples * 0.04));
+  const cleanLen = Math.max(1, totalSamples - trimTailSamples);
+  const float32 = new Float32Array(cleanLen);
+
+  const fadeInSamples = Math.min(360, Math.floor(cleanLen * 0.05));
+  const fadeOutSamples = Math.min(2040, Math.floor(cleanLen * 0.12));
+
+  for (let i = 0; i < cleanLen; i++) {
+    let sample = int16[i] / 32768.0;
+    if (i < fadeInSamples) {
+      sample *= i / fadeInSamples;
+    } else if (i > cleanLen - fadeOutSamples) {
+      const remaining = cleanLen - i;
+      sample *= remaining / fadeOutSamples;
+    }
+    float32[i] = sample;
   }
 
-  const audioBuffer = bachAudioCtx.createBuffer(1, float32.length, 24000);
+  const audioBuffer = bachAudioCtx.createBuffer(1, cleanLen, 24000);
   audioBuffer.getChannelData(0).set(float32);
 
   stopActiveBachAudio();
   const source = bachAudioCtx.createBufferSource();
   source.buffer = audioBuffer;
-  source.connect(bachAudioCtx.destination);
+
+  // Filtro pasa-bajos suave a 7.5 kHz para eliminar siseo digital agudo ("hiss") de la síntesis PCM
+  const lowpass = bachAudioCtx.createBiquadFilter();
+  lowpass.type = "lowpass";
+  lowpass.frequency.value = 7500;
+
+  source.connect(lowpass);
+  lowpass.connect(bachAudioCtx.destination);
 
   currentBachAudioSource = source;
   setBach8BitTalkingAnimation(true);
@@ -974,20 +1041,20 @@ async function playPcm24kBase64(base64Pcm) {
   return true;
 }
 
-async function speakAsBachGpt(htmlMessage) {
-  if (!bachVoiceEnabled) return;
+async function speakAsBachGpt(htmlMessage, forceReplay = false) {
+  if (!bachVoiceEnabled && !forceReplay) return;
   const cleanText = cleanHtmlForTtsReading(htmlMessage);
   if (!cleanText) return;
 
   stopActiveBachAudio();
   const apiKey = getGeminiApiKey();
 
-  // 1. Usar primero el modelo ultraligero y rápido gemini-3.8-flash-lite-tts (con respaldo a 2.5-flash-preview-tts)
+  // Enviar ÚNICAMENTE el texto puro del diálogo (CERO instrucciones de "Lee con voz...") para que nunca lea voz en off,
+  // fijando un solo modelo TTS y la voz grave 'Charon' con fonética germana consistente
   if (apiKey) {
-    // Limitamos la lectura hablada a las primeras 280 letras para que el audio se genere en ~1.5 segundos
-    const shortSpoken = cleanText.slice(0, 290);
-    const ttsPrompt = `Lee con voz masculina grave y acento alemán culto en español: "${shortSpoken}"`;
-    const ttsModels = ["gemini-3.8-flash-lite-tts", "gemini-3.8-flash-tts", "gemini-2.5-flash-preview-tts"];
+    const pureDialogueToRead = applyConsistentGermanAccentPhonetics(cleanText);
+    const ttsModels = ["gemini-3.8-flash-lite-tts", "gemini-2.5-flash-preview-tts"];
+    bachTtsFetchAbortController = new AbortController();
 
     for (const modelName of ttsModels) {
       try {
@@ -996,9 +1063,11 @@ async function speakAsBachGpt(htmlMessage) {
           {
             method: "POST",
             headers: { "Content-Type": "application/json" },
+            signal: bachTtsFetchAbortController.signal,
             body: JSON.stringify({
-              contents: [{ parts: [{ text: ttsPrompt }] }],
+              contents: [{ parts: [{ text: pureDialogueToRead }] }],
               generationConfig: {
+                temperature: 0.2,
                 responseModalities: ["AUDIO"],
                 speechConfig: {
                   voiceConfig: {
@@ -1015,20 +1084,25 @@ async function speakAsBachGpt(htmlMessage) {
         if (resp.ok) {
           const data = await resp.json();
           const b64 = data?.candidates?.[0]?.content?.parts?.[0]?.inlineData?.data;
-          if (b64) {
+          // Verificar que la ventana de BachGPT siga abierta antes de reproducir
+          const win = document.getElementById("bachGptWindow");
+          if (b64 && win && !win.classList.contains("hidden")) {
             await playPcm24kBase64(b64);
             return;
           }
+          return;
         }
       } catch (err) {
+        if (err && err.name === "AbortError") return;
         console.warn(`TTS model ${modelName} error:`, err);
       }
     }
   }
 
-  // 2. Respaldo offline si no hay internet
-  if ("speechSynthesis" in window) {
-    const utter = new SpeechSynthesisUtterance(germanizeSpanishTextForSpeech(htmlMessage));
+  // Respaldo offline si no hay internet
+  const win = document.getElementById("bachGptWindow");
+  if ("speechSynthesis" in window && win && !win.classList.contains("hidden")) {
+    const utter = new SpeechSynthesisUtterance(germanizeSpanishTextForSpeech(cleanText));
     utter.lang = "es-MX";
     utter.pitch = 0.72;
     utter.rate = 0.90;
@@ -1036,6 +1110,13 @@ async function speakAsBachGpt(htmlMessage) {
     utter.onend = () => setBach8BitTalkingAnimation(false);
     utter.onerror = () => setBach8BitTalkingAnimation(false);
     window.speechSynthesis.speak(utter);
+  }
+}
+
+function replaySpecificBachMessage(msgIndex) {
+  const htmlToReplay = bachSpokenMessagesHistory[msgIndex];
+  if (htmlToReplay) {
+    speakAsBachGpt(htmlToReplay, true);
   }
 }
 
@@ -1175,13 +1256,13 @@ function populateBachWorkSelect() {
     .join("");
 }
 
-// Al tocar el botón flotante principal de BachGPT abajo a la derecha -> Abre el MODO GENERAL
+// Al tocar el botón flotante principal de BachGPT abajo a la derecha -> Abre o cierra sin volver a repetir el saludo ya leído
 function handleMainBachFabClick() {
   const win = document.getElementById("bachGptWindow");
   if (!win.classList.contains("hidden")) {
     toggleBachGptChat(false);
   } else {
-    openBachGptGeneralMode();
+    openBachGptGeneralMode(false);
   }
 }
 
@@ -1193,18 +1274,16 @@ function toggleBachGptChat(forceState) {
     win.classList.remove("hidden");
   } else {
     win.classList.add("hidden");
-    if ("speechSynthesis" in window) {
-      window.speechSynthesis.cancel();
-      setBach8BitTalkingAnimation(false);
-    }
+    // Cortar el audio y cualquier petición TTS de inmediato al cerrar la ventana
+    stopActiveBachAudio();
   }
 }
 
 // ==========================================================================
 // MODO 1 DE BACHGPT: MODO CONSULTA GENERAL (Pantalla Principal)
-// Teoría, historia general, técnica, cómo usar la app, videos/audios abiertos
 // ==========================================================================
-function openBachGptGeneralMode() {
+function openBachGptGeneralMode(forceReset = false) {
+  const wasAlreadyGeneral = bachContextMode === "general" && bachGeneralInitialized;
   bachContextMode = "general";
   toggleBachGptChat(true);
 
@@ -1225,11 +1304,20 @@ function openBachGptGeneralMode() {
     <button class="bach-chip" onclick="openBachGptNotebookMode()">📖 Estudiar Libro PDF (Notebook)</button>
   `;
 
-  const box = document.getElementById("bachChatMessages");
-  box.innerHTML = "";
-  appendBachMessage(
-    `¡Guten Tag, mein lieber Kollege! Estás en mi <strong>Modo de Consulta General</strong>. Aquí puedes preguntarme de todo tipo de temas: <strong>teoría musical, análisis armónico, historia, técnica instrumental, búsqueda de videos/audios</strong> o pedirme que te explique <strong>cómo funciona cada modo de esta aplicación</strong>. También puedes abrir la pestaña <em>"📖 Libro Teoría (Notebook)"</em> para que estudiemos juntos un libro o tratado en PDF.`
-  );
+  // Si ya había sido abierto antes, NO borrar el historial ni volver a leer el saludo desde el inicio
+  if (wasAlreadyGeneral && !forceReset) {
+    return;
+  }
+
+  if (!bachGeneralInitialized || forceReset) {
+    bachGeneralInitialized = true;
+    const box = document.getElementById("bachChatMessages");
+    box.innerHTML = "";
+    appendBachMessage(
+      `¡Guten Tag, mein lieber Kollege! Estás en mi <strong>Modo de Consulta General</strong>. Aquí puedes preguntarme de todo tipo de temas: <strong>teoría musical, análisis armónico, historia, técnica instrumental, búsqueda de videos/audios</strong> o pedirme que te explique <strong>cómo funciona cada modo de esta aplicación</strong>. También puedes abrir la pestaña <em>"📖 Libro Teoría (Notebook)"</em> para que estudiemos juntos un libro o tratado en PDF.`,
+      false // No hablar automáticamente al abrir el saludo inicial
+    );
+  }
 }
 
 function askBachGeneral(topic) {
@@ -1273,8 +1361,12 @@ function openAiForWork(scoreId) {
 }
 
 function openBachGptSpecificWorkMode(scoreId) {
+  const targetId = Number(scoreId) || (activeScore ? activeScore.id : 1);
+  const isSameWorkAlreadyLoaded =
+    bachContextMode === "work" && bachLastInitializedWorkId === targetId;
+
   bachContextMode = "work";
-  bachSelectedWorkId = Number(scoreId) || (activeScore ? activeScore.id : 1);
+  bachSelectedWorkId = targetId;
   toggleBachGptChat(true);
 
   document.getElementById("bctxGeneralBtn").classList.remove("active");
@@ -1301,6 +1393,12 @@ function openBachGptSpecificWorkMode(scoreId) {
     <button class="bach-chip" onclick="askBachTopic('links')">▶ Videos, Audios y Versiones</button>
   `;
 
+  // Si ya estaba cargada esta misma obra y solo reabrió la ventana, no repetir todo el mensaje desde el inicio
+  if (isSameWorkAlreadyLoaded) {
+    return;
+  }
+
+  bachLastInitializedWorkId = targetId;
   const box = document.getElementById("bachChatMessages");
   box.innerHTML = "";
 
@@ -1456,15 +1554,25 @@ function appendUserMessage(text) {
 function appendBachMessage(htmlContent, shouldSpeak = true) {
   const box = document.getElementById("bachChatMessages");
   if (!box) return;
+  const msgIdx = bachSpokenMessagesHistory.length;
+  bachSpokenMessagesHistory.push(htmlContent);
+
   const wrap = document.createElement("div");
   wrap.className = "bach-msg-row";
   wrap.innerHTML = `
     <div class="bach-mini-8bit">${build8BitBachSvg(false)}</div>
-    <div class="chat-bubble bach-bubble">${htmlContent}</div>
+    <div class="chat-bubble bach-bubble">
+      <div class="bach-bubble-content">${htmlContent}</div>
+      <div class="bach-bubble-Controls">
+        <button class="bach-replay-btn" onclick="replaySpecificBachMessage(${msgIdx})" title="Reproducir o volver a escuchar esta respuesta">
+          🔊 Escuchar respuesta
+        </button>
+      </div>
+    </div>
   `;
   box.appendChild(wrap);
   box.scrollTop = box.scrollHeight;
-  if (shouldSpeak) {
+  if (shouldSpeak && bachVoiceEnabled) {
     speakAsBachGpt(htmlContent);
   }
 }
