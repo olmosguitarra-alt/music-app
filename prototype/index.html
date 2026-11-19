@@ -3,279 +3,337 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-  <title>Atril — Edición Editorial</title>
+  <title>Atril — Concepts × StaffPad × Linearity UI</title>
   <link rel="stylesheet" href="styles.css" />
 </head>
 <body class="palette-luthier">
 
-  <!-- BARRA SUPERIOR MINIMALISTA: 4 MODOS + SELECTOR DE LAS 4 PALETAS ELEGANTES -->
-  <header class="top-nav" id="topNav">
-    <nav class="mode-dock" aria-label="Modos">
-      <button class="mode-pill active" data-mode="library" onclick="switchMode('library')">
-        <svg viewBox="0 0 24 24" class="ico"><path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1 0-5H20"/></svg>
+  <!-- =================================================================== -->
+  <!-- HUD SUPERIOR FLOTANTE (Estilo Concepts & StaffPad: Cero barra fija) -->
+  <!-- =================================================================== -->
+  <header class="floating-hud-top">
+    <!-- Píldora Izquierda: Estado / Obra activa -->
+    <div class="glass-pill hud-status" id="hudContextPill">
+      <span class="status-dot"></span>
+      <span class="hud-piece-name" id="hudPieceTitle">J. S. Bach — BWV 1034</span>
+    </div>
+
+    <!-- Píldora Central: Selector de los 4 Modos (Linearity Curve Segmented Control) -->
+    <nav class="glass-pill mode-segmented" aria-label="Modos">
+      <button class="seg-btn active" data-mode="library" onclick="switchMode('library')">
+        <svg viewBox="0 0 24 24" class="v-ico"><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/></svg>
         <span>Biblioteca</span>
       </button>
-      <button class="mode-pill" data-mode="study" onclick="switchMode('study')">
-        <svg viewBox="0 0 24 24" class="ico"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg>
+      <button class="seg-btn" data-mode="study" onclick="switchMode('study')">
+        <svg viewBox="0 0 24 24" class="v-ico"><path d="M12 19l7-7 3 3-7 7-3-3z"/><path d="M18 13l-1.5-7.5L2 2l3.5 14.5L13 18l5-5z"/><path d="M2 2l7.586 7.586"/><circle cx="11" cy="11" r="2"/></svg>
         <span>Estudio</span>
       </button>
-      <button class="mode-pill" data-mode="concert" onclick="switchMode('concert')">
-        <svg viewBox="0 0 24 24" class="ico"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" x2="12" y1="19" y2="22"/></svg>
+      <button class="seg-btn" data-mode="concert" onclick="switchMode('concert')">
+        <svg viewBox="0 0 24 24" class="v-ico"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" x2="12" y1="19" y2="22"/></svg>
         <span>Concierto</span>
       </button>
-      <button class="mode-pill" data-mode="editor" onclick="switchMode('editor')">
-        <svg viewBox="0 0 24 24" class="ico"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>
-        <span>Editor</span>
+      <button class="seg-btn" data-mode="editor" onclick="switchMode('editor')">
+        <svg viewBox="0 0 24 24" class="v-ico"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>
+        <span>StaffEditor</span>
       </button>
     </nav>
 
-    <!-- Selector de las 4 Paletas Elegantes para comparar en vivo en la TCL NXTPAPER 14 -->
-    <div class="palette-switcher" title="Cambiar paleta de color">
-      <button class="pal-chip active" onclick="setPalette('palette-luthier', this)">
-        <span class="swatch sw-luthier"></span>
-        <span>Lutier</span>
-      </button>
-      <button class="pal-chip" onclick="setPalette('palette-henle', this)">
-        <span class="swatch sw-henle"></span>
-        <span>Henle</span>
-      </button>
-      <button class="pal-chip" onclick="setPalette('palette-linen', this)">
-        <span class="swatch sw-linen"></span>
-        <span>Lino Claro</span>
-      </button>
-      <button class="pal-chip" onclick="setPalette('palette-velvet', this)">
-        <span class="swatch sw-velvet"></span>
-        <span>Grafito</span>
-      </button>
+    <!-- Píldora Derecha: Paletas Editoriales (Concepts Canvas Themes) -->
+    <div class="glass-pill hud-palettes" title="Ambiente visual">
+      <button class="theme-orb orb-luthier active" onclick="setPalette('palette-luthier', this)" title="Lutier & Ébano"></button>
+      <button class="theme-orb orb-henle" onclick="setPalette('palette-henle', this)" title="Henle Urtext"></button>
+      <button class="theme-orb orb-linen" onclick="setPalette('palette-linen', this)" title="Papel Lino Claro"></button>
+      <button class="theme-orb orb-velvet" onclick="setPalette('palette-velvet', this)" title="Grafito Studio"></button>
     </div>
   </header>
 
   <!-- =================================================================== -->
-  <!-- 1. MODO BIBLIOTECA (MINIMALISTA Y EDITORIAL EN HOJA PARADA)         -->
+  <!-- 1. MODO BIBLIOTECA (Inspirado en StaffPad Library + Linearity)      -->
   <!-- =================================================================== -->
-  <main id="mode-library" class="view active">
-    <div class="lib-container">
-      <div class="lib-header">
-        <div class="search-bar">
-          <svg viewBox="0 0 24 24" class="ico"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
-          <input type="text" id="searchInput" placeholder="Buscar obra, compositor, BWV..." oninput="renderLibrary()" />
+  <main id="mode-library" class="canvas-view active">
+    <div class="library-stage">
+      <!-- Barra flotante de búsqueda e IA -->
+      <div class="lib-top-controls">
+        <div class="glass-search">
+          <svg viewBox="0 0 24 24" class="v-ico"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+          <input type="text" id="searchInput" placeholder="Buscar partitura, compositor, BWV, dotación..." oninput="renderLibrary()" />
         </div>
-        <button class="btn-editorial-cta" id="aiBtn" onclick="cleanLibraryWithAI()">
-          <span>✦ Catalogar con IA</span>
+
+        <button class="glass-cta-btn" id="aiBtn" onclick="cleanLibraryWithAI()">
+          <svg viewBox="0 0 24 24" class="v-ico"><path d="m12 3-1.9 5.8a2 2 0 0 1-1.3 1.3L3 12l5.8 1.9a2 2 0 0 1 1.3 1.3L12 21l1.9-5.8a2 2 0 0 1 1.3-1.3L21 12l-5.8-1.9a2 2 0 0 1-1.3-1.3Z"/></svg>
+          <span>Catalogar IA</span>
         </button>
       </div>
 
-      <div class="filter-bar">
-        <button class="f-chip active" onclick="setFilter('all', this)">Todo</button>
-        <button class="f-chip" onclick="setFilter('setlist', this)">Programas</button>
-        <button class="f-chip" onclick="setFilter('Barroco', this)">Barroco</button>
-        <button class="f-chip" onclick="setFilter('Siglo XX', this)">Siglo XX</button>
-        <button class="f-chip" onclick="setFilter('Guitarra Sola', this)">Guitarra Sola</button>
-        <button class="f-chip" onclick="setFilter('Orquesta / Cámara', this)">Dúo &amp; Orquesta</button>
+      <!-- Filtros limpios tipo Linearity Curve -->
+      <div class="lib-pills-row">
+        <button class="filter-token active" onclick="setFilter('all', this)">Biblioteca</button>
+        <button class="filter-token" onclick="setFilter('setlist', this)">Programas Concierto</button>
+        <button class="filter-token" onclick="setFilter('Barroco', this)">Barroco</button>
+        <button class="filter-token" onclick="setFilter('Siglo XX', this)">Siglo XX</button>
+        <button class="filter-token" onclick="setFilter('Guitarra Sola', this)">Guitarra Sola</button>
+        <button class="filter-token" onclick="setFilter('Orquesta / Cámara', this)">Dúo &amp; Orquesta</button>
       </div>
 
-      <div class="score-list" id="scoreList"></div>
+      <!-- Galería de Folios Verticales (Hoja Parada estilo StaffPad) -->
+      <div class="folio-grid" id="scoreList"></div>
     </div>
 
-    <!-- Modal Taller PDF -->
+    <!-- Inspector Flotante de Taller PDF (Estilo Linearity Curve Popover) -->
     <div class="modal-backdrop hidden" id="pdfModal" onclick="closePdfModal(event)">
-      <div class="pdf-modal-card" onclick="event.stopPropagation()">
-        <div class="modal-top">
-          <h3 id="modalScoreTitle">Sonata BWV 1034</h3>
-          <button class="icon-close" onclick="closePdfModal()">✕</button>
+      <div class="linearity-inspector-modal" onclick="event.stopPropagation()">
+        <div class="insp-head">
+          <div>
+            <span class="insp-eyebrow">TALLER DE PARTITURA PDF</span>
+            <h3 id="modalScoreTitle">Sonata BWV 1034</h3>
+          </div>
+          <button class="btn-circle-ghost" onclick="closePdfModal()">✕</button>
         </div>
 
-        <div class="pdf-pages-preview">
-          <div class="page-thumb active" onclick="this.classList.toggle('active')"><span>1</span><small>Adagio</small></div>
-          <div class="page-thumb active" onclick="this.classList.toggle('active')"><span>2</span><small>Allegro</small></div>
-          <div class="page-thumb" onclick="this.classList.toggle('active')"><span>3</span><small>Andante</small></div>
-          <div class="page-thumb" onclick="this.classList.toggle('active')"><span>4</span><small>Allegro</small></div>
+        <div class="folio-strip">
+          <div class="folio-page-thumb active" onclick="this.classList.toggle('active')">
+            <div class="mini-staff-lines"></div>
+            <span>Pág. 1</span>
+            <small>I. Adagio</small>
+          </div>
+          <div class="folio-page-thumb active" onclick="this.classList.toggle('active')">
+            <div class="mini-staff-lines"></div>
+            <span>Pág. 2</span>
+            <small>II. Allegro</small>
+          </div>
+          <div class="folio-page-thumb" onclick="this.classList.toggle('active')">
+            <div class="mini-staff-lines"></div>
+            <span>Pág. 3</span>
+            <small>III. Andante</small>
+          </div>
+          <div class="folio-page-thumb" onclick="this.classList.toggle('active')">
+            <div class="mini-staff-lines"></div>
+            <span>Pág. 4</span>
+            <small>IV. Allegro</small>
+          </div>
         </div>
 
-        <div class="modal-actions-grid">
-          <button class="m-action-btn" onclick="triggerPdfToast('Páginas extraídas como nueva partitura')">
-            <span>✂ Particionar</span>
+        <div class="linearity-action-bar">
+          <button class="lin-btn" onclick="triggerPdfToast('Páginas seleccionadas extraídas como obra independiente')">
+            <svg viewBox="0 0 24 24" class="v-ico"><circle cx="6" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><line x1="20" y1="4" x2="8.12" y2="15.88"/><line x1="14.47" y1="14.48" x2="20" y2="20"/><line x1="8.12" y1="8.12" x2="12" y2="12"/></svg>
+            <span>Particionar</span>
           </button>
-          <button class="m-action-btn" onclick="triggerPdfToast('Página agregada al documento')">
-            <span>＋ Agregar Pág.</span>
+          <button class="lin-btn" onclick="triggerPdfToast('Página insertada en el folio')">
+            <svg viewBox="0 0 24 24" class="v-ico"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            <span>Insertar Pág.</span>
           </button>
-          <button class="m-action-btn" onclick="triggerPdfToast('Páginas seleccionadas eliminadas')">
-            <span>－ Quitar Pág.</span>
+          <button class="lin-btn" onclick="triggerPdfToast('Páginas descartadas del documento')">
+            <svg viewBox="0 0 24 24" class="v-ico"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/></svg>
+            <span>Quitar Pág.</span>
           </button>
-          <button class="m-action-btn" onclick="triggerPdfToast('Catalogado y renombrado por IA')">
-            <span>✦ Renombrar IA</span>
+          <button class="lin-btn accent" onclick="triggerPdfToast('Metadatos y título normalizados por IA')">
+            <svg viewBox="0 0 24 24" class="v-ico"><path d="m12 3-1.9 5.8a2 2 0 0 1-1.3 1.3L3 12l5.8 1.9a2 2 0 0 1 1.3 1.3L12 21l1.9-5.8a2 2 0 0 1 1.3-1.3L21 12l-5.8-1.9a2 2 0 0 1-1.3-1.3Z"/></svg>
+            <span>Normalizar IA</span>
           </button>
         </div>
-        <div class="modal-toast" id="pdfToast"></div>
+        <div class="insp-feedback" id="pdfToast"></div>
       </div>
     </div>
   </main>
 
   <!-- =================================================================== -->
-  <!-- 2. MODO ESTUDIO (HOJA PARADA + CÁPSULA EDITORIAL)                   -->
+  <!-- 2. MODO ESTUDIO (Lienzo 100% + Paleta Concepts + Linearity Curve)   -->
   <!-- =================================================================== -->
-  <main id="mode-study" class="view">
-    <div class="sheet-stage">
-      <div class="portrait-sheet" id="studySheet">
-        <div class="sheet-head">
-          <span class="meta-left">David Russell, transcr.</span>
-          <div class="meta-center">
+  <main id="mode-study" class="canvas-view">
+    <!-- Lienzo infinito vertical con la Hoja Parada a máxima escala -->
+    <div class="full-bleed-canvas">
+      <div class="score-folio" id="studySheet">
+        <div class="folio-header">
+          <span class="folio-meta">transcr. David Russell</span>
+          <div class="folio-title">
             <h2>SONATE BWV 1034</h2>
             <span>I. Adagio ma non tanto</span>
           </div>
-          <span class="meta-right">J. S. Bach</span>
+          <span class="folio-meta">J. S. Bach (1685–1750)</span>
         </div>
 
-        <div class="sheet-body" id="studyWrap">
+        <div class="folio-staff-area" id="studyWrap">
           <div id="studySvg" class="svg-layer"></div>
           <canvas id="studyCanvas" class="draw-layer"></canvas>
           <div id="studyMoldLayer" class="mold-layer"></div>
         </div>
 
-        <div class="sheet-foot">
-          <span>BWV 1034</span>
-          <span>1 / 10</span>
+        <div class="folio-footer">
+          <span>Edición Urtext • 6ª en Re</span>
+          <span>Folio 1 / 10</span>
         </div>
       </div>
     </div>
 
-    <!-- Popover de Sellos por Instrumento -->
-    <div class="floating-popover hidden" id="stampPopover">
-      <div class="popover-tabs">
-        <button class="p-tab active" onclick="switchStampTab('guitar', this)">Guitarra</button>
-        <button class="p-tab" onclick="switchStampTab('strings', this)">Cuerdas</button>
-        <button class="p-tab" onclick="switchStampTab('piano', this)">Piano</button>
-        <button class="p-tab" onclick="switchStampTab('agogic', this)">Agógica &amp; Dinámica</button>
+    <!-- BARRA LATERAL / FLOTANTE ESTILO CONCEPTS + LINEARITY CURVE -->
+    <!-- Acoplada al borde izquierdo para el pulgar, dejando toda la partitura libre -->
+    <aside class="concepts-tool-rail">
+      <!-- Pluma estilográfica (Trazo libre) -->
+      <button class="rail-tool active" id="btnPen" onclick="setStudyTool('pen')" title="Pluma de trazo libre">
+        <svg viewBox="0 0 24 24" class="v-ico"><path d="M12 19l7-7 3 3-7 7-3-3z"/><path d="M18 13l-1.5-7.5L2 2l3.5 14.5L13 18l5-5z"/><path d="M2 2l7.586 7.586"/></svg>
+        <span class="rail-label">Pluma</span>
+      </button>
+
+      <!-- Marcador translúcido -->
+      <button class="rail-tool" id="btnMarker" onclick="setStudyTool('marker')" title="Marcador de frases">
+        <svg viewBox="0 0 24 24" class="v-ico"><path d="m9 11-6 6v3h9l3-3"/><path d="m22 12-4.6 4.6a2 2 0 0 1-2.8 0l-5.2-5.2a2 2 0 0 1 0-2.8L14 4"/></svg>
+        <span class="rail-label">Marcador</span>
+      </button>
+
+      <!-- Borrador vectorial -->
+      <button class="rail-tool" id="btnEraser" onclick="setStudyTool('eraser')" title="Borrador">
+        <svg viewBox="0 0 24 24" class="v-ico"><path d="m7 21-4.3-4.3c-1-1-1-2.5 0-3.4l9.6-9.6c1-1 2.5-1 3.4 0l5.6 5.6c1 1 1 2.5 0 3.4L13 21"/><path d="M22 21H7"/><path d="m5 11 9 9"/></svg>
+        <span class="rail-label">Borrar</span>
+      </button>
+
+      <div class="rail-divider"></div>
+
+      <!-- Conversor Trazo → Letra de Molde (StaffPad Recognition) -->
+      <button class="rail-tool magic-active" id="btnMoldToggle" onclick="toggleAutoMold()" title="Convertir trazo manuscrito a texto de molde">
+        <svg viewBox="0 0 24 24" class="v-ico"><path d="m12 3-1.9 5.8a2 2 0 0 1-1.3 1.3L3 12l5.8 1.9a2 2 0 0 1 1.3 1.3L12 21l1.9-5.8a2 2 0 0 1 1.3-1.3L21 12l-5.8-1.9a2 2 0 0 1-1.3-1.3Z"/></svg>
+        <span class="rail-label">A Molde</span>
+      </button>
+
+      <!-- Gaveta de Sellos por Instrumento -->
+      <button class="rail-tool" id="btnStamps" onclick="toggleStampPopover()" title="Sellos de digitación y agógica">
+        <svg viewBox="0 0 24 24" class="v-ico"><path d="M5 22h14"/><path d="M19.27 13.73A2.5 2.5 0 0 0 17.5 13h-11A2.5 2.5 0 0 0 4 15.5V17a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-1.5c0-.66-.26-1.3-.73-1.77Z"/><path d="M14 13V8.5C14 7 15 7 15 5a3 3 0 0 0-3-3c-1.66 0-3 1-3 3s1 2 1 3.5V13"/></svg>
+        <span class="rail-label">Sellos</span>
+      </button>
+
+      <div class="rail-divider"></div>
+
+      <!-- Puntos de Tinta (Estilo Concepts Color Wells) -->
+      <div class="rail-inks">
+        <button class="ink-well blue active" onclick="setInk('#23426e', this)" title="Tinta Azul Prusia"></button>
+        <button class="ink-well red" onclick="setInk('#8c2f27', this)" title="Tinta Carmín"></button>
+        <button class="ink-well green" onclick="setInk('#2e5a44', this)" title="Tinta Bosque"></button>
       </div>
-      <div class="stamp-grid" id="stampGrid"></div>
-    </div>
 
-    <!-- Cápsula Flotante Inferior Elegante -->
-    <div class="floating-dock">
-      <button class="dock-btn active" id="btnPen" onclick="setStudyTool('pen')">
-        <span>✎ Trazo</span>
+      <button class="rail-tool subtle" onclick="clearStudyLayer()" title="Limpiar capa de estudio">
+        <svg viewBox="0 0 24 24" class="v-ico"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
       </button>
-      <button class="dock-btn" id="btnMarker" onclick="setStudyTool('marker')">
-        <span>▬ Marcador</span>
-      </button>
-      <button class="dock-btn" id="btnEraser" onclick="setStudyTool('eraser')">
-        <span>⌫ Borrar</span>
-      </button>
+    </aside>
 
-      <div class="dock-sep"></div>
-
-      <button class="dock-btn mold-active" id="btnMoldToggle" onclick="toggleAutoMold()">
-        <span>✦ A Molde</span>
-      </button>
-
-      <button class="dock-btn" id="btnStamps" onclick="toggleStampPopover()">
-        <span>𝄞 Sellos</span>
-      </button>
-
-      <div class="dock-sep"></div>
-
-      <div class="ink-selector">
-        <button class="ink-dot blue active" onclick="setInk('#23426e', this)" title="Azul Prusia"></button>
-        <button class="ink-dot red" onclick="setInk('#8c2f27', this)" title="Carmín Editorial"></button>
-        <button class="ink-dot green" onclick="setInk('#2e5a44', this)" title="Verde Bosque"></button>
+    <!-- Popover de Sellos Especializados (Estilo Linearity Curve Inspector) -->
+    <div class="concepts-popover hidden" id="stampPopover">
+      <div class="popover-segmented">
+        <button class="p-seg active" onclick="switchStampTab('guitar', this)">Guitarra</button>
+        <button class="p-seg" onclick="switchStampTab('strings', this)">Cuerdas</button>
+        <button class="p-seg" onclick="switchStampTab('piano', this)">Piano</button>
+        <button class="p-seg" onclick="switchStampTab('agogic', this)">Agógica</button>
       </div>
-
-      <button class="dock-icon-only" onclick="clearStudyLayer()" title="Limpiar">↺</button>
+      <div class="stamp-tokens" id="stampGrid"></div>
     </div>
   </main>
 
   <!-- =================================================================== -->
-  <!-- 3. MODO CONCIERTO (HOJA PARADA + SEGUIMIENTO POR AUDIO)             -->
+  <!-- 3. MODO CONCIERTO (Hoja Parada Pura + Cápsula Escucha StaffPad)     -->
   <!-- =================================================================== -->
-  <main id="mode-concert" class="view">
-    <div class="sheet-stage">
-      <button class="edge-tap left" onclick="turnPage(-1)" aria-label="Anterior">‹</button>
+  <main id="mode-concert" class="canvas-view">
+    <div class="full-bleed-canvas">
+      <button class="invisible-page-zone left" onclick="turnPage(-1)" aria-label="Página anterior">‹</button>
 
-      <div class="portrait-sheet" id="concertSheet">
-        <div class="sheet-head">
-          <span class="meta-left">David Russell, transcr.</span>
-          <div class="meta-center">
+      <div class="score-folio" id="concertSheet">
+        <div class="folio-header">
+          <span class="folio-meta">transcr. David Russell</span>
+          <div class="folio-title">
             <h2>SONATE BWV 1034</h2>
             <span id="concertSub">I. Adagio ma non tanto</span>
           </div>
-          <span class="meta-right" id="concertPageNum">Pág. 1 / 10</span>
+          <span class="folio-meta" id="concertPageNum">Pág. 1 / 10</span>
         </div>
 
-        <div class="sheet-body">
+        <div class="folio-staff-area">
           <div id="concertSvg" class="svg-layer"></div>
         </div>
 
-        <div class="sheet-foot">
-          <span>Bach Programa</span>
+        <div class="folio-footer">
+          <span>Programa: Bach Recital</span>
           <span id="concertTransitionTag">Hoja Parada</span>
         </div>
       </div>
 
-      <button class="edge-tap right" onclick="turnPage(1)" aria-label="Siguiente">›</button>
+      <button class="invisible-page-zone right" onclick="turnPage(1)" aria-label="Siguiente página">›</button>
     </div>
 
-    <div class="floating-dock concert-dock">
-      <button class="dock-btn" onclick="turnPage(-1)">◀</button>
+    <!-- Cápsula Flotante Minimalista Inferior -->
+    <div class="glass-pill floating-bottom-bar">
+      <button class="bar-icon-btn" onclick="turnPage(-1)">
+        <svg viewBox="0 0 24 24" class="v-ico"><polyline points="15 18 9 12 15 6"/></svg>
+      </button>
 
-      <button class="dock-btn audio-cta" id="btnAudioFollow" onclick="toggleAudioFollow()">
-        <span>◉</span>
+      <button class="bar-pill-cta" id="btnAudioFollow" onclick="toggleAudioFollow()">
+        <span class="pulse-ring"></span>
         <span id="audioFollowLabel">Escucha Activa</span>
       </button>
 
-      <button class="dock-btn" id="btnPageMode" onclick="cyclePageLayout()">
+      <button class="bar-token-btn" id="btnPageMode" onclick="cyclePageLayout()">
         <span id="pageModeLabel">1 Pág</span>
       </button>
 
-      <button class="dock-btn" onclick="turnPage(1)">▶</button>
+      <button class="bar-icon-btn" onclick="turnPage(1)">
+        <svg viewBox="0 0 24 24" class="v-ico"><polyline points="9 18 15 12 9 6"/></svg>
+      </button>
     </div>
   </main>
 
   <!-- =================================================================== -->
-  <!-- 4. MODO EDITOR (MANUSCRITO A NOTACIÓN DE MOLDE + KEYPAD EDITORIAL)  -->
+  <!-- 4. MODO STAFF EDITOR (Inspirado en StaffPad + Sibelius Touch)       -->
   <!-- =================================================================== -->
-  <main id="mode-editor" class="view">
-    <div class="sheet-stage">
-      <div class="portrait-sheet">
-        <div class="sheet-head">
-          <span class="meta-left">6ª en Re</span>
-          <div class="meta-center">
+  <main id="mode-editor" class="canvas-view">
+    <div class="full-bleed-canvas">
+      <div class="score-folio staffpad-folio">
+        <div class="folio-header">
+          <span class="folio-meta">6ª en Re • ♩ = 68</span>
+          <div class="folio-title">
             <h2 contenteditable="true">Preludio en Re menor</h2>
-            <span>Dibuja notas en el pentagrama para convertirlas a molde</span>
+            <span>Escribe con el lápiz en el compás para grabado automático a molde</span>
           </div>
-          <span class="meta-right" id="editorStatusPill">✦ Trazo → Molde</span>
+          <span class="folio-meta badge-engraving" id="editorStatusPill">✦ StaffPad Ink → Molde</span>
         </div>
 
-        <div class="sheet-body" id="editorWrap">
+        <div class="folio-staff-area staffpad-grid-bg" id="editorWrap">
           <div id="editorSvg" class="svg-layer"></div>
           <canvas id="editorCanvas" class="draw-layer"></canvas>
+        </div>
+
+        <div class="folio-footer">
+          <span>Notación + Tablatura Dinámica</span>
+          <span>Voz 1 (Polifonía Activa)</span>
         </div>
       </div>
     </div>
 
-    <div class="floating-dock editor-dock">
-      <button class="kp-pill" onclick="pickDuration('𝅝', 'Redonda', this)">𝅝</button>
-      <button class="kp-pill" onclick="pickDuration('𝅗𝅥', 'Blanca', this)">𝅗𝅥</button>
-      <button class="kp-pill active" onclick="pickDuration('♩', 'Negra', this)">♩</button>
-      <button class="kp-pill" onclick="pickDuration('♪', 'Corchea', this)">♪</button>
-      <button class="kp-pill" onclick="pickDuration('♬', 'Semicorchea', this)">♬</button>
+    <!-- PALETA FLOTANTE DE NOTACIÓN (StaffPad Top/Bottom Ribbon + Linearity Precision) -->
+    <div class="glass-pill floating-bottom-bar staffpad-dock">
+      <div class="sp-group">
+        <button class="sp-note-btn" onclick="pickDuration('𝅝', 'Redonda', this)">𝅝</button>
+        <button class="sp-note-btn" onclick="pickDuration('𝅗𝅥', 'Blanca', this)">𝅗𝅥</button>
+        <button class="sp-note-btn active" onclick="pickDuration('♩', 'Negra', this)">♩</button>
+        <button class="sp-note-btn" onclick="pickDuration('♪', 'Corchea', this)">♪</button>
+        <button class="sp-note-btn" onclick="pickDuration('♬', 'Semicorchea', this)">♬</button>
+      </div>
 
-      <div class="dock-sep"></div>
+      <div class="rail-divider-v"></div>
 
-      <button class="kp-pill" onclick="pickAccidental('♯', this)">♯</button>
-      <button class="kp-pill" onclick="pickAccidental('♭', this)">♭</button>
-      <button class="kp-pill" onclick="pickAccidental('♮', this)">♮</button>
+      <div class="sp-group">
+        <button class="sp-note-btn" onclick="pickAccidental('♯', this)">♯</button>
+        <button class="sp-note-btn" onclick="pickAccidental('♭', this)">♭</button>
+        <button class="sp-note-btn" onclick="pickAccidental('♮', this)">♮</button>
+      </div>
 
-      <div class="dock-sep"></div>
+      <div class="rail-divider-v"></div>
 
-      <button class="dock-btn mold-active" onclick="insertSampleChord()">
-        <span>＋ Acorde</span>
+      <button class="bar-token-btn" onclick="insertSampleChord()">＋ Cejilla / Acorde</button>
+
+      <button class="bar-pill-cta play" onclick="playEditorNotes()">
+        <svg viewBox="0 0 24 24" class="v-ico"><polygon points="5 3 19 12 5 21 5 3" fill="currentColor"/></svg>
+        <span>Escuchar</span>
       </button>
 
-      <button class="dock-btn play-cta" onclick="playEditorNotes()">
-        <span>▶ Sonar</span>
+      <button class="bar-icon-btn" onclick="resetEditorNotes()" title="Limpiar compás">
+        <svg viewBox="0 0 24 24" class="v-ico"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
       </button>
-
-      <button class="dock-icon-only" onclick="resetEditorNotes()" title="Reiniciar">↺</button>
     </div>
   </main>
 
