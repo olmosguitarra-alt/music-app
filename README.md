@@ -22,6 +22,8 @@ El objetivo es combinar en una experiencia limpia, intuitiva y confiable en esce
 - [`docs/01-contexto-y-vision.md`](./docs/01-contexto-y-vision.md): Contexto artístico y profesional de Daniel Olmos, visión integral del producto, público objetivo, dispositivos de referencia y criterios de diseño.
 - [`docs/02-analisis-referencia-mobilesheets.md`](./docs/02-analisis-referencia-mobilesheets.md): Análisis detallado de las 12 capturas de pantalla reales de *MobileSheets* en la TCL NXTPAPER 14 (qué funciona bien hoy, qué problemas de diseño y ergonomía presenta y cómo los resolveremos).
 - [`docs/03-hoja-de-ruta-y-fases.md`](./docs/03-hoja-de-ruta-y-fases.md): Propuesta de hoja de ruta (*Roadmap*) estructurada por fases para separar el Producto Mínimo Viable (MVP) de la visión completa a mediano y largo plazo.
+- [`docs/04-arquitectura-4-modos-y-ux.md`](./docs/04-arquitectura-4-modos-y-ux.md): Especificación detallada de los **4 Modos de la Aplicación** (Biblioteca con IA y Taller PDF, Estudio con trazo a molde y sellos por instrumento, Concierto, y Editor Táctil tipo Sibelius con reconocimiento de notación manuscrita a molde).
+- [`prototype/`](./prototype/index.html): Primer prototipo visual e interactivo diseñado para la **TCL NXTPAPER 14** con los 4 modos funcionales.
 - [`docs/referencias/mobilesheets/`](./docs/referencias/mobilesheets/): Capturas de pantalla de referencia tomadas en la tablet TCL NXTPAPER 14.
 
 ---
