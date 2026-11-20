@@ -801,6 +801,7 @@ function switchMode(mode) {
   document.body.classList.remove("writing-focus");
   document.getElementById("dockRevealHandle")?.classList.add("hidden");
 
+  document.body.classList.toggle("mode-library-active", mode === "library");
   document.body.classList.toggle("mode-concert-active", mode === "concert");
   if (mode === "concert") {
     toggleBachGptChat(false);

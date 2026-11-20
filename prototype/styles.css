@@ -5348,3 +5348,13 @@ body.concert-immersion #mode-concert .floating-bottom-bar {
     width: calc(100vw - 24px) !important;
   }
 }
+
+/* V38: evitar que la barra de Editor toque el subtítulo de obra en cabecera */
+body:not(.mode-library-active) .cadenza-brand-text .hud-piece-name {
+  display: none;
+}
+
+#mode-editor .staffpad-dock {
+  gap: 4px;
+  padding: 3px 8px;
+}
