@@ -829,7 +829,6 @@ function setPalette(paletteClass, btn, labelText) {
   });
   const lbl = document.getElementById("paletteTriggerLabel");
   if (lbl && labelText) lbl.textContent = labelText;
-  document.getElementById("paletteMenu")?.classList.add("hidden");
 }
 
 function setLibraryViewMode(mode) {
