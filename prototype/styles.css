@@ -3036,6 +3036,8 @@ body.concert-immersion #mode-concert .concert-stage {
   justify-content: center;
   align-items: center;
   margin-bottom: 8px;
+  position: relative;
+  z-index: 30;
 }
 
 .filter-ribbon {

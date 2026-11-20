@@ -251,9 +251,10 @@ async function handleRealPdfUpload(fileList) {
     const previewInfo = await generatePdfThumbnailDataUrl(uint8);
     const numPages = previewInfo ? previewInfo.numPages : 1;
 
+    const isMessyName = /(_|IMSLP|PMLP|^\d{3,}|partition|free-scores)/i.test(file.name);
     const newScore = {
       id: Date.now() + i,
-      title: meta.title,
+      title: isMessyName ? file.name.replace(/\.pdf$/i, "") : meta.title,
       clean: meta.title,
       rawFilename: file.name,
       subtitle: `Archivo PDF de tu Tablet (${file.name})`,
@@ -264,7 +265,7 @@ async function handleRealPdfUpload(fileList) {
       pages: `${numPages} ${numPages === 1 ? "pág." : "págs."}`,
       pageCount: numPages,
       tuning: "PDF Real",
-      raw: false,
+      raw: isMessyName,
       isRealPdf: true,
       pdfBytes: uint8,
       thumbDataUrl: previewInfo ? previewInfo.thumbUrl : null,
@@ -1802,11 +1803,11 @@ async function extractRealPdfTextAndMeta(pdfBytes) {
   }
 }
 
-async function normalizePdfMetadataWithGemini(rawName, pdfMeta) {
+async function normalizePdfMetadataWithGemini(rawName, pdfMeta, thumbDataUrl) {
   const apiKey = typeof getGeminiApiKey === "function" ? getGeminiApiKey() : "";
   if (!apiKey) return null;
 
-  const prompt = `Eres un archivista de partituras musicales clásicas. Normaliza los metadatos de este archivo PDF real.
+  const prompt = `Eres un archivista de partituras musicales clásicas. Normaliza los metadatos de este archivo PDF real observando su portada/página 1 (imagen adjunta si está disponible), su texto y su nombre original.
 Nombre de archivo original: "${rawName}"
 Metadatos PDF Title: "${pdfMeta.infoTitle}" | Author: "${pdfMeta.infoAuthor}"
 Texto extraído de la página 1: "${pdfMeta.page1Text}"
@@ -1819,6 +1820,14 @@ Responde ÚNICAMENTE con un JSON válido (sin markdown ni texto extra) con estas
   "group": "uno de: Guitarra Sola | Dúo / Cámara | Guitarra y Orquesta | Otro Instrumento"
 }`;
 
+  const parts = [{ text: prompt }];
+  if (thumbDataUrl && thumbDataUrl.startsWith("data:image/")) {
+    const base64Data = thumbDataUrl.split(",")[1];
+    if (base64Data) {
+      parts.push({ inlineData: { mimeType: "image/jpeg", data: base64Data } });
+    }
+  }
+
   try {
     const resp = await fetch(
       `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`,
@@ -1826,7 +1835,7 @@ Responde ÚNICAMENTE con un JSON válido (sin markdown ni texto extra) con estas
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          contents: [{ role: "user", parts: [{ text: prompt }] }],
+          contents: [{ role: "user", parts }],
           generationConfig: { temperature: 0.15, maxOutputTokens: 250 }
         })
       }
@@ -1862,7 +1871,7 @@ async function cleanLibraryWithAI() {
     } else if (s.isRealPdf) {
       const rawName = s.rawFilename || s.title;
       const pdfMeta = await extractRealPdfTextAndMeta(s.pdfBytes);
-      const aiMeta = await normalizePdfMetadataWithGemini(rawName, pdfMeta);
+      const aiMeta = await normalizePdfMetadataWithGemini(rawName, pdfMeta, s.thumbDataUrl);
       const fallback = inferMusicMetadataFromFilename(rawName);
 
       s.title = (aiMeta && aiMeta.title) ? aiMeta.title : fallback.title;
