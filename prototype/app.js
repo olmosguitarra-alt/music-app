@@ -154,9 +154,12 @@ async function loadSavedPdfsFromDb() {
 function inferMusicMetadataFromFilename(rawFilename) {
   const nameNoExt = rawFilename.replace(/\.pdf$/i, "");
   const cleanStr = nameNoExt
-    .replace(/^\(Partition.*?\)\s*-\s*/i, "")
+    .replace(/^\(Partition.*?\)\s*-?\s*/i, "")
+    .replace(/\[.*?free-scores.*?\]/gi, "")
+    .replace(/\b(?:IMSLP|PMLP)\d+[-_]?/gi, "")
     .replace(/^[!0-9_\-\s]+/, "")
     .replace(/[_]+/g, " ")
+    .replace(/\s{2,}/g, " ")
     .trim();
 
   const lower = rawFilename.toLowerCase();
@@ -252,6 +255,7 @@ async function handleRealPdfUpload(fileList) {
       id: Date.now() + i,
       title: meta.title,
       clean: meta.title,
+      rawFilename: file.name,
       subtitle: `Archivo PDF de tu Tablet (${file.name})`,
       composer: meta.composer,
       period: meta.period,
@@ -1772,21 +1776,119 @@ async function sendUserMessageToBach() {
   }
 }
 
-function cleanLibraryWithAI() {
-  scores.forEach((s) => {
-    if (s.raw && s.clean) {
+async function extractRealPdfTextAndMeta(pdfBytes) {
+  if (!window.pdfjsLib || !pdfBytes) return { infoTitle: "", infoAuthor: "", page1Text: "" };
+  try {
+    const loadingTask = window.pdfjsLib.getDocument({ data: pdfBytes.slice(0) });
+    const pdfDoc = await loadingTask.promise;
+    let infoTitle = "";
+    let infoAuthor = "";
+    try {
+      const meta = await pdfDoc.getMetadata();
+      infoTitle = (meta?.info?.Title || "").trim();
+      infoAuthor = (meta?.info?.Author || "").trim();
+    } catch (_) {}
+
+    let page1Text = "";
+    try {
+      const page1 = await pdfDoc.getPage(1);
+      const tc = await page1.getTextContent();
+      page1Text = tc.items.map((it) => it.str).join(" ").replace(/\s+/g, " ").trim().slice(0, 700);
+    } catch (_) {}
+
+    return { infoTitle, infoAuthor, page1Text };
+  } catch (_) {
+    return { infoTitle: "", infoAuthor: "", page1Text: "" };
+  }
+}
+
+async function normalizePdfMetadataWithGemini(rawName, pdfMeta) {
+  const apiKey = typeof getGeminiApiKey === "function" ? getGeminiApiKey() : "";
+  if (!apiKey) return null;
+
+  const prompt = `Eres un archivista de partituras musicales clásicas. Normaliza los metadatos de este archivo PDF real.
+Nombre de archivo original: "${rawName}"
+Metadatos PDF Title: "${pdfMeta.infoTitle}" | Author: "${pdfMeta.infoAuthor}"
+Texto extraído de la página 1: "${pdfMeta.page1Text}"
+
+Responde ÚNICAMENTE con un JSON válido (sin markdown ni texto extra) con estas 4 claves:
+{
+  "title": "Título limpio y formal de la obra (sin .pdf, sin códigos IMSLP, sin guiones bajos)",
+  "composer": "Nombre completo del compositor (si se conoce, ej. J. S. Bach (1685–1750))",
+  "period": "uno de: Renacimiento | Barroco | Clasicismo | Romanticismo | Siglo XX",
+  "group": "uno de: Guitarra Sola | Dúo / Cámara | Guitarra y Orquesta | Otro Instrumento"
+}`;
+
+  try {
+    const resp = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          contents: [{ role: "user", parts: [{ text: prompt }] }],
+          generationConfig: { temperature: 0.15, maxOutputTokens: 250 }
+        })
+      }
+    );
+    if (!resp.ok) return null;
+    const data = await resp.json();
+    const rawText = data?.candidates?.[0]?.content?.parts?.[0]?.text || "";
+    const jsonMatch = rawText.match(/\{[\s\S]*\}/);
+    if (!jsonMatch) return null;
+    const parsed = JSON.parse(jsonMatch[0]);
+    if (parsed && parsed.title) return parsed;
+    return null;
+  } catch (_) {
+    return null;
+  }
+}
+
+async function cleanLibraryWithAI() {
+  const btn = document.getElementById("btnNormalizeRaw");
+  if (btn) {
+    btn.disabled = true;
+    btn.textContent = "✦ Normalizando...";
+  }
+  showPilotBanner("✦ Analizando archivos PDF de tu biblioteca...");
+
+  let updatedCount = 0;
+
+  for (const s of scores) {
+    if (s.raw && s.clean && !s.isRealPdf) {
       s.title = s.clean;
       s.raw = false;
-    } else if (s.isRealPdf && s.title) {
-      const inferred = inferMusicMetadataFromFilename(s.title);
-      if (inferred && inferred.title) {
-        s.title = inferred.title;
-        if (inferred.composer && s.composer === "Por clasificar") s.composer = inferred.composer;
-      }
+      updatedCount++;
+    } else if (s.isRealPdf) {
+      const rawName = s.rawFilename || s.title;
+      const pdfMeta = await extractRealPdfTextAndMeta(s.pdfBytes);
+      const aiMeta = await normalizePdfMetadataWithGemini(rawName, pdfMeta);
+      const fallback = inferMusicMetadataFromFilename(rawName);
+
+      s.title = (aiMeta && aiMeta.title) ? aiMeta.title : fallback.title;
+      s.clean = s.title;
+      if (aiMeta && aiMeta.composer) s.composer = aiMeta.composer;
+      else if (fallback.composer && s.composer === "Compositor por clasificar") s.composer = fallback.composer;
+
+      const validPeriods = ["Renacimiento", "Barroco", "Clasicismo", "Romanticismo", "Siglo XX"];
+      if (aiMeta && validPeriods.includes(aiMeta.period)) s.period = aiMeta.period;
+
+      const validGroups = ["Guitarra Sola", "Dúo / Cámara", "Guitarra y Orquesta", "Otro Instrumento"];
+      if (aiMeta && validGroups.includes(aiMeta.group)) s.group = aiMeta.group;
+
+      s.raw = false;
+      await saveRealPdfToDb(s);
+      updatedCount++;
     }
-  });
-  showPilotBanner("✦ Nombres de la biblioteca normalizados.");
+  }
+
+  if (btn) {
+    btn.disabled = false;
+    btn.textContent = "✦ Normalizar nombres";
+  }
   renderLibrary();
+  renderSetlistDrawer();
+  showPilotBanner(`✓ ${updatedCount} ${updatedCount === 1 ? "obra normalizada" : "obras normalizadas"} y guardadas.`);
 }
 
 function closePdfModal() {
