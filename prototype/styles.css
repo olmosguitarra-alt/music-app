@@ -2924,6 +2924,7 @@ body.concert-immersion #mode-concert .concert-stage {
 /* 1. Selector único elegante de paleta de colores */
 .palette-dropdown-wrap {
   position: relative;
+  pointer-events: auto;
 }
 
 .palette-trigger-btn {
@@ -2961,6 +2962,7 @@ body.concert-immersion #mode-concert .concert-stage {
 
 .palette-dropdown-menu {
   position: absolute;
+  pointer-events: auto;
   top: calc(100% + 8px);
   right: 0;
   width: 224px;
