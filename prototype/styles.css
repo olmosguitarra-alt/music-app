@@ -4163,3 +4163,113 @@ body.palette-velvet {
   height: 15px;
   display: block;
 }
+
+
+/* ==========================================================================
+   V31 SELECCIÓN MÚLTIPLE (LONG-PRESS) Y CINTILLO FLOTANTE INFERIOR
+   ========================================================================== */
+.folio-card {
+  position: relative;
+}
+
+.folio-card.is-selected,
+.list-detail-row.is-selected {
+  border-color: var(--accent) !important;
+  box-shadow: 0 0 0 1px var(--accent), 0 10px 26px rgba(0, 0, 0, 0.25);
+}
+
+.multi-select-chk {
+  width: 22px;
+  height: 22px;
+  border-radius: 7px;
+  border: 1.5px solid var(--text-secondary);
+  background: var(--glass-bg);
+  color: var(--accent-ink);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+
+.multi-select-chk.checked {
+  background: var(--accent);
+  border-color: var(--accent);
+}
+
+.multi-select-chk svg {
+  width: 14px;
+  height: 14px;
+  stroke: currentColor;
+  stroke-width: 2.5;
+  fill: none;
+}
+
+.folio-card .multi-select-chk {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  z-index: 8;
+}
+
+.list-detail-row .multi-select-chk {
+  margin-right: 6px;
+}
+
+.multi-select-bar {
+  position: fixed;
+  bottom: max(18px, env(safe-area-inset-bottom));
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 6px 10px 6px 16px;
+  gap: 16px;
+  z-index: 95;
+  backdrop-filter: blur(22px) saturate(160%);
+  -webkit-backdrop-filter: blur(22px) saturate(160%);
+}
+
+.multi-select-bar.hidden {
+  display: none;
+}
+
+.ms-count {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--text-primary);
+  white-space: nowrap;
+}
+
+.ms-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.ms-btn {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: 1px solid var(--glass-border);
+  background: transparent;
+  color: var(--text-primary);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: border-color 0.15s ease, color 0.15s ease, background 0.15s ease;
+}
+
+.ms-btn:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.ms-btn.ms-del:hover {
+  border-color: rgba(224, 79, 95, 0.6);
+  color: #e04f5f;
+}
+
+.ms-btn .v-ico {
+  width: 16px;
+  height: 16px;
+}

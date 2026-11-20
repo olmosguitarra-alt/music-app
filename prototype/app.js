@@ -872,8 +872,19 @@ function buildFolioCardHtml(s) {
   const aiHeadSvg = buildMonochromeBachHeadSvg();
   const trashSvg = `<svg viewBox="0 0 24 24" class="v-ico"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>`;
 
+  const isSelected = multiSelectMode && selectedScoreIds.has(s.id);
+  const chkHtml = multiSelectMode
+    ? `<span class="multi-select-chk ${isSelected ? "checked" : ""}">${isSelected ? '<svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>' : ""}</span>`
+    : "";
+
   return `
-    <article class="folio-card" onclick="openScoreById(${s.id}, 'study')">
+    <article class="folio-card ${isSelected ? "is-selected" : ""}"
+             onclick="handleScoreCardClick(${s.id})"
+             onpointerdown="onScoreCardPointerDown(event, ${s.id})"
+             onpointerup="cancelScoreLongPress()"
+             onpointercancel="cancelScoreLongPress()"
+             onpointerleave="cancelScoreLongPress()">
+      ${chkHtml}
       <div class="folio-preview-sheet ${s.thumbDataUrl ? "has-real-thumb" : ""}">
         ${previewInner}
       </div>
@@ -906,8 +917,19 @@ function buildListRowHtml(s) {
   const aiHeadSvg = buildMonochromeBachHeadSvg();
   const trashSvg = `<svg viewBox="0 0 24 24" class="v-ico"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>`;
 
+  const isSelected = multiSelectMode && selectedScoreIds.has(s.id);
+  const chkHtml = multiSelectMode
+    ? `<span class="multi-select-chk ${isSelected ? "checked" : ""}">${isSelected ? '<svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>' : ""}</span>`
+    : "";
+
   return `
-    <div class="list-detail-row" onclick="openScoreById(${s.id}, 'study')">
+    <div class="list-detail-row ${isSelected ? "is-selected" : ""}"
+         onclick="handleScoreCardClick(${s.id})"
+         onpointerdown="onScoreCardPointerDown(event, ${s.id})"
+         onpointerup="cancelScoreLongPress()"
+         onpointercancel="cancelScoreLongPress()"
+         onpointerleave="cancelScoreLongPress()">
+      ${chkHtml}
       <div class="list-col-main">
         <div class="list-title-line">
           <strong class="list-work-title">${s.title}</strong>
@@ -3034,20 +3056,133 @@ async function handleRealPdfFolderUpload(fileList) {
 // ==========================================================================
 // 6. MENÚ FLOTANTE DISCRETO PARA AGREGAR Y ORDENAR EN PROGRAMA (DRAG & DROP)
 // ==========================================================================
-let pqTargetScoreId = null;
+let pqTargetScoreIds = [];
 let pqSelectedProgId = null;
 let pqDraftIds = [];
 let pqDragIndex = null;
+
+// Selección múltiple mediante long-press
+let multiSelectMode = false;
+let selectedScoreIds = new Set();
+let longPressTimer = null;
+let justTriggeredLongPress = false;
+
+function onScoreCardPointerDown(e, scoreId) {
+  if (e.target.closest("button")) return;
+  if (multiSelectMode) return;
+  cancelScoreLongPress();
+  longPressTimer = setTimeout(() => {
+    justTriggeredLongPress = true;
+    enterMultiSelectMode(scoreId);
+  }, 460);
+}
+
+function cancelScoreLongPress() {
+  if (longPressTimer) {
+    clearTimeout(longPressTimer);
+    longPressTimer = null;
+  }
+}
+
+function handleScoreCardClick(scoreId) {
+  if (justTriggeredLongPress) {
+    justTriggeredLongPress = false;
+    return;
+  }
+  if (multiSelectMode) {
+    const id = Number(scoreId);
+    if (selectedScoreIds.has(id)) selectedScoreIds.delete(id);
+    else selectedScoreIds.add(id);
+    updateMultiSelectBar();
+    renderLibrary();
+    return;
+  }
+  openScoreById(scoreId, "study");
+}
+
+function enterMultiSelectMode(initialScoreId) {
+  multiSelectMode = true;
+  selectedScoreIds = new Set([Number(initialScoreId)]);
+  updateMultiSelectBar();
+  renderLibrary();
+}
+
+function exitMultiSelectMode() {
+  multiSelectMode = false;
+  selectedScoreIds.clear();
+  document.getElementById("multiSelectBar")?.classList.add("hidden");
+  document.getElementById("progQuickPopover")?.classList.add("hidden");
+  renderLibrary();
+}
+
+function updateMultiSelectBar() {
+  const bar = document.getElementById("multiSelectBar");
+  const countEl = document.getElementById("multiSelectCount");
+  if (!bar || !countEl) return;
+  const n = selectedScoreIds.size;
+  if (n === 0) {
+    exitMultiSelectMode();
+    return;
+  }
+  countEl.textContent = `${n} ${n === 1 ? "seleccionada" : "seleccionadas"}`;
+  bar.classList.remove("hidden");
+}
+
+async function deleteSelectedScores() {
+  const count = selectedScoreIds.size;
+  if (count === 0) return;
+  if (!window.confirm(`¿Eliminar ${count} ${count === 1 ? "obra seleccionada" : "obras seleccionadas"} de tu biblioteca?`)) return;
+
+  const idsToDelete = [...selectedScoreIds];
+  for (const id of idsToDelete) {
+    const idx = scores.findIndex((s) => s.id === id);
+    if (idx !== -1) {
+      const target = scores[idx];
+      scores.splice(idx, 1);
+      if (target.isRealPdf) await deleteRealPdfFromDb(id);
+    }
+    favoriteScoreIds.delete(id);
+    programsState.list.forEach((p) => {
+      p.scoreIds = p.scoreIds.filter((sid) => sid !== id);
+    });
+  }
+  saveFavoritesState();
+  saveProgramsState();
+  renderSetlistDrawer();
+  exitMultiSelectMode();
+}
+
+function openProgramQuickMenuForSelection(e) {
+  if (e) e.stopPropagation();
+  const pop = document.getElementById("progQuickPopover");
+  const bar = document.getElementById("multiSelectBar");
+  if (!pop || selectedScoreIds.size === 0) return;
+
+  pqTargetScoreIds = [...selectedScoreIds];
+  pqSelectedProgId = null;
+  renderProgQuickListView();
+  pop.classList.remove("hidden");
+
+  if (bar) {
+    const rect = bar.getBoundingClientRect();
+    const popW = Math.min(310, window.innerWidth - 24);
+    const left = Math.max(12, Math.min(window.innerWidth - popW - 12, window.innerWidth / 2 - popW / 2));
+    pop.style.left = `${left}px`;
+    pop.style.top = "auto";
+    pop.style.bottom = `${window.innerHeight - rect.top + 10}px`;
+  }
+}
 
 function openProgramQuickMenu(e, scoreId) {
   if (e) e.stopPropagation();
   const pop = document.getElementById("progQuickPopover");
   if (!pop) return;
 
-  pqTargetScoreId = Number(scoreId);
+  pqTargetScoreIds = [Number(scoreId)];
   pqSelectedProgId = null;
   renderProgQuickListView();
   pop.classList.remove("hidden");
+  pop.style.bottom = "auto";
 
   if (e && e.currentTarget) {
     const rect = e.currentTarget.getBoundingClientRect();
@@ -3086,9 +3221,11 @@ function selectProgramInQuickMenu(progId) {
   if (!prog) return;
   pqSelectedProgId = progId;
   pqDraftIds = [...prog.scoreIds];
-  if (pqTargetScoreId && !pqDraftIds.includes(pqTargetScoreId)) {
-    pqDraftIds.push(pqTargetScoreId);
-  }
+  pqTargetScoreIds.forEach((sid) => {
+    if (sid && !pqDraftIds.includes(sid)) {
+      pqDraftIds.push(sid);
+    }
+  });
   renderProgQuickOrderView();
 }
 
@@ -3104,7 +3241,7 @@ function renderProgQuickOrderView() {
   const itemsHtml = validItems
     .map(
       (s, idx) => `
-      <div class="pq-work-item ${s.id === pqTargetScoreId ? "is-target-work" : ""}"
+      <div class="pq-work-item ${pqTargetScoreIds.includes(s.id) ? "is-target-work" : ""}"
            data-pq-idx="${idx}"
            onpointerdown="onPqPointerDown(event, ${idx})">
         <svg viewBox="0 0 24 24" class="pq-drag-ico" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="8" y1="7" x2="16" y2="7"/><line x1="8" y1="12" x2="16" y2="12"/><line x1="8" y1="17" x2="16" y2="17"/></svg>
@@ -3218,6 +3355,7 @@ function saveProgramQuickOrder() {
   saveProgramsState();
   renderSetlistDrawer();
   document.getElementById("progQuickPopover")?.classList.add("hidden");
+  if (multiSelectMode) exitMultiSelectMode();
 }
 
 // Cierre inmediato de #progQuickPopover al tocar cualquier lugar fuera (excepto los 3 cintillos superiores)

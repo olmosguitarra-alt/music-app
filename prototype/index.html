@@ -7,7 +7,7 @@
   <meta http-equiv="Pragma" content="no-cache" />
   <meta http-equiv="Expires" content="0" />
   <title>Atril — Plataforma Musical</title>
-  <link rel="stylesheet" href="styles.css?v=30" />
+  <link rel="stylesheet" href="styles.css?v=31" />
   <!-- Motores Oficiales para Renderizar (PDF.js) y Particionar/Editar PDFs Reales (pdf-lib) -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf-lib/1.17.1/pdf-lib.min.js"></script>
@@ -611,9 +611,23 @@
     </button>
   </div>
 
+  <!-- CINTILLO FLOTANTE INFERIOR PARA SELECCIÓN MÚLTIPLE -->
+  <div class="glass-pill multi-select-bar hidden" id="multiSelectBar" onclick="event.stopPropagation()">
+    <span class="ms-count" id="multiSelectCount">1 seleccionada</span>
+    <div class="ms-actions">
+      <button class="ms-btn" id="msAddProgBtn" onclick="openProgramQuickMenuForSelection(event)" title="Agregar seleccionadas a programa" aria-label="Agregar a programa">
+        <svg viewBox="0 0 24 24" class="v-ico"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+      </button>
+      <button class="ms-btn ms-del" onclick="deleteSelectedScores()" title="Eliminar seleccionadas" aria-label="Eliminar seleccionadas">
+        <svg viewBox="0 0 24 24" class="v-ico"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+      </button>
+      <button class="btn-bare-x ms-cancel" onclick="exitMultiSelectMode()" title="Salir de selección" aria-label="Cerrar selección">✕</button>
+    </div>
+  </div>
+
   <!-- MENÚ FLOTANTE DISCRETO PARA AGREGAR/ORDENAR EN PROGRAMA -->
   <div class="prog-quick-popover hidden" id="progQuickPopover" onclick="event.stopPropagation()"></div>
 
-  <script src="app.js?v=30"></script>
+  <script src="app.js?v=31"></script>
 </body>
 </html>
