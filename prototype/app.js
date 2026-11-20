@@ -1203,13 +1203,46 @@ function openWorkActionsMenu(e, scoreId) {
   }
 }
 
+let modeTipTimer = null;
+
+function startModeLongPress(btn) {
+  endModeLongPress();
+  modeTipTimer = setTimeout(() => {
+    const tip = document.getElementById("modeLongPressTip");
+    if (!tip || !btn) return;
+    tip.textContent = btn.dataset.label || "";
+    tip.classList.remove("hidden");
+    const dockRect = document.getElementById("bottomNavDock")?.getBoundingClientRect();
+    const btnRect = btn.getBoundingClientRect();
+    if (dockRect) {
+      tip.style.left = `${btnRect.left - dockRect.left + btnRect.width / 2}px`;
+    }
+  }, 380);
+}
+
+function endModeLongPress() {
+  if (modeTipTimer) {
+    clearTimeout(modeTipTimer);
+    modeTipTimer = null;
+  }
+  document.getElementById("modeLongPressTip")?.classList.add("hidden");
+}
+
 function closeWorkActionsMenu() {
-  document.getElementById("workActionsMenu")?.classList.add("hidden");
+  const menu = document.getElementById("workActionsMenu");
+  if (!menu) return;
+  menu.classList.add("hidden");
+  menu.classList.remove("is-prog-mode");
 }
 
 function openProgFromWorkMenu(e, scoreId) {
-  closeWorkActionsMenu();
-  openProgramQuickMenu(e, scoreId);
+  if (e) e.stopPropagation();
+  const menu = document.getElementById("workActionsMenu");
+  if (!menu) return;
+  pqTargetScoreIds = [Number(scoreId)];
+  pqSelectedProgId = null;
+  menu.classList.add("is-prog-mode");
+  renderProgQuickListView(menu, true);
 }
 
 // ==========================================================================
@@ -3474,13 +3507,13 @@ function openProgramQuickMenu(e, scoreId) {
   }
 }
 
-function renderProgQuickListView() {
-  const pop = document.getElementById("progQuickPopover");
+function renderProgQuickListView(targetEl, fromWorkMenu = false) {
+  const pop = targetEl || document.getElementById("progQuickPopover");
   if (!pop) return;
   const listHtml = programsState.list
     .map(
       (p) => `
-      <button class="pq-prog-btn" onclick="selectProgramInQuickMenu('${p.id}')">
+      <button class="pq-prog-btn" onclick="selectProgramInQuickMenu('${p.id}', ${fromWorkMenu})">
         <svg viewBox="0 0 24 24" class="v-ico"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><circle cx="4" cy="6" r="1"/><circle cx="4" cy="12" r="1"/><circle cx="4" cy="18" r="1"/></svg>
         <span>${p.name}</span>
       </button>
@@ -3496,7 +3529,7 @@ function renderProgQuickListView() {
   `;
 }
 
-function selectProgramInQuickMenu(progId) {
+function selectProgramInQuickMenu(progId, fromWorkMenu = false) {
   const prog = programsState.list.find((p) => p.id === progId);
   if (!prog) return;
   pqSelectedProgId = progId;
@@ -3506,11 +3539,12 @@ function selectProgramInQuickMenu(progId) {
       pqDraftIds.push(sid);
     }
   });
-  renderProgQuickOrderView();
+  const target = fromWorkMenu ? document.getElementById("workActionsMenu") : document.getElementById("progQuickPopover");
+  renderProgQuickOrderView(target, fromWorkMenu);
 }
 
-function renderProgQuickOrderView() {
-  const pop = document.getElementById("progQuickPopover");
+function renderProgQuickOrderView(targetEl, fromWorkMenu = false) {
+  const pop = targetEl || document.getElementById("progQuickPopover");
   const prog = programsState.list.find((p) => p.id === pqSelectedProgId);
   if (!pop || !prog) return;
 
@@ -3523,11 +3557,11 @@ function renderProgQuickOrderView() {
       (s, idx) => `
       <div class="pq-work-item ${pqTargetScoreIds.includes(s.id) ? "is-target-work" : ""}"
            data-pq-idx="${idx}"
-           onpointerdown="onPqPointerDown(event, ${idx})">
+           onpointerdown="onPqPointerDown(event, ${idx}, ${fromWorkMenu})">
         <svg viewBox="0 0 24 24" class="pq-drag-ico" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="8" y1="7" x2="16" y2="7"/><line x1="8" y1="12" x2="16" y2="12"/><line x1="8" y1="17" x2="16" y2="17"/></svg>
         <span class="pq-work-num">${idx + 1}</span>
         <span class="pq-work-title">${s.clean || s.title}</span>
-        <button class="pq-remove-btn" onclick="event.stopPropagation(); removeFromPqDraft(${idx})" onpointerdown="event.stopPropagation()" title="Eliminar del programa" aria-label="Eliminar">−</button>
+        <button class="pq-remove-btn" onclick="event.stopPropagation(); removeFromPqDraft(${idx}, ${fromWorkMenu})" onpointerdown="event.stopPropagation()" title="Eliminar del programa" aria-label="Eliminar">−</button>
       </div>
     `
     )
@@ -3535,28 +3569,30 @@ function renderProgQuickOrderView() {
 
   pop.innerHTML = `
     <div class="pq-head">
-      <button class="pq-back-btn" onclick="renderProgQuickListView()" title="Volver a programas" aria-label="Regresar">
+      <button class="pq-back-btn" onclick="renderProgQuickListView(${fromWorkMenu ? "document.getElementById('workActionsMenu'), true" : ""})" title="Volver a programas" aria-label="Regresar">
         <svg viewBox="0 0 24 24" class="v-ico"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
       </button>
       <span class="pq-title">${prog.name}</span>
     </div>
     <div class="pq-list" id="pqOrderList">${itemsHtml}</div>
-    <button class="pq-save-btn" onclick="saveProgramQuickOrder()">Guardar cambios</button>
+    <button class="pq-save-btn" onclick="saveProgramQuickOrder(${fromWorkMenu})">Guardar cambios</button>
   `;
 }
 
-function removeFromPqDraft(idx) {
+function removeFromPqDraft(idx, fromWorkMenu = false) {
   if (idx < 0 || idx >= pqDraftIds.length) return;
   pqDraftIds.splice(idx, 1);
-  renderProgQuickOrderView();
+  const target = fromWorkMenu ? document.getElementById("workActionsMenu") : document.getElementById("progQuickPopover");
+  renderProgQuickOrderView(target, fromWorkMenu);
 }
 
-function reorderPqDraft(fromIdx, toIdx) {
+function reorderPqDraft(fromIdx, toIdx, fromWorkMenu = false) {
   if (fromIdx === null || fromIdx === toIdx || fromIdx < 0 || toIdx < 0) return;
   if (fromIdx >= pqDraftIds.length || toIdx >= pqDraftIds.length) return;
   const [moved] = pqDraftIds.splice(fromIdx, 1);
   pqDraftIds.splice(toIdx, 0, moved);
-  renderProgQuickOrderView();
+  const target = fromWorkMenu ? document.getElementById("workActionsMenu") : document.getElementById("progQuickPopover");
+  renderProgQuickOrderView(target, fromWorkMenu);
 }
 
 function onPqDragStart(e, idx) {
@@ -3589,7 +3625,7 @@ function onPqDragEnd(e) {
 }
 
 // Soporte unificado (ratón, dedo y lápiz) para deslizar obras entre niveles
-function onPqPointerDown(e, idx) {
+function onPqPointerDown(e, idx, fromWorkMenu = false) {
   if (e.target.closest("button")) return;
   e.preventDefault();
   const itemEl = e.currentTarget;
@@ -3602,14 +3638,14 @@ function onPqPointerDown(e, idx) {
     if (elUnder) {
       const targetIdx = Number(elUnder.dataset.pqIdx);
       if (!Number.isNaN(targetIdx) && targetIdx !== currentIdx) {
-        reorderPqDraft(currentIdx, targetIdx);
+        reorderPqDraft(currentIdx, targetIdx, fromWorkMenu);
         currentIdx = targetIdx;
       }
     } else if (Math.abs(ev.clientY - startY) > 28) {
       const dir = ev.clientY > startY ? 1 : -1;
       const next = Math.max(0, Math.min(pqDraftIds.length - 1, currentIdx + dir));
       if (next !== currentIdx) {
-        reorderPqDraft(currentIdx, next);
+        reorderPqDraft(currentIdx, next, fromWorkMenu);
         currentIdx = next;
       }
     }
@@ -3627,24 +3663,42 @@ function onPqPointerDown(e, idx) {
   window.addEventListener("pointercancel", onUp);
 }
 
-function saveProgramQuickOrder() {
+function saveProgramQuickOrder(fromWorkMenu = false) {
   const prog = programsState.list.find((p) => p.id === pqSelectedProgId);
   if (!prog) return;
   prog.scoreIds = [...pqDraftIds];
   programsState.activeId = prog.id;
   saveProgramsState();
   renderSetlistDrawer();
-  document.getElementById("progQuickPopover")?.classList.add("hidden");
+  if (fromWorkMenu) closeWorkActionsMenu();
+  else document.getElementById("progQuickPopover")?.classList.add("hidden");
   if (multiSelectMode) exitMultiSelectMode();
 }
 
-// Cierre inmediato de #progQuickPopover al tocar cualquier lugar fuera (excepto los 3 cintillos superiores)
+// Cierre inmediato de #progQuickPopover y #workActionsMenu al tocar fuera (salvo los cintillos principales)
 document.addEventListener("pointerdown", (e) => {
+  const workMenu = document.getElementById("workActionsMenu");
+  if (workMenu && !workMenu.classList.contains("hidden") && !e.target.closest("#workActionsMenu")) {
+    const isTopBars = e.target.closest(".floating-hud-top, .lib-subbar, .lib-filter-bar, .bottom-nav-dock");
+    closeWorkActionsMenu();
+    if (!isTopBars) {
+      e.preventDefault();
+      e.stopPropagation();
+      const suppressNextClick = (ev) => {
+        ev.preventDefault();
+        ev.stopPropagation();
+      };
+      document.addEventListener("click", suppressNextClick, { capture: true, once: true });
+      setTimeout(() => document.removeEventListener("click", suppressNextClick, true), 300);
+    }
+    return;
+  }
+
   const pqPop = document.getElementById("progQuickPopover");
   if (!pqPop || pqPop.classList.contains("hidden")) return;
   if (e.target.closest("#progQuickPopover")) return;
 
-  const isTopBars = e.target.closest(".floating-hud-top, .lib-subbar, .lib-filter-bar, #importPdfMenu, #paletteMenu");
+  const isTopBars = e.target.closest(".floating-hud-top, .lib-subbar, .lib-filter-bar, .bottom-nav-dock, #importPdfMenu, #paletteMenu");
   pqPop.classList.add("hidden");
 
   if (!isTopBars) {

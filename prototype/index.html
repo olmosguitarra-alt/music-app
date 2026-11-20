@@ -8,7 +8,7 @@
   <meta http-equiv="Expires" content="0" />
   <title>Cadenza — Estudio y Lectura Musical</title>
   <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='16' fill='%236b172b'/%3E%3Cpath d='M4 34c16-10 34 8 56-4M4 38c16-10 34 8 56-4M4 42c16-10 34 8 56-4' stroke='%23f7efe7' stroke-opacity='.45' stroke-width='1.5' fill='none'/%3E%3Ctext x='18' y='45' font-family='Georgia,serif' font-size='38' fill='%23fcf8f4'%3EC%3C/text%3E%3C/svg%3E" />
-  <link rel="stylesheet" href="styles.css?v=36" />
+  <link rel="stylesheet" href="styles.css?v=37" />
   <!-- Motores Oficiales para Renderizar (PDF.js) y Particionar/Editar PDFs Reales (pdf-lib) -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf-lib/1.17.1/pdf-lib.min.js"></script>
@@ -27,9 +27,9 @@
   <header class="floating-hud-top" id="floatingHudTop">
     <div class="cadenza-brand-head">
       <div class="cadenza-logo-badge" aria-hidden="true">
-        <svg viewBox="0 0 64 64" width="32" height="32">
+        <svg viewBox="0 0 64 64" width="38" height="38">
           <rect width="64" height="64" rx="16" fill="var(--accent)"/>
-          <path d="M4 34c16-10 34 8 56-4M4 38c16-10 34 8 56-4M4 42c16-10 34 8 56-4" stroke="var(--accent-ink)" stroke-opacity=".42" stroke-width="1.6" fill="none"/>
+          <path d="M4 34c16-10 34 8 56-4M4 38c16-10 34 8 56-4M4 42c16-10 34 8 56-4" stroke="var(--accent-ink)" stroke-opacity=".44" stroke-width="1.6" fill="none"/>
           <text x="18" y="45" font-family="Georgia,serif" font-size="38" fill="var(--accent-ink)">C</text>
         </svg>
       </div>
@@ -38,6 +38,8 @@
         <span class="hud-piece-name" id="hudPieceTitle">J. S. Bach — BWV 1034</span>
       </div>
     </div>
+
+    <div class="hud-center-tools" id="hudCenterTools"></div>
 
     <div class="hud-right-cluster">
       <button class="btn-gear-minimal" id="btnSettingsDrawer" onclick="toggleSettingsDrawer(event)" title="Configuración y paletas" aria-label="Configuración">
@@ -91,55 +93,57 @@
           </div>
         </div>
 
-        <!-- NIVEL 3: FILTROS CON DESPLEGABLES + ENLACE PROGRAMAS › -->
-        <div class="lib-filter-bar">
-          <div class="glass-pill filter-ribbon" role="tablist" aria-label="Organizar biblioteca">
-            <button class="ribbon-tab active" data-cls="all" onclick="selectClassification('all', 'Todo', this)">Todo</button>
-            <button class="ribbon-tab" data-cls="favorites" onclick="selectClassification('favorites', 'Favoritos', this)">Favoritos</button>
-
-            <div class="filter-dd-wrap">
-              <button class="ribbon-tab filter-dd-btn" data-cls="composer" id="btnFilterComposer" onclick="toggleFilterDropdown('composer', event)">
-                <span id="labelFilterComposer">Compositor</span>
-                <svg viewBox="0 0 24 24" class="v-ico wedge-ico"><polyline points="6 9 12 15 18 9"/></svg>
-              </button>
-              <div class="filter-dd-menu hidden" id="composerFilterMenu" onclick="event.stopPropagation()"></div>
-            </div>
-
-            <div class="filter-dd-wrap">
-              <button class="ribbon-tab filter-dd-btn" data-cls="period" id="btnFilterPeriod" onclick="toggleFilterDropdown('period', event)">
-                <span id="labelFilterPeriod">Periodo</span>
-                <svg viewBox="0 0 24 24" class="v-ico wedge-ico"><polyline points="6 9 12 15 18 9"/></svg>
-              </button>
-              <div class="filter-dd-menu hidden" id="periodFilterMenu" onclick="event.stopPropagation()"></div>
-            </div>
-
-            <button class="ribbon-tab" data-cls="instrumentation" onclick="selectClassification('instrumentation', 'Dotación', this)">Dotación</button>
-            <span class="ribbon-sep"></span>
-            <button class="ribbon-tab ribbon-action" id="btnNormalizeRaw" onclick="cleanLibraryWithAI()" title="Limpiar nombres de archivos PDF crudos">✦ Normalizar nombres</button>
-          </div>
-
-          <button class="programs-link-btn" id="btnOpenProgramsSlide" onclick="openProgramsSlideView()">
-            <span>Programas</span>
-            <svg viewBox="0 0 24 24" class="v-ico"><polyline points="9 18 15 12 9 6"/></svg>
-          </button>
-        </div>
-
         <div class="pilot-status-banner hidden" id="pilotStatusBanner"></div>
 
         <!-- CONTENEDOR DESLIZANTE CONTINUO: BIBLIOTECA <-> PROGRAMAS -->
         <div class="library-slides-viewport" id="librarySlidesViewport">
           <div class="library-slide catalog-slide" id="libraryCatalogSlide">
+            <!-- NIVEL 3: FILTROS CON DESPLEGABLES + BOTÓN PROGRAMAS A LA DERECHA (SE DESLIZAN CON LA LISTA) -->
+            <div class="lib-filter-bar">
+              <div class="glass-pill filter-ribbon" role="tablist" aria-label="Organizar biblioteca">
+                <button class="ribbon-tab active" data-cls="all" onclick="selectClassification('all', 'Todo', this)">Todo</button>
+                <button class="ribbon-tab" data-cls="favorites" onclick="selectClassification('favorites', 'Favoritos', this)">Favoritos</button>
+
+                <div class="filter-dd-wrap">
+                  <button class="ribbon-tab filter-dd-btn" data-cls="composer" id="btnFilterComposer" onclick="toggleFilterDropdown('composer', event)">
+                    <span id="labelFilterComposer">Compositor</span>
+                    <svg viewBox="0 0 24 24" class="v-ico wedge-ico"><polyline points="6 9 12 15 18 9"/></svg>
+                  </button>
+                  <div class="filter-dd-menu hidden" id="composerFilterMenu" onclick="event.stopPropagation()"></div>
+                </div>
+
+                <div class="filter-dd-wrap">
+                  <button class="ribbon-tab filter-dd-btn" data-cls="period" id="btnFilterPeriod" onclick="toggleFilterDropdown('period', event)">
+                    <span id="labelFilterPeriod">Periodo</span>
+                    <svg viewBox="0 0 24 24" class="v-ico wedge-ico"><polyline points="6 9 12 15 18 9"/></svg>
+                  </button>
+                  <div class="filter-dd-menu hidden" id="periodFilterMenu" onclick="event.stopPropagation()"></div>
+                </div>
+
+                <button class="ribbon-tab" data-cls="instrumentation" onclick="selectClassification('instrumentation', 'Dotación', this)">Dotación</button>
+                <span class="ribbon-sep"></span>
+                <button class="ribbon-tab ribbon-action" id="btnNormalizeRaw" onclick="cleanLibraryWithAI()" title="Limpiar nombres de archivos PDF crudos">✦ Normalizar nombres</button>
+              </div>
+
+              <button class="glass-pill programs-pill-btn" id="btnOpenProgramsSlide" onclick="openProgramsSlideView()">
+                <span>Programas</span>
+                <svg viewBox="0 0 24 24" class="v-ico"><polyline points="9 18 15 12 9 6"/></svg>
+              </button>
+            </div>
+
             <div id="libraryCatalogContainer">
               <div class="folio-grid" id="scoreList"></div>
             </div>
           </div>
 
           <section class="library-slide programs-slide" id="programsSlideView" aria-label="Programas">
+            <div class="programs-slide-top-nav">
+              <button class="prog-slide-back-btn" onclick="closeProgramsSlideView()" title="Volver a Biblioteca" aria-label="Volver">
+                <svg viewBox="0 0 24 24" class="v-ico"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+              </button>
+            </div>
             <div class="programs-slide-card">
               <div class="setlist-head">
-                <button class="pq-back-btn prog-slide-back" onclick="closeProgramsSlideView()" title="Volver a Biblioteca" aria-label="Volver">
-                  <svg viewBox="0 0 24 24" class="v-ico"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
-                </button>
                 <div class="setlist-head-main">
                   <span class="setlist-eyebrow">Programas:</span>
                   <div class="setlist-name-row">
@@ -604,29 +608,58 @@
 
   </div>
 
-  <!-- DOCK INFERIOR UNIFICADO: 4 MODOS (SOLO ICONOS) + PÍLDORA BACHGPT -->
+  <!-- DOCK INFERIOR CENTRADO: 4 MODOS (SOLO ICONOS) + BACHGPT EN ESQUINA DERECHA -->
   <div class="bottom-nav-dock" id="bottomNavDock">
     <nav class="glass-pill mode-segmented bottom-mode-capsule" aria-label="Modos de la aplicación">
-      <button class="seg-btn active" data-mode="library" onclick="switchMode('library')" title="Biblioteca" aria-label="Biblioteca">
-        <svg viewBox="0 0 24 24" class="v-ico"><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/></svg>
+      <button class="seg-btn active" data-mode="library" data-label="Biblioteca"
+              onclick="switchMode('library')"
+              onpointerdown="startModeLongPress(this)" onpointerup="endModeLongPress()" onpointerleave="endModeLongPress()" onpointercancel="endModeLongPress()"
+              title="Biblioteca" aria-label="Biblioteca">
+        <!-- 3 libros apilados -->
+        <svg viewBox="0 0 24 24" class="v-ico">
+          <rect x="4" y="4" width="14" height="4" rx="1"/>
+          <rect x="6" y="10" width="14" height="4" rx="1"/>
+          <rect x="4" y="16" width="14" height="4" rx="1"/>
+        </svg>
       </button>
-      <button class="seg-btn" data-mode="study" onclick="switchMode('study')" title="Estudio" aria-label="Estudio">
+      <button class="seg-btn" data-mode="study" data-label="Estudio"
+              onclick="switchMode('study')"
+              onpointerdown="startModeLongPress(this)" onpointerup="endModeLongPress()" onpointerleave="endModeLongPress()" onpointercancel="endModeLongPress()"
+              title="Estudio" aria-label="Estudio">
+        <!-- Pluma fuente -->
         <svg viewBox="0 0 24 24" class="v-ico"><path d="M12 19l7-7 3 3-7 7-3-3z"/><path d="M18 13l-1.5-7.5L2 2l3.5 14.5L13 18l5-5z"/><path d="M2 2l7.586 7.586"/><circle cx="11" cy="11" r="2"/></svg>
       </button>
-      <button class="seg-btn" data-mode="concert" onclick="switchMode('concert')" title="Concierto" aria-label="Concierto">
-        <svg viewBox="0 0 24 24" class="v-ico"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
+      <button class="seg-btn" data-mode="concert" data-label="Concierto"
+              onclick="switchMode('concert')"
+              onpointerdown="startModeLongPress(this)" onpointerup="endModeLongPress()" onpointerleave="endModeLongPress()" onpointercancel="endModeLongPress()"
+              title="Concierto" aria-label="Concierto">
+        <!-- Corchea individual estilizada -->
+        <svg viewBox="0 0 24 24" class="v-ico">
+          <ellipse cx="9" cy="18" rx="3.5" ry="2.6" transform="rotate(-18 9 18)"/>
+          <path d="M12.2 17.2V4.5c2.2 1.2 4.8 2.4 5.3 5.2.3 1.7-.4 3.2-1.5 4.1"/>
+        </svg>
       </button>
-      <button class="seg-btn" data-mode="editor" onclick="switchMode('editor')" title="Editor" aria-label="Editor">
-        <svg viewBox="0 0 24 24" class="v-ico"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>
+      <button class="seg-btn" data-mode="editor" data-label="Editor"
+              onclick="switchMode('editor')"
+              onpointerdown="startModeLongPress(this)" onpointerup="endModeLongPress()" onpointerleave="endModeLongPress()" onpointercancel="endModeLongPress()"
+              title="Editor" aria-label="Editor">
+        <!-- Clave de sol estilizada con engrane integrado -->
+        <svg viewBox="0 0 24 24" class="v-ico">
+          <path d="M12.5 21V5.2a2.6 2.6 0 0 1 4.2-2c1.2 1 .9 3-.8 4.2-2.6 1.8-5.4 3.6-5.4 6.6"/>
+          <circle cx="12.5" cy="15.5" r="2.6"/>
+          <path d="M12.5 11.4v1.5M12.5 18.1v1.5M8.4 15.5h1.5M15.1 15.5h1.5M9.6 12.6l1.1 1.1M14.3 17.3l1.1 1.1M15.4 12.6l-1.1 1.1M10.7 17.3l-1.1 1.1"/>
+        </svg>
       </button>
     </nav>
-
-    <button class="bachgpt-fab" id="bachGptFab" onclick="handleMainBachFabClick()" title="BachGPT — Asistente Musical">
-      <div class="bach-8bit-icon" id="bachFabIcon"></div>
-      <span class="bach-fab-label">BachGPT</span>
-      <span class="bach-fab-sparkle" aria-hidden="true">✦</span>
-    </button>
+    <div class="mode-longpress-tip hidden" id="modeLongPressTip"></div>
   </div>
+
+  <!-- PÍLDORA BACHGPT INDEPENDIENTE EN ESQUINA INFERIOR DERECHA (MISMA ALTURA QUE MODOS) -->
+  <button class="bachgpt-fab" id="bachGptFab" onclick="handleMainBachFabClick()" title="BachGPT — Asistente Musical">
+    <div class="bach-8bit-icon" id="bachFabIcon"></div>
+    <span class="bach-fab-label">BachGPT</span>
+    <span class="bach-fab-sparkle" aria-hidden="true">✦</span>
+  </button>
 
   <!-- Pestaña mínima para mostrar de nuevo el dock inferior tras ocultarse al escribir -->
   <button class="dock-reveal-handle hidden" id="dockRevealHandle" onclick="revealBottomNavDock()" title="Mostrar barra de modos" aria-label="Mostrar barra de modos">
@@ -693,6 +726,6 @@
     <span class="pdf-loading-text">Cargando...</span>
   </div>
 
-  <script src="app.js?v=36"></script>
+  <script src="app.js?v=37"></script>
 </body>
 </html>

@@ -5012,3 +5012,339 @@ body.writing-focus #mode-study .full-bleed-canvas {
     flex-wrap: wrap;
   }
 }
+
+
+/* ==========================================================================
+   V37 CORRECCIONES DE DISTRIBUCIÓN, LOGO EJECUTIVO, PROGRAMAS Y TOP TOOLBARS
+   ========================================================================== */
+
+/* 1. Logo y título Cadenza con más aire, tamaño y porte ejecutivo */
+.floating-hud-top {
+  top: max(14px, env(safe-area-inset-top));
+  left: 22px;
+  right: 22px;
+  gap: 14px;
+}
+
+.cadenza-brand-head {
+  gap: 12px;
+}
+
+.cadenza-logo-badge {
+  width: 38px;
+  height: 38px;
+  border-radius: 11px;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.24);
+}
+
+.cadenza-wordmark {
+  font-size: 24px;
+  letter-spacing: -0.015em;
+}
+
+.library-workspace {
+  padding: 80px 26px 86px !important;
+}
+
+/* 2 & 4. Botón Programas a la derecha en la misma fila del cintillo de filtros */
+.lib-filter-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: nowrap;
+  gap: 12px;
+  margin-bottom: 12px !important;
+}
+
+.programs-pill-btn {
+  height: 32px;
+  min-height: 32px;
+  padding: 0 13px;
+  gap: 5px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-primary);
+  cursor: pointer;
+  flex-shrink: 0;
+  white-space: nowrap;
+  transition: border-color 0.16s ease, transform 0.14s ease;
+}
+
+.programs-pill-btn:hover {
+  border-color: var(--accent);
+  transform: translateY(-1px);
+}
+
+.programs-pill-btn .v-ico {
+  width: 14px;
+  height: 14px;
+  opacity: 0.8;
+}
+
+/* 5. Flecha regresar arriba de la tarjeta de Programas (justo abajo de Importar) */
+.programs-slide-top-nav {
+  max-width: 740px;
+  margin: 0 auto 10px;
+  display: flex;
+  align-items: center;
+}
+
+.prog-slide-back-btn {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  border: 1px solid var(--glass-border);
+  background: var(--glass-bg);
+  backdrop-filter: blur(18px);
+  color: var(--text-primary);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.14);
+  transition: border-color 0.15s ease, transform 0.15s ease;
+}
+
+.prog-slide-back-btn:hover {
+  border-color: var(--accent);
+  transform: translateX(-2px);
+}
+
+.prog-slide-back-btn .v-ico {
+  width: 20px;
+  height: 20px;
+}
+
+/* 7. Menú de acciones (•••) con ancho adaptable al sustituir por Agregar a programa */
+.work-actions-menu.is-prog-mode {
+  width: min(295px, calc(100vw - 24px));
+  max-height: 360px;
+  padding: 10px;
+  gap: 8px;
+}
+
+/* 8 & 9. Dock de 4 modos centrado abajo + BachGPT independiente en esquina derecha (44px) */
+.bottom-nav-dock {
+  position: fixed;
+  bottom: max(14px, env(safe-area-inset-bottom));
+  left: 50%;
+  transform: translateX(-50%);
+  width: auto !important;
+  z-index: 65;
+}
+
+.bottom-mode-capsule {
+  height: 44px;
+  padding: 4px;
+  gap: 4px;
+}
+
+.bottom-mode-capsule .seg-btn {
+  height: 36px;
+  padding: 0 15px;
+  min-width: 44px;
+}
+
+#bachGptFab.bachgpt-fab {
+  position: fixed !important;
+  right: 20px !important;
+  bottom: max(14px, env(safe-area-inset-bottom)) !important;
+  height: 44px !important;
+  min-height: 44px !important;
+  padding: 0 14px 0 8px !important;
+  z-index: 66;
+}
+
+#bachGptFab .bach-8bit-icon {
+  width: 26px;
+  height: 26px;
+}
+
+#bachGptFab .bach-fab-label {
+  font-size: 12.5px;
+}
+
+body.mode-concert-active #bachGptFab {
+  display: none !important;
+}
+
+.mode-longpress-tip {
+  position: absolute;
+  bottom: calc(100% + 10px);
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 4px 12px;
+  border-radius: 999px;
+  background: var(--card-bg);
+  border: 1px solid var(--glass-border);
+  color: var(--text-primary);
+  font-size: 11.5px;
+  font-weight: 600;
+  white-space: nowrap;
+  pointer-events: none;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.25);
+}
+
+.mode-longpress-tip.hidden {
+  display: none;
+}
+
+/* 10. Barras de herramientas en la parte SUPERIOR entre Cadenza y el engranaje */
+#mode-study .concepts-tool-rail {
+  position: fixed !important;
+  top: max(14px, env(safe-area-inset-top)) !important;
+  left: 50% !important;
+  right: auto !important;
+  bottom: auto !important;
+  transform: translateX(-50%) !important;
+  flex-direction: row !important;
+  width: auto !important;
+  max-width: calc(100vw - 340px);
+  height: 42px;
+  padding: 4px 8px !important;
+  border-radius: 999px !important;
+  gap: 3px !important;
+  overflow-x: auto;
+  scrollbar-width: none;
+  z-index: 70;
+}
+
+#mode-study .concepts-tool-rail::-webkit-scrollbar {
+  display: none;
+}
+
+#mode-study .concepts-tool-rail .rail-tool {
+  width: 34px;
+  height: 34px;
+  padding: 0;
+  flex-direction: row;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+#mode-study .concepts-tool-rail .rail-label {
+  display: none;
+}
+
+#mode-study .concepts-tool-rail .rail-divider {
+  width: 1px;
+  height: 20px;
+  margin: 0 3px;
+}
+
+#mode-study .full-bleed-canvas {
+  padding: 74px 24px 78px !important;
+}
+
+#mode-study .invisible-page-zone.left {
+  left: 8px !important;
+}
+
+#mode-study .concepts-popover {
+  top: 66px !important;
+  left: 50% !important;
+  bottom: auto !important;
+  transform: translateX(-50%) !important;
+}
+
+/* Concierto: barra superior entre Cadenza y el engranaje */
+#mode-concert .floating-bottom-bar {
+  top: max(14px, env(safe-area-inset-top)) !important;
+  bottom: auto !important;
+  left: 50% !important;
+  transform: translateX(-50%) !important;
+  height: 42px;
+  padding: 4px 8px;
+  z-index: 70;
+}
+
+#mode-concert .concert-stage-pills {
+  top: 64px;
+  right: 22px;
+  bottom: auto !important;
+}
+
+#mode-concert .concert-quick-palette {
+  top: 108px;
+  right: 22px;
+  bottom: auto !important;
+}
+
+body.concert-immersion #mode-concert .floating-bottom-bar {
+  opacity: 0;
+  pointer-events: none;
+  transform: translate(-50%, -20px) !important;
+}
+
+#mode-concert .concert-stage {
+  padding: 74px 20px 76px !important;
+}
+
+/* Editor: dock en la parte superior entre Cadenza y el engranaje */
+#mode-editor .staffpad-dock {
+  top: max(14px, env(safe-area-inset-top)) !important;
+  bottom: auto !important;
+  left: 50% !important;
+  transform: translateX(-50%) !important;
+  max-width: calc(100vw - 340px);
+  height: 42px;
+  padding: 4px 10px;
+  overflow-x: auto;
+  scrollbar-width: none;
+  z-index: 70;
+}
+
+#mode-editor .staffpad-dock::-webkit-scrollbar {
+  display: none;
+}
+
+#mode-editor .full-bleed-canvas {
+  padding: 74px 24px 78px !important;
+}
+
+@media (max-width: 900px) {
+  .floating-hud-top {
+    left: 12px;
+    right: 12px;
+  }
+  .cadenza-wordmark {
+    font-size: 20px;
+  }
+  .cadenza-logo-badge {
+    width: 32px;
+    height: 32px;
+  }
+  .library-workspace {
+    padding: 66px 12px 84px !important;
+  }
+  .lib-filter-bar {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+  .lib-filter-bar::-webkit-scrollbar {
+    display: none;
+  }
+  #bachGptFab.bachgpt-fab {
+    right: 10px !important;
+    padding: 0 10px 0 6px !important;
+  }
+  #bachGptFab .bach-fab-label {
+    display: none;
+  }
+  #mode-study .concepts-tool-rail,
+  #mode-editor .staffpad-dock,
+  #mode-concert .floating-bottom-bar {
+    top: 58px !important;
+    max-width: calc(100vw - 20px) !important;
+  }
+  #mode-study .full-bleed-canvas,
+  #mode-editor .full-bleed-canvas,
+  #mode-concert .concert-stage {
+    padding-top: 110px !important;
+  }
+  #mode-study .concepts-popover {
+    top: 106px !important;
+    width: calc(100vw - 24px) !important;
+  }
+}
