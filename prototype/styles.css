@@ -4992,3 +4992,23 @@ body.writing-focus #mode-study .full-bleed-canvas {
     padding: 58px 12px 84px !important;
   }
 }
+
+/* V36: evitar que Programas › baje de línea en tablet y elevar z-index de desplegables */
+.lib-filter-bar {
+  flex-wrap: nowrap;
+}
+
+.filter-dd-menu {
+  z-index: 120;
+}
+
+.programs-link-btn {
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+
+@media (max-width: 760px) {
+  .lib-filter-bar {
+    flex-wrap: wrap;
+  }
+}
