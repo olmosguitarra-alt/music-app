@@ -2182,12 +2182,12 @@ body.concert-immersion .floating-bottom-bar {
    -------------------------------------------------------------------------- */
 .library-workspace {
   display: flex;
-  gap: 20px;
+  gap: 22px;
   width: 100%;
   max-width: 1460px;
   margin: 0 auto;
   height: 100%;
-  padding: 76px 24px 20px;
+  padding: 82px 28px 24px;
   align-items: stretch;
 }
 
@@ -2230,12 +2230,16 @@ body.concert-immersion .floating-bottom-bar {
 }
 
 /* Estudio: evitar que el rail tape el botón "Página anterior" y los popovers */
+#mode-study .full-bleed-canvas {
+  padding: 74px 24px 24px 96px;
+}
+
 #mode-study .invisible-page-zone.left {
-  left: 92px;
+  left: 96px;
 }
 
 #mode-study .concepts-popover {
-  left: 96px;
+  left: 100px;
 }
 
 .concepts-popover .p-seg.active {
@@ -2257,12 +2261,12 @@ body.concert-immersion .floating-bottom-bar {
 
 /* Concierto: espacio limpio para controles sin tapar el pie de la partitura */
 #mode-concert .concert-stage {
-  padding: 68px 16px 72px;
+  padding: 74px 20px 82px;
   transition: padding 0.24s ease;
 }
 
 body.concert-immersion #mode-concert .concert-stage {
-  padding: 14px 16px 56px;
+  padding: 16px 20px 64px;
 }
 
 #mode-concert .concert-folio {
