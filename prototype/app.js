@@ -2728,8 +2728,40 @@ function initConcertQuickInteraction() {
   window.addEventListener("touchend", up);
 }
 
+function toggleImportMenu(e) {
+  if (e) e.stopPropagation();
+  document.getElementById("importPdfMenu")?.classList.toggle("hidden");
+}
+
+function triggerSinglePdfImport() {
+  document.getElementById("importPdfMenu")?.classList.add("hidden");
+  document.getElementById("realPdfFileInput")?.click();
+}
+
+function triggerFolderPdfImport() {
+  document.getElementById("importPdfMenu")?.classList.add("hidden");
+  document.getElementById("realPdfFolderInput")?.click();
+}
+
+async function handleRealPdfFolderUpload(fileList) {
+  if (!fileList || fileList.length === 0) return;
+  const pdfFiles = Array.from(fileList).filter(
+    (f) => f.type === "application/pdf" || f.name.toLowerCase().endsWith(".pdf")
+  );
+  if (pdfFiles.length === 0) {
+    showPilotBanner("No se encontraron archivos PDF dentro de la carpeta seleccionada.");
+    return;
+  }
+  await handleRealPdfUpload(pdfFiles);
+}
+
 // Cerrar menús flotantes al tocar cualquier parte fuera de ellos
 document.addEventListener("click", (e) => {
+  const impMenu = document.getElementById("importPdfMenu");
+  if (impMenu && !impMenu.classList.contains("hidden") && !e.target.closest("#importPopoverWrap")) {
+    impMenu.classList.add("hidden");
+  }
+
   const palMenu = document.getElementById("paletteMenu");
   if (palMenu && !palMenu.classList.contains("hidden") && !e.target.closest("#paletteDropdownWrap")) {
     palMenu.classList.add("hidden");

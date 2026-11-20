@@ -7,7 +7,7 @@
   <meta http-equiv="Pragma" content="no-cache" />
   <meta http-equiv="Expires" content="0" />
   <title>Atril — Plataforma Musical</title>
-  <link rel="stylesheet" href="styles.css?v=16" />
+  <link rel="stylesheet" href="styles.css?v=17" />
   <!-- Motores Oficiales para Renderizar (PDF.js) y Particionar/Editar PDFs Reales (pdf-lib) -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf-lib/1.17.1/pdf-lib.min.js"></script>
@@ -16,6 +16,7 @@
 
   <!-- Inputs ocultos para importar PDFs reales desde la Tablet o Celular -->
   <input type="file" id="realPdfFileInput" accept="application/pdf,.pdf" multiple style="display:none" onchange="handleRealPdfUpload(this.files)" />
+  <input type="file" id="realPdfFolderInput" webkitdirectory directory multiple style="display:none" onchange="handleRealPdfFolderUpload(this.files)" />
   <input type="file" id="appendPdfFileInput" accept="application/pdf,.pdf" style="display:none" onchange="handleAppendPdfPages(this.files)" />
   <input type="file" id="theoryBookPdfInput" accept="application/pdf,.pdf" style="display:none" onchange="handleTheoryBookUpload(this.files)" />
 
@@ -84,12 +85,37 @@
     <div class="library-workspace">
       <div class="library-stage">
 
-        <!-- BARRA DE COMANDO PRINCIPAL -->
-        <div class="lib-command-bar">
-          <button class="btn-import-pdf" onclick="document.getElementById('realPdfFileInput').click()" title="Cargar archivos PDF desde tu tablet">
-            <svg viewBox="0 0 24 24" class="v-ico"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
-            <span>Importar PDF</span>
-          </button>
+        <!-- NIVEL 2: BARRA DE COMANDO COMPACTA (SUBTÍTULO) -->
+        <div class="lib-command-bar lib-subbar">
+          <div class="import-popover-wrap" id="importPopoverWrap">
+            <button class="btn-import-pdf" id="btnImportPdfTrigger" onclick="toggleImportMenu(event)" title="Importar PDF o carpeta completa">
+              <svg viewBox="0 0 24 24" class="v-ico"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+              <span>Importar PDF</span>
+            </button>
+
+            <div class="import-floating-menu hidden" id="importPdfMenu" onclick="event.stopPropagation()">
+              <button class="import-opt-btn" onclick="triggerSinglePdfImport()">
+                <span class="imp-ico">📄</span>
+                <span><strong>Importar archivo PDF</strong><small>Uno o varios archivos seleccionados</small></span>
+              </button>
+              <button class="import-opt-btn" onclick="triggerFolderPdfImport()">
+                <span class="imp-ico">📁</span>
+                <span><strong>Importar carpeta completa</strong><small>Carga todos los PDFs de una carpeta</small></span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Alternar Vista Tarjeta vs Lista junto a Importar PDF -->
+          <div class="view-toggle-pill" id="viewTogglePill" title="Alternar vista Tarjeta / Lista">
+            <button class="vt-btn active" id="btnViewFolio" onclick="setLibraryViewMode('folio')" aria-label="Vista Tarjeta">
+              <svg viewBox="0 0 24 24" class="v-ico"><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="9" rx="1.5"/><rect x="3" y="15" width="7" height="6" rx="1.5"/><rect x="14" y="15" width="7" height="6" rx="1.5"/></svg>
+              <span class="vt-label">Tarjeta</span>
+            </button>
+            <button class="vt-btn" id="btnViewList" onclick="setLibraryViewMode('list')" aria-label="Vista Lista">
+              <svg viewBox="0 0 24 24" class="v-ico"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
+              <span class="vt-label">Lista</span>
+            </button>
+          </div>
 
           <div class="glass-search">
             <svg viewBox="0 0 24 24" class="v-ico"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
@@ -100,25 +126,13 @@
             <svg viewBox="0 0 24 24" class="v-ico"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><circle cx="4" cy="6" r="1"/><circle cx="4" cy="12" r="1"/><circle cx="4" cy="18" r="1"/></svg>
             <span>Programas</span>
           </button>
-
-          <!-- Alternar Vista Folio vs Lista -->
-          <div class="view-toggle-pill" id="viewTogglePill" title="Alternar vista Folio / Lista">
-            <button class="vt-btn active" id="btnViewFolio" onclick="setLibraryViewMode('folio')" aria-label="Vista Folio">
-              <svg viewBox="0 0 24 24" class="v-ico"><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="9" rx="1.5"/><rect x="3" y="15" width="7" height="6" rx="1.5"/><rect x="14" y="15" width="7" height="6" rx="1.5"/></svg>
-              <span class="vt-label">Folio</span>
-            </button>
-            <button class="vt-btn" id="btnViewList" onclick="setLibraryViewMode('list')" aria-label="Vista Lista">
-              <svg viewBox="0 0 24 24" class="v-ico"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
-              <span class="vt-label">Lista</span>
-            </button>
-          </div>
         </div>
 
-        <!-- CINTA ÚNICA CENTRADA DE FILTROS Y ACCIONES -->
+        <!-- NIVEL 3: CINTA ÚNICA CENTRADA DE FILTROS Y ACCIONES -->
         <div class="lib-filter-bar">
           <div class="glass-pill filter-ribbon" role="tablist" aria-label="Organizar biblioteca">
             <button class="ribbon-tab active" data-cls="all" onclick="selectClassification('all', 'Todo', this)">Todo</button>
-            <button class="ribbon-tab" data-cls="favorites" onclick="selectClassification('favorites', 'Favoritos', this)">★ Favoritos</button>
+            <button class="ribbon-tab" data-cls="favorites" onclick="selectClassification('favorites', 'Favoritos', this)">Favoritos</button>
             <button class="ribbon-tab" data-cls="composer" onclick="selectClassification('composer', 'Compositor', this)">Por Compositor</button>
             <button class="ribbon-tab" data-cls="period" onclick="selectClassification('period', 'Periodo', this)">Por Periodo</button>
             <button class="ribbon-tab" data-cls="instrumentation" onclick="selectClassification('instrumentation', 'Dotación', this)">Por Dotación</button>
@@ -602,6 +616,6 @@
     </button>
   </div>
 
-  <script src="app.js?v=16"></script>
+  <script src="app.js?v=17"></script>
 </body>
 </html>
