@@ -1343,7 +1343,7 @@ function openBachGptGeneralMode(forceReset = false) {
     const box = document.getElementById("bachChatMessages");
     box.innerHTML = "";
     appendBachMessage(
-      `¡Guten Tag, mein lieber Kollege! Estás en mi <strong>Modo de Consulta General</strong>. Aquí puedes preguntarme de todo tipo de temas: <strong>teoría musical, análisis armónico, historia, técnica instrumental, búsqueda de videos/audios</strong> o pedirme que te explique <strong>cómo funciona cada modo de esta aplicación</strong>. También puedes abrir la pestaña <em>"📖 Libro Teoría (Notebook)"</em> para que estudiemos juntos un libro o tratado en PDF.`,
+      `¡Guten Tag, mein lieber Kollege! Estás en mi <strong>Modo de Consulta General</strong>. Aquí puedes preguntarme de todo tipo de temas: <strong>teoría musical, análisis armónico, historia, técnica instrumental, búsqueda de videos/audios</strong> o pedirme que te explique <strong>cómo funciona cada modo de esta aplicación</strong>. También puedes abrir la pestaña <em>"Libro PDF"</em> para que estudiemos juntos un libro o tratado en PDF.`,
       false // No hablar automáticamente al abrir el saludo inicial
     );
   }
@@ -1816,6 +1816,7 @@ function switchStampTab(key, btn) {
 }
 
 function toggleStampPopover() {
+  document.getElementById("brushPopover")?.classList.add("hidden");
   const pop = document.getElementById("stampPopover");
   pop.classList.toggle("hidden");
   document.getElementById("btnStamps").classList.toggle("active", !pop.classList.contains("hidden"));
@@ -2004,6 +2005,8 @@ function setStudyTool(tool) {
   document.getElementById("btnPen").classList.toggle("active", tool === "pen");
   document.getElementById("btnMarker").classList.toggle("active", tool === "marker");
   document.getElementById("btnEraser").classList.toggle("active", tool === "eraser");
+  document.getElementById("btnStamps")?.classList.remove("active");
+  document.getElementById("btnBrushStyle")?.classList.remove("active");
   document.getElementById("stampPopover")?.classList.add("hidden");
   document.getElementById("brushPopover")?.classList.add("hidden");
   const fl = document.getElementById("studyFooterLeft");
