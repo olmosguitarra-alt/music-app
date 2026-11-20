@@ -822,13 +822,11 @@ function togglePaletteMenu(e) {
 }
 
 function setPalette(paletteClass, btn, labelText) {
-  const keepConcert = document.body.classList.contains("mode-concert-active");
-  const keepImmersion = document.body.classList.contains("concert-immersion");
-  document.body.className = paletteClass;
-  if (keepConcert) document.body.classList.add("mode-concert-active");
-  if (keepImmersion) document.body.classList.add("concert-immersion");
-  document.querySelectorAll(".palette-opt").forEach((c) => c.classList.remove("active"));
-  if (btn) btn.classList.add("active");
+  document.body.classList.remove("palette-luthier", "palette-henle", "palette-linen", "palette-velvet", "palette-cadenza");
+  document.body.classList.add(paletteClass);
+  document.querySelectorAll(".palette-opt").forEach((c) => {
+    c.classList.toggle("active", btn ? c === btn : c.dataset.palette === paletteClass);
+  });
   const lbl = document.getElementById("paletteTriggerLabel");
   if (lbl && labelText) lbl.textContent = labelText;
   document.getElementById("paletteMenu")?.classList.add("hidden");
@@ -843,35 +841,60 @@ function setLibraryViewMode(mode) {
 
 let selectedComposerFilter = "all";
 let selectedPeriodFilter = "all";
+let selectedGroupFilter = "all";
+let activeFilterMenuKind = null;
+
+function closeSharedFilterMenu() {
+  document.getElementById("sharedFilterMenu")?.classList.add("hidden");
+  activeFilterMenuKind = null;
+}
 
 function selectClassification(clsKey, labelText, btn) {
   currentClassification = clsKey;
   document.querySelectorAll(".ribbon-tab[data-cls]").forEach((item) => item.classList.remove("active"));
   if (btn) btn.classList.add("active");
-  document.getElementById("composerFilterMenu")?.classList.add("hidden");
-  document.getElementById("periodFilterMenu")?.classList.add("hidden");
+  closeSharedFilterMenu();
   if (clsKey === "all") {
     selectedComposerFilter = "all";
     selectedPeriodFilter = "all";
+    selectedGroupFilter = "all";
     const lc = document.getElementById("labelFilterComposer");
     const lp = document.getElementById("labelFilterPeriod");
+    const lg = document.getElementById("labelFilterGroup");
     if (lc) lc.textContent = "Compositor";
     if (lp) lp.textContent = "Periodo";
+    if (lg) lg.textContent = "Dotación";
   }
   renderLibrary();
 }
 
 function toggleFilterDropdown(kind, e) {
   if (e) e.stopPropagation();
-  const isComp = kind === "composer";
-  const menu = document.getElementById(isComp ? "composerFilterMenu" : "periodFilterMenu");
-  const other = document.getElementById(isComp ? "periodFilterMenu" : "composerFilterMenu");
-  if (other) other.classList.add("hidden");
+  const menu = document.getElementById("sharedFilterMenu");
   if (!menu) return;
 
-  const vals = [...new Set(scores.map((s) => (isComp ? s.composer.split("(")[0].trim() : s.period)).filter(Boolean))];
-  const current = isComp ? selectedComposerFilter : selectedPeriodFilter;
-  const fn = isComp ? "applyComposerFilter" : "applyPeriodFilter";
+  const isAlreadyOpen = !menu.classList.contains("hidden") && activeFilterMenuKind === kind;
+  if (isAlreadyOpen) {
+    closeSharedFilterMenu();
+    return;
+  }
+
+  let vals = [];
+  let current = "all";
+  let fn = "applyComposerFilter";
+  if (kind === "composer") {
+    vals = [...new Set(scores.map((s) => (s.composer || "").split("(")[0].trim()).filter(Boolean))];
+    current = selectedComposerFilter;
+    fn = "applyComposerFilter";
+  } else if (kind === "period") {
+    vals = [...new Set(scores.map((s) => (s.period || "").trim()).filter(Boolean))];
+    current = selectedPeriodFilter;
+    fn = "applyPeriodFilter";
+  } else if (kind === "group") {
+    vals = [...new Set(scores.map((s) => (s.group || "").trim()).filter(Boolean))];
+    current = selectedGroupFilter;
+    fn = "applyGroupFilter";
+  }
 
   menu.innerHTML = [
     `<button class="filter-dd-opt ${current === "all" ? "active" : ""}" onclick="${fn}('all')">Todos</button>`,
@@ -880,7 +903,19 @@ function toggleFilterDropdown(kind, e) {
     )
   ].join("");
 
-  menu.classList.toggle("hidden");
+  const trigger = e?.currentTarget;
+  if (trigger) {
+    const rect = trigger.getBoundingClientRect();
+    const menuWidth = Math.max(180, rect.width + 32);
+    const left = Math.min(Math.max(12, rect.left), window.innerWidth - menuWidth - 12);
+    const top = Math.min(rect.bottom + 8, window.innerHeight - 240);
+    menu.style.left = `${left}px`;
+    menu.style.top = `${top}px`;
+    menu.style.minWidth = `${menuWidth}px`;
+  }
+
+  activeFilterMenuKind = kind;
+  menu.classList.remove("hidden");
 }
 
 function applyComposerFilter(val) {
@@ -889,7 +924,7 @@ function applyComposerFilter(val) {
   document.querySelectorAll(".ribbon-tab[data-cls]").forEach((item) => item.classList.toggle("active", item.dataset.cls === "composer"));
   const lbl = document.getElementById("labelFilterComposer");
   if (lbl) lbl.textContent = val === "all" ? "Compositor" : val;
-  document.getElementById("composerFilterMenu")?.classList.add("hidden");
+  closeSharedFilterMenu();
   renderLibrary();
 }
 
@@ -899,7 +934,17 @@ function applyPeriodFilter(val) {
   document.querySelectorAll(".ribbon-tab[data-cls]").forEach((item) => item.classList.toggle("active", item.dataset.cls === "period"));
   const lbl = document.getElementById("labelFilterPeriod");
   if (lbl) lbl.textContent = val === "all" ? "Periodo" : val;
-  document.getElementById("periodFilterMenu")?.classList.add("hidden");
+  closeSharedFilterMenu();
+  renderLibrary();
+}
+
+function applyGroupFilter(val) {
+  selectedGroupFilter = val;
+  currentClassification = "instrumentation";
+  document.querySelectorAll(".ribbon-tab[data-cls]").forEach((item) => item.classList.toggle("active", item.dataset.cls === "instrumentation"));
+  const lbl = document.getElementById("labelFilterGroup");
+  if (lbl) lbl.textContent = val === "all" ? "Dotación" : val;
+  closeSharedFilterMenu();
   renderLibrary();
 }
 
@@ -971,6 +1016,9 @@ function renderLibrary() {
     }
     if (currentClassification === "period" && selectedPeriodFilter !== "all") {
       if (s.period !== selectedPeriodFilter) return false;
+    }
+    if (currentClassification === "instrumentation" && selectedGroupFilter !== "all") {
+      if (s.group !== selectedGroupFilter) return false;
     }
     return (
       s.title.toLowerCase().includes(q) ||
@@ -3726,14 +3774,9 @@ document.addEventListener("click", (e) => {
     workMenu.classList.add("hidden");
   }
 
-  const compMenu = document.getElementById("composerFilterMenu");
-  if (compMenu && !compMenu.classList.contains("hidden") && !e.target.closest("#composerFilterMenu") && !e.target.closest("#btnFilterComposer")) {
-    compMenu.classList.add("hidden");
-  }
-
-  const perMenu = document.getElementById("periodFilterMenu");
-  if (perMenu && !perMenu.classList.contains("hidden") && !e.target.closest("#periodFilterMenu") && !e.target.closest("#btnFilterPeriod")) {
-    perMenu.classList.add("hidden");
+  const sharedFilterMenu = document.getElementById("sharedFilterMenu");
+  if (sharedFilterMenu && !sharedFilterMenu.classList.contains("hidden") && !e.target.closest("#sharedFilterMenu") && !e.target.closest(".filter-dd-btn")) {
+    closeSharedFilterMenu();
   }
 
   const pqPop = document.getElementById("progQuickPopover");

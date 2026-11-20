@@ -5358,3 +5358,81 @@ body:not(.mode-library-active) .cadenza-brand-text .hud-piece-name {
   gap: 4px;
   padding: 3px 8px;
 }
+
+/* ==========================================================================
+   V39: FIXES DE ALINEACIÓN, DROPDOWNS FLOTANTES, BACHGPT LABEL Y POPOVER
+   ========================================================================== */
+#bachGptFab .bach-fab-label {
+  display: inline !important;
+}
+
+#bachGptFab.bachgpt-fab {
+  padding: 0 14px 0 8px !important;
+}
+
+/* 1 sola línea para filtros + Programas recargado a la derecha */
+.lib-filter-bar {
+  display: flex !important;
+  flex-wrap: nowrap !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  gap: 10px !important;
+  width: 100% !important;
+  overflow: visible !important;
+}
+
+.lib-filter-bar .filter-ribbon {
+  flex: 1 1 auto !important;
+  min-width: 0 !important;
+  overflow-x: auto !important;
+  scrollbar-width: none;
+}
+
+.lib-filter-bar .filter-ribbon::-webkit-scrollbar {
+  display: none;
+}
+
+.lib-filter-bar .programs-pill-btn {
+  flex-shrink: 0 !important;
+  margin-left: auto !important;
+}
+
+/* Dropdown compartido flotante sin recorte por overflow */
+#sharedFilterMenu.filter-dd-menu {
+  position: fixed !important;
+  z-index: 145 !important;
+  max-height: min(320px, 55vh);
+  overflow-y: auto;
+}
+
+/* Mismo tamaño al sustituir menú ••• por Agregar a programa */
+.work-actions-menu.is-prog-mode {
+  width: 210px !important;
+  padding: 8px !important;
+}
+
+@media (max-width: 900px) {
+  #mode-study .concepts-tool-rail,
+  #mode-editor .staffpad-dock,
+  #mode-concert .floating-bottom-bar {
+    top: max(12px, env(safe-area-inset-top)) !important;
+    left: calc(50% + 44px) !important;
+    transform: translateX(-50%) !important;
+    max-width: calc(100vw - 208px) !important;
+    overflow-x: auto !important;
+    scrollbar-width: none;
+  }
+  #mode-study .concepts-tool-rail::-webkit-scrollbar,
+  #mode-editor .staffpad-dock::-webkit-scrollbar,
+  #mode-concert .floating-bottom-bar::-webkit-scrollbar {
+    display: none;
+  }
+  #mode-study .full-bleed-canvas,
+  #mode-editor .full-bleed-canvas,
+  #mode-concert .concert-stage {
+    padding-top: 74px !important;
+  }
+  #mode-study .concepts-popover {
+    top: 66px !important;
+  }
+}
