@@ -2116,3 +2116,685 @@ body.palette-linen .pdf-page-canvas {
     height: 15px;
   }
 }
+
+
+/* ==========================================================================
+   V13 UX/UI REDESIGN: JERARQUÍA, PROGRAMAS, ESTUDIO PERSISTENTE Y CONCIERTO
+   ========================================================================== */
+
+.hud-right-cluster {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.hud-bach-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 5px 12px 5px 7px;
+  cursor: pointer;
+  color: var(--text-primary);
+  font-size: 12.5px;
+  font-weight: 600;
+  border: 1px solid var(--glass-border);
+  transition: transform 0.16s ease, border-color 0.2s ease, background 0.2s ease;
+}
+
+.hud-bach-btn:hover {
+  border-color: var(--accent);
+  transform: translateY(-1px);
+}
+
+.hud-bach-icon {
+  width: 24px;
+  height: 24px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Ocultar BachGPT y controles en Modo Concierto Inmersivo */
+body.mode-concert-active .hud-bach-btn,
+body.mode-concert-active .bachgpt-widget-root {
+  display: none !important;
+}
+
+body.concert-immersion .floating-hud-top {
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(-18px);
+}
+
+body.concert-immersion .floating-bottom-bar {
+  opacity: 0;
+  pointer-events: none;
+  transform: translate(-50%, 24px);
+}
+
+.floating-hud-top,
+.floating-bottom-bar {
+  transition: opacity 0.24s ease, transform 0.24s ease;
+}
+
+/* --------------------------------------------------------------------------
+   BIBLIOTECA + PANEL LATERAL DE PROGRAMA (SETLIST)
+   -------------------------------------------------------------------------- */
+.library-workspace {
+  display: flex;
+  gap: 18px;
+  width: 100%;
+  max-width: 1460px;
+  margin: 0 auto;
+  height: 100%;
+  padding: 0 20px 20px;
+  align-items: stretch;
+}
+
+.library-workspace .library-stage {
+  flex: 1;
+  min-width: 0;
+  padding: 0;
+  margin: 0;
+  max-width: none;
+}
+
+.btn-setlist-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  min-height: 44px;
+  padding: 0 14px;
+  border-radius: 14px;
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  color: var(--text-primary);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: border-color 0.2s ease, background 0.2s ease;
+  white-space: nowrap;
+}
+
+.btn-setlist-toggle:hover,
+.btn-setlist-toggle.active {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.lib-filter-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.filter-chips-scroll {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  overflow-x: auto;
+  padding-bottom: 2px;
+  scrollbar-width: none;
+}
+
+.filter-chips-scroll::-webkit-scrollbar {
+  display: none;
+}
+
+.filter-chip {
+  min-height: 36px;
+  padding: 6px 14px;
+  border-radius: 999px;
+  border: 1px solid var(--glass-border);
+  background: var(--glass-bg);
+  color: var(--text-secondary);
+  font-size: 12.5px;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.18s ease;
+}
+
+.filter-chip:hover {
+  color: var(--text-primary);
+  border-color: var(--accent);
+}
+
+.filter-chip.active {
+  background: var(--accent);
+  color: var(--accent-ink);
+  border-color: var(--accent);
+}
+
+.btn-normalize-subtle {
+  min-height: 36px;
+  padding: 6px 12px;
+  border-radius: 999px;
+  border: 1px dashed var(--glass-border);
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.btn-normalize-subtle:hover {
+  color: var(--accent);
+  border-color: var(--accent);
+}
+
+/* Tarjetas más claras y botones táctiles */
+.folio-card-foot {
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.folio-quick-btns,
+.list-col-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.mini-action-btn {
+  min-width: 36px;
+  min-height: 36px;
+  padding: 0 9px;
+  border-radius: 10px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.mini-action-btn.with-label {
+  padding: 0 10px;
+}
+
+/* Panel lateral de Setlist / Programa */
+.setlist-drawer {
+  width: 310px;
+  flex-shrink: 0;
+  background: var(--card-bg);
+  border: 1px solid var(--glass-border);
+  border-radius: 20px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  backdrop-filter: blur(18px);
+  max-height: calc(100dvh - 96px);
+}
+
+.setlist-drawer.hidden {
+  display: none;
+}
+
+.setlist-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.setlist-eyebrow {
+  display: block;
+  font-size: 10.5px;
+  letter-spacing: 0.08em;
+  color: var(--accent);
+  font-weight: 700;
+  margin-bottom: 6px;
+}
+
+.setlist-name-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.setlist-name-row select {
+  background: var(--glass-bg);
+  color: var(--text-primary);
+  border: 1px solid var(--glass-border);
+  border-radius: 10px;
+  padding: 7px 10px;
+  font-size: 13px;
+  font-weight: 600;
+  max-width: 215px;
+}
+
+.btn-icon-sm {
+  width: 34px;
+  height: 34px;
+  border-radius: 10px;
+  border: 1px solid var(--glass-border);
+  background: var(--glass-bg);
+  color: var(--text-primary);
+  font-size: 16px;
+  cursor: pointer;
+}
+
+.btn-icon-sm:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.drawer-close-mobile {
+  display: none;
+}
+
+.setlist-summary {
+  font-size: 12px;
+  color: var(--text-secondary);
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--glass-border);
+}
+
+.setlist-items {
+  flex: 1;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.setlist-empty {
+  padding: 20px 12px;
+  text-align: center;
+  color: var(--text-secondary);
+  font-size: 12.5px;
+  line-height: 1.5;
+  border: 1px dashed var(--glass-border);
+  border-radius: 14px;
+}
+
+.setlist-item {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 9px 10px;
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  border-radius: 12px;
+}
+
+.setlist-num {
+  width: 22px;
+  height: 22px;
+  border-radius: 7px;
+  background: var(--accent);
+  color: var(--accent-ink);
+  font-size: 11.5px;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.setlist-item-info {
+  flex: 1;
+  min-width: 0;
+  cursor: pointer;
+}
+
+.setlist-item-info strong {
+  display: block;
+  font-size: 12.5px;
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.setlist-item-info small {
+  font-size: 11px;
+  color: var(--text-secondary);
+}
+
+.setlist-item-actions {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+}
+
+.setlist-item-actions button {
+  width: 26px;
+  height: 26px;
+  border-radius: 7px;
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.setlist-item-actions button:hover {
+  background: var(--card-bg);
+  color: var(--text-primary);
+  border-color: var(--glass-border);
+}
+
+.btn-launch-concert {
+  width: 100%;
+  min-height: 44px;
+  border-radius: 14px;
+  border: none;
+  background: var(--accent);
+  color: var(--accent-ink);
+  font-size: 13.5px;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  cursor: pointer;
+  transition: transform 0.15s ease, opacity 0.15s ease;
+}
+
+.btn-launch-concert:hover {
+  transform: translateY(-1px);
+}
+
+.btn-launch-concert:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+/* --------------------------------------------------------------------------
+   MODO ESTUDIO: BOOKMARKS, SCRUBBER Y POPOVER DE TRAZO
+   -------------------------------------------------------------------------- */
+.study-head-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.bookmark-star-btn {
+  width: 34px;
+  height: 34px;
+  border-radius: 10px;
+  border: 1px solid var(--paper-line);
+  background: transparent;
+  color: var(--paper-ink);
+  font-size: 17px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.bookmark-star-btn.bookmarked {
+  color: #b8860b;
+  border-color: rgba(184, 134, 11, 0.45);
+  background: rgba(212, 175, 55, 0.16);
+}
+
+.study-page-scrubber {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  max-width: 56%;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.study-page-scrubber::-webkit-scrollbar {
+  display: none;
+}
+
+.scrub-pg-btn {
+  min-width: 26px;
+  height: 24px;
+  padding: 0 6px;
+  border-radius: 7px;
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--paper-ink);
+  opacity: 0.65;
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.scrub-pg-btn.active {
+  opacity: 1;
+  background: var(--paper-ink);
+  color: var(--paper-bg);
+}
+
+.scrub-pg-btn.has-bookmark::after {
+  content: "★";
+  margin-left: 2px;
+  color: #b8860b;
+}
+
+.brush-swatch-dot {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: #23426e;
+  border: 2px solid var(--text-primary);
+}
+
+.brush-popover {
+  width: 250px;
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.brush-pop-section {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.brush-pop-label {
+  font-size: 11.5px;
+  color: var(--text-secondary);
+}
+
+.rail-inks.horizontal {
+  flex-direction: row;
+  gap: 10px;
+}
+
+.ink-well.charcoal {
+  background: #201c19;
+}
+
+.brush-popover input[type="range"] {
+  width: 100%;
+  accent-color: var(--accent);
+}
+
+/* --------------------------------------------------------------------------
+   MODO CONCIERTO: 2 PÁGINAS REALES + CONTROLES MÍNIMOS DE ESCENARIO
+   -------------------------------------------------------------------------- */
+.concert-spread-wrap {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  width: 100%;
+  height: 100%;
+  padding: 4px 10px;
+}
+
+.concert-spread-wrap.two-pages .concert-folio {
+  width: min(47vw, 640px);
+  max-width: 640px;
+}
+
+.concert-folio.hidden {
+  display: none;
+}
+
+.concert-draw-layer {
+  pointer-events: none;
+}
+
+.concert-draw-layer.active-drawing {
+  pointer-events: auto;
+  cursor: crosshair;
+}
+
+.concert-stage-pills {
+  position: fixed;
+  right: 18px;
+  bottom: 16px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  z-index: 45;
+}
+
+.stage-pill-btn {
+  min-height: 36px;
+  padding: 0 13px;
+  border-radius: 999px;
+  border: 1px solid var(--glass-border);
+  background: var(--glass-bg);
+  backdrop-filter: blur(14px);
+  color: var(--text-primary);
+  font-size: 12px;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  cursor: pointer;
+  opacity: 0.78;
+  transition: opacity 0.2s ease, border-color 0.2s ease;
+}
+
+.stage-pill-btn:hover,
+.stage-pill-btn.listening {
+  opacity: 1;
+  border-color: var(--accent);
+}
+
+.stage-pill-icon {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  border: 1px solid var(--glass-border);
+  background: var(--glass-bg);
+  backdrop-filter: blur(14px);
+  color: var(--text-primary);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  opacity: 0.78;
+}
+
+.stage-pill-icon:hover,
+.stage-pill-icon.active {
+  opacity: 1;
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.concert-quick-palette {
+  position: fixed;
+  right: 18px;
+  bottom: 62px;
+  padding: 6px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  z-index: 46;
+}
+
+.concert-quick-palette.hidden {
+  display: none;
+}
+
+.cq-btn {
+  min-height: 34px;
+  padding: 0 11px;
+  border-radius: 999px;
+  border: none;
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.cq-btn.active {
+  background: var(--accent);
+  color: var(--accent-ink);
+}
+
+/* --------------------------------------------------------------------------
+   BACHGPT SIMPLIFICADO (Sin saturación de barras)
+   -------------------------------------------------------------------------- */
+.bachgpt-widget-root {
+  bottom: 18px;
+  right: 18px;
+}
+
+.bachgpt-chat-window {
+  height: min(560px, calc(100dvh - 104px));
+}
+
+.bach-context-switcher {
+  padding: 8px 12px;
+  gap: 6px;
+}
+
+.bctx-tab {
+  min-height: 32px;
+  font-size: 12px;
+  padding: 4px 8px;
+}
+
+/* --------------------------------------------------------------------------
+   RESPONSIVO TABLET VERTICAL / MÓVIL
+   -------------------------------------------------------------------------- */
+@media (max-width: 1024px) {
+  .setlist-drawer {
+    position: fixed;
+    right: 14px;
+    top: 76px;
+    bottom: 16px;
+    z-index: 50;
+    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.45);
+  }
+  .drawer-close-mobile {
+    display: inline-flex;
+  }
+  .concert-spread-wrap.two-pages .concert-folio {
+    width: min(94vw, 820px);
+  }
+}
+
+@media (max-width: 900px) {
+  .hud-bach-label {
+    display: none;
+  }
+  .library-workspace {
+    padding: 0 10px 16px;
+  }
+  .lib-filter-bar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .concert-stage-pills {
+    right: 10px;
+    bottom: 12px;
+  }
+  .concert-quick-palette {
+    right: 10px;
+    bottom: 56px;
+  }
+}

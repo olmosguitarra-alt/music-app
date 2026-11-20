@@ -324,37 +324,71 @@ async function renderActiveScorePage() {
 
   const studyPdfCanvas = document.getElementById("studyPdfRenderCanvas");
   const concertPdfCanvas = document.getElementById("concertPdfRenderCanvas");
+  const concertPdfCanvasRight = document.getElementById("concertPdfRenderCanvasRight");
   const studySvgEl = document.getElementById("studySvg");
   const concertSvgEl = document.getElementById("concertSvg");
+  const concertSvgRightEl = document.getElementById("concertSvgRight");
   const studyHead = document.getElementById("studyFolioHeader");
   const concertHead = document.getElementById("concertFolioHeader");
+
+  const isTwoPages = layouts[layoutIdx] === "2 Págs";
+  const spreadWrap = document.getElementById("concertSpreadWrap");
+  const rightSheet = document.getElementById("concertSheetRight");
+  const hasSecondPage = isTwoPages && pageNum + 1 <= total;
+
+  if (spreadWrap && rightSheet) {
+    spreadWrap.classList.toggle("two-pages", hasSecondPage);
+    rightSheet.classList.toggle("hidden", !hasSecondPage);
+    if (hasSecondPage) {
+      document.getElementById("concertTitleHeadingRight").textContent = activeScore.clean || activeScore.title;
+      document.getElementById("concertSubRight").textContent = activeScore.composer;
+      document.getElementById("concertPageNumRight").textContent = `Pág. ${pageNum + 1} / ${total}`;
+      document.getElementById("concertPageFooterRight").textContent = `Folio ${pageNum + 1} / ${total}`;
+    }
+  }
 
   if (activeScore.isRealPdf && currentPdfDocInstance) {
     studySvgEl.classList.add("hidden");
     concertSvgEl.classList.add("hidden");
+    if (concertSvgRightEl) concertSvgRightEl.classList.add("hidden");
     studyPdfCanvas.classList.remove("hidden");
     concertPdfCanvas.classList.remove("hidden");
-    // Ocultar encabezado duplicado para que el PDF real ocupe toda la hoja parada
     studyHead.classList.add("compact-pdf-head");
     concertHead.classList.add("compact-pdf-head");
 
     const page = await currentPdfDocInstance.getPage(pageNum);
     await renderPdfPageToCanvas(page, studyPdfCanvas, document.getElementById("studyWrap"));
     await renderPdfPageToCanvas(page, concertPdfCanvas, document.getElementById("concertWrap"));
-    setupStudyCanvas();
+
+    if (hasSecondPage && concertPdfCanvasRight) {
+      concertPdfCanvasRight.classList.remove("hidden");
+      const page2 = await currentPdfDocInstance.getPage(pageNum + 1);
+      await renderPdfPageToCanvas(page2, concertPdfCanvasRight, document.getElementById("concertWrapRight"));
+    } else if (concertPdfCanvasRight) {
+      concertPdfCanvasRight.classList.add("hidden");
+    }
   } else {
     studyPdfCanvas.classList.add("hidden");
-    concertPdfCanvas.classList.remove("hidden");
     concertPdfCanvas.classList.add("hidden");
+    if (concertPdfCanvasRight) concertPdfCanvasRight.classList.add("hidden");
     studySvgEl.classList.remove("hidden");
     concertSvgEl.classList.remove("hidden");
+    if (concertSvgRightEl) concertSvgRightEl.classList.remove("hidden");
     studyHead.classList.remove("compact-pdf-head");
     concertHead.classList.remove("compact-pdf-head");
 
     studySvgEl.innerHTML = buildPortraitScoreSvg(-1);
     concertSvgEl.innerHTML = buildPortraitScoreSvg(-1);
-    setupStudyCanvas();
+    if (hasSecondPage && concertSvgRightEl) {
+      concertSvgRightEl.innerHTML = buildPortraitScoreSvg(-1);
+    }
   }
+
+  setupStudyCanvas();
+  restoreStudyAnnotationsForCurrentPage();
+  if (typeof updateBookmarkButton === "function") updateBookmarkButton();
+  if (typeof renderStudyPageScrubber === "function") renderStudyPageScrubber();
+  if (typeof setupConcertQuickCanvas === "function") setupConcertQuickCanvas();
 }
 
 async function renderPdfPageToCanvas(pdfPage, canvas, containerEl) {
@@ -589,6 +623,14 @@ function switchMode(mode) {
   document.querySelectorAll(".canvas-view").forEach((v) => v.classList.remove("active"));
   document.getElementById(`mode-${mode}`).classList.add("active");
 
+  document.body.classList.toggle("mode-concert-active", mode === "concert");
+  if (mode === "concert") {
+    toggleBachGptChat(false);
+    document.body.classList.remove("concert-immersion");
+  } else {
+    document.body.classList.remove("concert-immersion");
+  }
+
   if (mode === "study" || mode === "concert") {
     setTimeout(() => renderActiveScorePage(), 40);
   }
@@ -596,7 +638,11 @@ function switchMode(mode) {
 }
 
 function setPalette(paletteClass, btn) {
+  const keepConcert = document.body.classList.contains("mode-concert-active");
+  const keepImmersion = document.body.classList.contains("concert-immersion");
   document.body.className = paletteClass;
+  if (keepConcert) document.body.classList.add("mode-concert-active");
+  if (keepImmersion) document.body.classList.add("concert-immersion");
   document.querySelectorAll(".theme-orb").forEach((c) => c.classList.remove("active"));
   if (btn) btn.classList.add("active");
 }
@@ -605,38 +651,19 @@ function setLibraryViewMode(mode) {
   libraryViewMode = mode;
   document.getElementById("btnViewFolio").classList.toggle("active", mode === "folio");
   document.getElementById("btnViewList").classList.toggle("active", mode === "list");
-
-  if (currentClassification === "ai-mode") {
-    currentClassification = "all";
-    document.getElementById("currentClassifyLabel").textContent = "Clasificar: Todo";
-    document.getElementById("aiMusicologyStage").classList.add("hidden");
-    document.getElementById("libraryCatalogContainer").classList.remove("hidden");
-  }
   renderLibrary();
 }
 
-function toggleClassifyMenu(e) {
-  if (e) e.stopPropagation();
-  document.getElementById("classifyMenu").classList.toggle("hidden");
-}
-
-window.addEventListener("click", () => {
-  const menu = document.getElementById("classifyMenu");
-  if (menu && !menu.classList.contains("hidden")) menu.classList.add("hidden");
-});
-
 function selectClassification(clsKey, labelText, btn) {
   currentClassification = clsKey;
-  document.getElementById("currentClassifyLabel").textContent = labelText;
-  document.querySelectorAll(".dd-item").forEach((item) => item.classList.remove("active"));
+  document.querySelectorAll(".filter-chip").forEach((item) => item.classList.remove("active"));
   if (btn) btn.classList.add("active");
-  document.getElementById("classifyMenu").classList.add("hidden");
   renderLibrary();
 }
 
 function exitAiModeToCatalog() {
-  const allBtn = document.querySelector('.dd-item[data-cls="all"]');
-  selectClassification("all", "Clasificar: Todo", allBtn);
+  const allBtn = document.querySelector('.filter-chip[data-cls="all"]');
+  selectClassification("all", "Todo", allBtn);
 }
 
 function renderLibrary() {
@@ -740,9 +767,10 @@ function buildFolioCardHtml(s) {
       <div class="folio-card-foot" onclick="event.stopPropagation()">
         <span class="period-tag">${s.period} • ${s.pages}</span>
         <div class="folio-quick-btns">
-          <button class="mini-action-btn bach-card-btn" onclick="openAiForWork(${s.id})" title="BachGPT: Consultar específicamente sobre esta obra">${build8BitBachSvg(false)}</button>
+          <button class="mini-action-btn bach-card-btn" onclick="openAiForWork(${s.id})" title="BachGPT: Consultar sobre esta obra">${build8BitBachSvg(false)}</button>
+          <button class="mini-action-btn with-label" onclick="addScoreToActiveProgram(${s.id})" title="Agregar al programa activo">＋ Prog</button>
           <button class="mini-action-btn" onclick="openPdfModalById(${s.id})" title="Taller PDF y Renombrar">✂</button>
-          <button class="mini-action-btn" onclick="openScoreById(${s.id}, 'concert')" title="Modo Concierto">◉</button>
+          <button class="mini-action-btn" onclick="openScoreById(${s.id}, 'concert')" title="Abrir en Concierto">◉</button>
         </div>
       </div>
     </article>
@@ -767,7 +795,8 @@ function buildListRowHtml(s) {
       </div>
 
       <div class="list-col-actions" onclick="event.stopPropagation()">
-        <button class="mini-action-btn bach-card-btn" onclick="openAiForWork(${s.id})" title="BachGPT: Consultar específicamente sobre esta obra">${build8BitBachSvg(false)}</button>
+        <button class="mini-action-btn bach-card-btn" onclick="openAiForWork(${s.id})" title="BachGPT: Consultar sobre esta obra">${build8BitBachSvg(false)}</button>
+        <button class="mini-action-btn with-label" onclick="addScoreToActiveProgram(${s.id})" title="Agregar al programa activo">＋ Prog</button>
         <button class="mini-action-btn" onclick="openPdfModalById(${s.id})" title="Taller PDF y Renombrar">✂</button>
         <button class="mini-action-btn" onclick="openScoreById(${s.id}, 'concert')" title="Abrir en Concierto">◉</button>
       </div>
@@ -1800,13 +1829,188 @@ function chooseStamp(st, btn) {
   document.getElementById("stampPopover").classList.add("hidden");
 }
 
+let brushWidth = 2.4;
+let brushOpacity = 1.0;
+const studyPageAnnotations = {};
+const studyUndoStacks = {};
+const studyRedoStacks = {};
+const studyBookmarks = {};
+
+function getStudyPageKey() {
+  return `${activeScore ? activeScore.id : 1}:${pageNum}`;
+}
+
+function saveStudyAnnotationsForCurrentPage() {
+  const canvas = document.getElementById("studyCanvas");
+  const moldLayer = document.getElementById("studyMoldLayer");
+  if (!canvas || !moldLayer) return;
+  const key = getStudyPageKey();
+  studyPageAnnotations[key] = {
+    dataUrl: canvas.toDataURL("image/png"),
+    moldHtml: moldLayer.innerHTML
+  };
+}
+
+function restoreStudyAnnotationsForCurrentPage() {
+  const canvas = document.getElementById("studyCanvas");
+  const moldLayer = document.getElementById("studyMoldLayer");
+  if (!canvas || !moldLayer) return;
+  const ctx = canvas.getContext("2d");
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  const key = getStudyPageKey();
+  const saved = studyPageAnnotations[key];
+  if (saved) {
+    moldLayer.innerHTML = saved.moldHtml || "";
+    if (saved.dataUrl) {
+      const img = new Image();
+      img.onload = () => ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+      img.src = saved.dataUrl;
+    }
+  } else {
+    moldLayer.innerHTML = "";
+  }
+}
+
+function pushStudyUndoSnapshot() {
+  const canvas = document.getElementById("studyCanvas");
+  const moldLayer = document.getElementById("studyMoldLayer");
+  if (!canvas || !moldLayer) return;
+  const key = getStudyPageKey();
+  if (!studyUndoStacks[key]) studyUndoStacks[key] = [];
+  studyUndoStacks[key].push({
+    dataUrl: canvas.toDataURL("image/png"),
+    moldHtml: moldLayer.innerHTML
+  });
+  if (studyUndoStacks[key].length > 25) studyUndoStacks[key].shift();
+  studyRedoStacks[key] = [];
+}
+
+function applyStudySnapshot(snap) {
+  const canvas = document.getElementById("studyCanvas");
+  const moldLayer = document.getElementById("studyMoldLayer");
+  if (!canvas || !moldLayer || !snap) return;
+  const ctx = canvas.getContext("2d");
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  moldLayer.innerHTML = snap.moldHtml || "";
+  if (snap.dataUrl) {
+    const img = new Image();
+    img.onload = () => {
+      ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+      saveStudyAnnotationsForCurrentPage();
+    };
+    img.src = snap.dataUrl;
+  } else {
+    saveStudyAnnotationsForCurrentPage();
+  }
+}
+
+function undoStudyAction() {
+  const key = getStudyPageKey();
+  const stack = studyUndoStacks[key];
+  if (!stack || stack.length === 0) return;
+  const canvas = document.getElementById("studyCanvas");
+  const moldLayer = document.getElementById("studyMoldLayer");
+  if (!studyRedoStacks[key]) studyRedoStacks[key] = [];
+  studyRedoStacks[key].push({
+    dataUrl: canvas ? canvas.toDataURL("image/png") : "",
+    moldHtml: moldLayer ? moldLayer.innerHTML : ""
+  });
+  const prev = stack.pop();
+  applyStudySnapshot(prev);
+}
+
+function redoStudyAction() {
+  const key = getStudyPageKey();
+  const rStack = studyRedoStacks[key];
+  if (!rStack || rStack.length === 0) return;
+  const canvas = document.getElementById("studyCanvas");
+  const moldLayer = document.getElementById("studyMoldLayer");
+  if (!studyUndoStacks[key]) studyUndoStacks[key] = [];
+  studyUndoStacks[key].push({
+    dataUrl: canvas ? canvas.toDataURL("image/png") : "",
+    moldHtml: moldLayer ? moldLayer.innerHTML : ""
+  });
+  const next = rStack.pop();
+  applyStudySnapshot(next);
+}
+
+function toggleBrushPopover() {
+  document.getElementById("stampPopover")?.classList.add("hidden");
+  document.getElementById("brushPopover")?.classList.toggle("hidden");
+}
+
+function setBrushWidth(val) {
+  brushWidth = parseFloat(val) || 2.4;
+  const lbl = document.getElementById("brushWidthLabel");
+  if (lbl) lbl.textContent = `${brushWidth.toFixed(1)} px`;
+}
+
+function setBrushOpacity(val) {
+  const pct = parseInt(val, 10) || 100;
+  brushOpacity = pct / 100;
+  const lbl = document.getElementById("brushOpacityLabel");
+  if (lbl) lbl.textContent = `${pct}%`;
+}
+
+function togglePageBookmark() {
+  const sId = activeScore ? activeScore.id : 1;
+  if (!studyBookmarks[sId]) studyBookmarks[sId] = new Set();
+  if (studyBookmarks[sId].has(pageNum)) {
+    studyBookmarks[sId].delete(pageNum);
+  } else {
+    studyBookmarks[sId].add(pageNum);
+  }
+  updateBookmarkButton();
+  renderStudyPageScrubber();
+}
+
+function updateBookmarkButton() {
+  const btn = document.getElementById("btnStudyBookmark");
+  if (!btn) return;
+  const sId = activeScore ? activeScore.id : 1;
+  const isBm = studyBookmarks[sId]?.has(pageNum);
+  btn.classList.toggle("bookmarked", Boolean(isBm));
+  btn.textContent = isBm ? "★" : "☆";
+}
+
+function renderStudyPageScrubber() {
+  const el = document.getElementById("studyPageScrubber");
+  if (!el) return;
+  const total = activeScore?.pageCount || 10;
+  const sId = activeScore ? activeScore.id : 1;
+  const bms = studyBookmarks[sId] || new Set();
+  let html = "";
+  for (let p = 1; p <= total; p++) {
+    const cls = [
+      "scrub-pg-btn",
+      p === pageNum ? "active" : "",
+      bms.has(p) ? "has-bookmark" : ""
+    ].filter(Boolean).join(" ");
+    html += `<button class="${cls}" onclick="jumpToPage(${p})">${p}</button>`;
+  }
+  el.innerHTML = html;
+}
+
+async function jumpToPage(targetPage) {
+  saveStudyAnnotationsForCurrentPage();
+  const total = activeScore?.pageCount || 10;
+  pageNum = Math.max(1, Math.min(total, targetPage));
+  await renderActiveScorePage();
+}
+
 function setStudyTool(tool) {
   studyTool = tool;
   selectedStamp = null;
   document.getElementById("btnPen").classList.toggle("active", tool === "pen");
   document.getElementById("btnMarker").classList.toggle("active", tool === "marker");
   document.getElementById("btnEraser").classList.toggle("active", tool === "eraser");
-  document.getElementById("stampPopover").classList.add("hidden");
+  document.getElementById("stampPopover")?.classList.add("hidden");
+  document.getElementById("brushPopover")?.classList.add("hidden");
+  const fl = document.getElementById("studyFooterLeft");
+  if (fl) {
+    const names = { pen: "Pluma Activa", marker: "Marcador Activo", eraser: "Borrador Activo" };
+    fl.textContent = `Modo Estudio • ${names[tool] || "Pluma"}`;
+  }
 }
 
 function toggleAutoMold() {
@@ -1817,7 +2021,9 @@ function toggleAutoMold() {
 function setInk(color, btn) {
   inkColor = color;
   document.querySelectorAll(".ink-well").forEach((d) => d.classList.remove("active"));
-  btn.classList.add("active");
+  if (btn) btn.classList.add("active");
+  const dot = document.getElementById("brushSwatchDot");
+  if (dot) dot.style.background = color;
 }
 
 function setupStudyCanvas() {
@@ -1843,9 +2049,12 @@ function initStudyInteraction() {
 
   const down = (e) => {
     e.preventDefault();
+    document.getElementById("brushPopover")?.classList.add("hidden");
     const pt = getPt(e);
+    pushStudyUndoSnapshot();
     if (studyTool === "stamp" && selectedStamp) {
       addMoldBadge(pt.x, pt.y, selectedStamp, inkColor);
+      saveStudyAnnotationsForCurrentPage();
       return;
     }
     drawing = true;
@@ -1862,18 +2071,22 @@ function initStudyInteraction() {
     ctx.lineTo(pt.x, pt.y);
 
     if (studyTool === "marker") {
-      ctx.strokeStyle = "rgba(212, 175, 55, 0.34)";
-      ctx.lineWidth = 18;
+      ctx.globalAlpha = Math.min(0.45, brushOpacity * 0.45);
+      ctx.strokeStyle = "#d4af37";
+      ctx.lineWidth = Math.max(14, brushWidth * 5.5);
     } else if (studyTool === "eraser") {
+      ctx.globalAlpha = 1;
       ctx.globalCompositeOperation = "destination-out";
       ctx.lineWidth = 26;
     } else {
+      ctx.globalAlpha = brushOpacity;
       ctx.globalCompositeOperation = "source-over";
       ctx.strokeStyle = inkColor;
-      ctx.lineWidth = 2.4;
+      ctx.lineWidth = brushWidth;
     }
     ctx.lineCap = "round";
     ctx.stroke();
+    ctx.globalAlpha = 1;
     ctx.globalCompositeOperation = "source-over";
     last = pt;
   };
@@ -1886,7 +2099,10 @@ function initStudyInteraction() {
         canvas.getContext("2d").clearRect(0, 0, canvas.width, canvas.height);
         const word = moldWords[moldIndex++ % moldWords.length];
         addMoldBadge(last.x, last.y, word, inkColor);
+        saveStudyAnnotationsForCurrentPage();
       }, 280);
+    } else {
+      saveStudyAnnotationsForCurrentPage();
     }
   };
 
@@ -1909,14 +2125,23 @@ function addMoldBadge(x, y, text, color) {
   layer.appendChild(el);
 }
 
+function confirmClearStudyLayer() {
+  if (window.confirm("¿Limpiar todas las anotaciones de esta página?")) {
+    pushStudyUndoSnapshot();
+    clearStudyLayer();
+    saveStudyAnnotationsForCurrentPage();
+  }
+}
+
 function clearStudyLayer() {
   const canvas = document.getElementById("studyCanvas");
   if (canvas) canvas.getContext("2d").clearRect(0, 0, canvas.width, canvas.height);
-  document.getElementById("studyMoldLayer").innerHTML = "";
+  const ml = document.getElementById("studyMoldLayer");
+  if (ml) ml.innerHTML = "";
 }
 
 // ==========================================================================
-// 3. MODO CONCIERTO (Avanza páginas reales del PDF)
+// 3. MODO CONCIERTO (Pantalla completa real al tocar + 2 Págs + Quick-Pen)
 // ==========================================================================
 let audioTimer = null;
 let followedSys = 0;
@@ -1924,16 +2149,24 @@ let layoutIdx = 0;
 const layouts = ["1 Pág", "Media Pág", "2 Págs"];
 
 async function turnPage(dir) {
+  saveStudyAnnotationsForCurrentPage();
   const total = activeScore.pageCount || 10;
-  pageNum = Math.max(1, Math.min(total, pageNum + dir));
-  clearStudyLayer();
+  const step = layouts[layoutIdx] === "2 Págs" ? 2 : 1;
+  pageNum = Math.max(1, Math.min(total, pageNum + dir * step));
   await renderActiveScorePage();
 }
 
-function cyclePageLayout() {
+async function cyclePageLayout() {
   layoutIdx = (layoutIdx + 1) % layouts.length;
   document.getElementById("pageModeLabel").textContent = layouts[layoutIdx];
-  document.getElementById("concertTransitionTag").textContent = `Vista: ${layouts[layoutIdx]}`;
+  document.getElementById("concertTransitionTag").textContent = `${layouts[layoutIdx]} • Toca el centro para ocultar controles`;
+  await renderActiveScorePage();
+}
+
+function handleConcertCanvasTap(e) {
+  if (concertQuickToolActive) return;
+  if (e.target.closest("button, .concert-stage-pills, .concert-quick-palette, .floating-bottom-bar")) return;
+  document.body.classList.toggle("concert-immersion");
 }
 
 function toggleAudioFollow() {
@@ -1944,7 +2177,7 @@ function toggleAudioFollow() {
     clearInterval(audioTimer);
     audioTimer = null;
     btn.classList.remove("listening");
-    lbl.textContent = "Escucha Activa";
+    lbl.textContent = "Escucha Activa (Demo)";
     if (!activeScore.isRealPdf) {
       document.getElementById("concertSvg").innerHTML = buildPortraitScoreSvg(-1);
     }
@@ -1953,7 +2186,7 @@ function toggleAudioFollow() {
 
   btn.classList.add("listening");
   followedSys = 0;
-  lbl.textContent = "Compás 1 • Escuchando";
+  lbl.textContent = "Compás 1 • Demo";
   if (!activeScore.isRealPdf) {
     document.getElementById("concertSvg").innerHTML = buildPortraitScoreSvg(followedSys);
   }
@@ -2156,20 +2389,290 @@ function playEditorNotes() {
   });
 }
 
+function undoEditorNote() {
+  if (editorNotes.length > 0) {
+    editorNotes.pop();
+    renderEditorSvg();
+  }
+}
+
+// ==========================================================================
+// 5. PROGRAMAS DE CONCIERTO (SETLISTS) & QUICK-PEN EN ESCENARIO
+// ==========================================================================
+const PROGRAMS_STORAGE_KEY = "atrilProgramsV13";
+let programsState = {
+  activeId: "prog-1",
+  list: [
+    { id: "prog-1", name: "Recital Bellas Artes", scoreIds: [1, 3] },
+    { id: "prog-2", name: "Bach Integral", scoreIds: [1, 2] }
+  ]
+};
+let activeProgramScoreIndex = 0;
+
+function loadProgramsState() {
+  try {
+    const raw = localStorage.getItem(PROGRAMS_STORAGE_KEY);
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (parsed && Array.isArray(parsed.list) && parsed.list.length > 0) {
+        programsState = parsed;
+      }
+    }
+  } catch (_) {}
+}
+
+function saveProgramsState() {
+  try {
+    localStorage.setItem(PROGRAMS_STORAGE_KEY, JSON.stringify(programsState));
+  } catch (_) {}
+}
+
+function getActiveProgram() {
+  return programsState.list.find((p) => p.id === programsState.activeId) || programsState.list[0];
+}
+
+function toggleSetlistDrawer(forceState) {
+  const drawer = document.getElementById("setlistDrawer");
+  const btn = document.getElementById("btnToggleSetlist");
+  if (!drawer) return;
+  const shouldOpen = typeof forceState === "boolean" ? forceState : drawer.classList.contains("hidden");
+  drawer.classList.toggle("hidden", !shouldOpen);
+  if (btn) btn.classList.toggle("active", shouldOpen);
+}
+
+function createNewProgramPrompt() {
+  const name = window.prompt("Nombre del nuevo programa de concierto:");
+  if (!name || !name.trim()) return;
+  const newProg = {
+    id: `prog-${Date.now()}`,
+    name: name.trim(),
+    scoreIds: []
+  };
+  programsState.list.push(newProg);
+  programsState.activeId = newProg.id;
+  saveProgramsState();
+  renderSetlistDrawer();
+}
+
+function switchActiveProgram(progId) {
+  programsState.activeId = progId;
+  activeProgramScoreIndex = 0;
+  saveProgramsState();
+  renderSetlistDrawer();
+}
+
+function addScoreToActiveProgram(scoreId) {
+  const prog = getActiveProgram();
+  if (!prog) return;
+  const numId = Number(scoreId);
+  if (!prog.scoreIds.includes(numId)) {
+    prog.scoreIds.push(numId);
+    saveProgramsState();
+    renderSetlistDrawer();
+  }
+  toggleSetlistDrawer(true);
+}
+
+function moveProgramItem(idx, dir) {
+  const prog = getActiveProgram();
+  if (!prog) return;
+  const target = idx + dir;
+  if (target < 0 || target >= prog.scoreIds.length) return;
+  const tmp = prog.scoreIds[idx];
+  prog.scoreIds[idx] = prog.scoreIds[target];
+  prog.scoreIds[target] = tmp;
+  saveProgramsState();
+  renderSetlistDrawer();
+}
+
+function removeProgramItem(idx) {
+  const prog = getActiveProgram();
+  if (!prog) return;
+  prog.scoreIds.splice(idx, 1);
+  saveProgramsState();
+  renderSetlistDrawer();
+}
+
+function renderSetlistDrawer() {
+  const sel = document.getElementById("activeProgramSelect");
+  const itemsEl = document.getElementById("setlistItems");
+  const sumEl = document.getElementById("setlistSummary");
+  const badgeEl = document.getElementById("setlistCountBadge");
+  const launchBtn = document.getElementById("btnLaunchProgram");
+  if (!sel || !itemsEl) return;
+
+  sel.innerHTML = programsState.list
+    .map((p) => `<option value="${p.id}" ${p.id === programsState.activeId ? "selected" : ""}>${p.name}</option>`)
+    .join("");
+
+  const prog = getActiveProgram();
+  const validScores = (prog ? prog.scoreIds : [])
+    .map((id) => scores.find((s) => s.id === id))
+    .filter(Boolean);
+
+  if (badgeEl) badgeEl.textContent = String(validScores.length);
+  const totalPages = validScores.reduce((acc, s) => acc + (s.pageCount || 10), 0);
+  if (sumEl) sumEl.textContent = `${validScores.length} ${validScores.length === 1 ? "obra" : "obras"} • ${totalPages} págs. en total`;
+  if (launchBtn) launchBtn.disabled = validScores.length === 0;
+
+  const concertFooterLeft = document.getElementById("concertFooterLeft");
+  if (concertFooterLeft && prog) {
+    concertFooterLeft.textContent = `Programa: ${prog.name}`;
+  }
+
+  if (validScores.length === 0) {
+    itemsEl.innerHTML = `<div class="setlist-empty">Tu programa está vacío.<br>Toca <strong>"＋ Prog"</strong> en cualquier obra para agregarla aquí.</div>`;
+    return;
+  }
+
+  itemsEl.innerHTML = validScores
+    .map(
+      (s, idx) => `
+      <div class="setlist-item">
+        <span class="setlist-num">${idx + 1}</span>
+        <div class="setlist-item-info" onclick="openScoreById(${s.id}, 'study')">
+          <strong>${s.clean || s.title}</strong>
+          <small>${s.composer.split("(")[0].trim()} • ${s.pages}</small>
+        </div>
+        <div class="setlist-item-actions">
+          <button onclick="moveProgramItem(${idx}, -1)" title="Subir">↑</button>
+          <button onclick="moveProgramItem(${idx}, 1)" title="Bajar">↓</button>
+          <button onclick="removeProgramItem(${idx})" title="Quitar">✕</button>
+        </div>
+      </div>
+    `
+    )
+    .join("");
+}
+
+async function launchActiveProgramInConcert() {
+  const prog = getActiveProgram();
+  if (!prog || prog.scoreIds.length === 0) return;
+  activeProgramScoreIndex = 0;
+  await openScoreById(prog.scoreIds[0], "concert");
+}
+
+async function stepProgramPiece(dir) {
+  const prog = getActiveProgram();
+  if (!prog || prog.scoreIds.length === 0) return;
+  activeProgramScoreIndex = Math.max(0, Math.min(prog.scoreIds.length - 1, activeProgramScoreIndex + dir));
+  const nextId = prog.scoreIds[activeProgramScoreIndex];
+  if (nextId) await openScoreById(nextId, "concert");
+}
+
+// Quick-Pen en Modo Concierto
+let concertQuickToolActive = false;
+let concertQuickTool = "pen";
+
+function toggleConcertQuickTools(forceState) {
+  const pal = document.getElementById("concertQuickPalette");
+  const btn = document.getElementById("btnConcertQuickPen");
+  const drawLayer = document.getElementById("concertQuickCanvas");
+  if (!pal || !drawLayer) return;
+
+  concertQuickToolActive = typeof forceState === "boolean" ? forceState : pal.classList.contains("hidden");
+  pal.classList.toggle("hidden", !concertQuickToolActive);
+  if (btn) btn.classList.toggle("active", concertQuickToolActive);
+  drawLayer.classList.toggle("active-drawing", concertQuickToolActive);
+  if (concertQuickToolActive) setupConcertQuickCanvas();
+}
+
+function setConcertQuickTool(tool) {
+  concertQuickTool = tool;
+  document.getElementById("cqPenBtn")?.classList.toggle("active", tool === "pen");
+  document.getElementById("cqMarkerBtn")?.classList.toggle("active", tool === "marker");
+  document.getElementById("cqEraserBtn")?.classList.toggle("active", tool === "eraser");
+}
+
+function setupConcertQuickCanvas() {
+  const canvas = document.getElementById("concertQuickCanvas");
+  const wrap = document.getElementById("concertWrap");
+  if (!canvas || !wrap) return;
+  if (canvas.width !== wrap.clientWidth || canvas.height !== wrap.clientHeight) {
+    canvas.width = wrap.clientWidth;
+    canvas.height = wrap.clientHeight;
+  }
+}
+
+function initConcertQuickInteraction() {
+  const canvas = document.getElementById("concertQuickCanvas");
+  if (!canvas) return;
+  let drawing = false;
+  let last = { x: 0, y: 0 };
+
+  const getPt = (e) => {
+    const r = canvas.getBoundingClientRect();
+    const cx = e.touches ? e.touches[0].clientX : e.clientX;
+    const cy = e.touches ? e.touches[0].clientY : e.clientY;
+    return { x: cx - r.left, y: cy - r.top };
+  };
+
+  const down = (e) => {
+    if (!concertQuickToolActive) return;
+    e.preventDefault();
+    e.stopPropagation();
+    drawing = true;
+    last = getPt(e);
+  };
+
+  const move = (e) => {
+    if (!drawing || !concertQuickToolActive) return;
+    e.preventDefault();
+    const pt = getPt(e);
+    const ctx = canvas.getContext("2d");
+    ctx.beginPath();
+    ctx.moveTo(last.x, last.y);
+    ctx.lineTo(pt.x, pt.y);
+    if (concertQuickTool === "marker") {
+      ctx.strokeStyle = "rgba(212, 175, 55, 0.34)";
+      ctx.lineWidth = 18;
+    } else if (concertQuickTool === "eraser") {
+      ctx.globalCompositeOperation = "destination-out";
+      ctx.lineWidth = 26;
+    } else {
+      ctx.globalCompositeOperation = "source-over";
+      ctx.strokeStyle = "#23426e";
+      ctx.lineWidth = 2.4;
+    }
+    ctx.lineCap = "round";
+    ctx.stroke();
+    ctx.globalCompositeOperation = "source-over";
+    last = pt;
+  };
+
+  const up = () => {
+    drawing = false;
+  };
+
+  canvas.addEventListener("mousedown", down);
+  canvas.addEventListener("mousemove", move);
+  window.addEventListener("mouseup", up);
+  canvas.addEventListener("touchstart", down, { passive: false });
+  canvas.addEventListener("touchmove", move, { passive: false });
+  window.addEventListener("touchend", up);
+}
+
 window.addEventListener("DOMContentLoaded", async () => {
   await loadSavedPdfsFromDb();
+  loadProgramsState();
   initBachGptWidget();
   renderLibrary();
+  renderSetlistDrawer();
   switchStampTab("guitar");
   document.getElementById("studySvg").innerHTML = buildPortraitScoreSvg(-1);
   document.getElementById("concertSvg").innerHTML = buildPortraitScoreSvg(-1);
   initStudyInteraction();
+  initConcertQuickInteraction();
   initEditorInteraction();
   setupStudyCanvas();
+  setupConcertQuickCanvas();
   setupEditorCanvas();
+  renderStudyPageScrubber();
+  updateBookmarkButton();
 });
 
 window.addEventListener("resize", () => {
   setupStudyCanvas();
+  setupConcertQuickCanvas();
   setupEditorCanvas();
 });
