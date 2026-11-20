@@ -8,7 +8,7 @@
   <meta http-equiv="Expires" content="0" />
   <title>Cadenza — Estudio y Lectura Musical</title>
   <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='16' fill='%236b172b'/%3E%3Cpath d='M4 34c16-10 34 8 56-4M4 38c16-10 34 8 56-4M4 42c16-10 34 8 56-4' stroke='%23f7efe7' stroke-opacity='.45' stroke-width='1.5' fill='none'/%3E%3Ctext x='18' y='45' font-family='Georgia,serif' font-size='38' fill='%23fcf8f4'%3EC%3C/text%3E%3C/svg%3E" />
-  <link rel="stylesheet" href="styles.css?v=34" />
+  <link rel="stylesheet" href="styles.css?v=35" />
   <!-- Motores Oficiales para Renderizar (PDF.js) y Particionar/Editar PDFs Reales (pdf-lib) -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf-lib/1.17.1/pdf-lib.min.js"></script>
@@ -22,58 +22,27 @@
   <input type="file" id="theoryBookPdfInput" accept="application/pdf,.pdf" style="display:none" onchange="handleTheoryBookUpload(this.files)" />
 
   <!-- =================================================================== -->
-  <!-- HUD SUPERIOR FLOTANTE                                               -->
+  <!-- CABECERA SUPERIOR: LOGO CADENZA + ENGRANAJE MINIMALISTA             -->
   <!-- =================================================================== -->
   <header class="floating-hud-top" id="floatingHudTop">
-    <div class="glass-pill hud-status" id="hudContextPill">
-      <span class="status-dot"></span>
-      <span class="hud-piece-name" id="hudPieceTitle">J. S. Bach — BWV 1034</span>
+    <div class="cadenza-brand-head">
+      <div class="cadenza-logo-badge" aria-hidden="true">
+        <svg viewBox="0 0 64 64" width="32" height="32">
+          <rect width="64" height="64" rx="16" fill="var(--accent)"/>
+          <path d="M4 34c16-10 34 8 56-4M4 38c16-10 34 8 56-4M4 42c16-10 34 8 56-4" stroke="var(--accent-ink)" stroke-opacity=".42" stroke-width="1.6" fill="none"/>
+          <text x="18" y="45" font-family="Georgia,serif" font-size="38" fill="var(--accent-ink)">C</text>
+        </svg>
+      </div>
+      <div class="cadenza-brand-text">
+        <span class="cadenza-wordmark">Cadenza</span>
+        <span class="hud-piece-name" id="hudPieceTitle">J. S. Bach — BWV 1034</span>
+      </div>
     </div>
 
-    <nav class="glass-pill mode-segmented" aria-label="Modos de la aplicación">
-      <button class="seg-btn active" data-mode="library" onclick="switchMode('library')">
-        <svg viewBox="0 0 24 24" class="v-ico"><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/></svg>
-        <span>Biblioteca</span>
-      </button>
-      <button class="seg-btn" data-mode="study" onclick="switchMode('study')">
-        <svg viewBox="0 0 24 24" class="v-ico"><path d="M12 19l7-7 3 3-7 7-3-3z"/><path d="M18 13l-1.5-7.5L2 2l3.5 14.5L13 18l5-5z"/><path d="M2 2l7.586 7.586"/><circle cx="11" cy="11" r="2"/></svg>
-        <span>Estudio</span>
-      </button>
-      <button class="seg-btn" data-mode="concert" onclick="switchMode('concert')">
-        <svg viewBox="0 0 24 24" class="v-ico"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
-        <span>Concierto</span>
-      </button>
-      <button class="seg-btn" data-mode="editor" onclick="switchMode('editor')">
-        <svg viewBox="0 0 24 24" class="v-ico"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>
-        <span>Editor</span>
-      </button>
-    </nav>
-
     <div class="hud-right-cluster">
-      <div class="palette-dropdown-wrap" id="paletteDropdownWrap">
-        <button class="glass-pill palette-trigger-btn" id="paletteTriggerBtn" onclick="togglePaletteMenu(event)" title="Paleta de color" aria-label="Paleta de color">
-          <span class="pal-circle pal-circle-active" id="paletteActiveDot"></span>
-          <svg viewBox="0 0 24 24" class="v-ico chevron-sm"><polyline points="6 9 12 15 18 9"/></svg>
-        </button>
-
-        <div class="palette-dropdown-menu hidden" id="paletteMenu" onclick="event.stopPropagation()">
-          <button class="palette-opt active" data-palette="palette-luthier" onclick="setPalette('palette-luthier', this, 'Lutier')" title="Lutier & Ébano" aria-label="Lutier & Ébano">
-            <span class="pal-circle pc-luthier"></span>
-          </button>
-          <button class="palette-opt" data-palette="palette-henle" onclick="setPalette('palette-henle', this, 'Henle')" title="Henle Urtext" aria-label="Henle Urtext">
-            <span class="pal-circle pc-henle"></span>
-          </button>
-          <button class="palette-opt" data-palette="palette-linen" onclick="setPalette('palette-linen', this, 'Lino')" title="Papel Lino" aria-label="Papel Lino">
-            <span class="pal-circle pc-linen"></span>
-          </button>
-          <button class="palette-opt" data-palette="palette-velvet" onclick="setPalette('palette-velvet', this, 'Grafito')" title="Grafito Studio" aria-label="Grafito Studio">
-            <span class="pal-circle pc-velvet"></span>
-          </button>
-          <button class="palette-opt" data-palette="palette-cadenza" onclick="setPalette('palette-cadenza', this, 'Burdeos')" title="Burdeos & Marfil" aria-label="Burdeos & Marfil">
-            <span class="pal-circle pc-cadenza"></span>
-          </button>
-        </div>
-      </div>
+      <button class="btn-gear-minimal" id="btnSettingsDrawer" onclick="toggleSettingsDrawer(event)" title="Configuración y paletas" aria-label="Configuración">
+        <svg viewBox="0 0 24 24" class="v-ico"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+      </button>
     </div>
   </header>
 
@@ -120,74 +89,96 @@
             <svg viewBox="0 0 24 24" class="v-ico"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
             <input type="text" id="searchInput" placeholder="Buscar obra, compositor, BWV o programa..." oninput="renderLibrary()" />
           </div>
-
-          <button class="btn-setlist-toggle" id="btnToggleSetlist" onclick="toggleSetlistDrawer()" title="Mostrar u ocultar Programas de Concierto">
-            <svg viewBox="0 0 24 24" class="v-ico"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><circle cx="4" cy="6" r="1"/><circle cx="4" cy="12" r="1"/><circle cx="4" cy="18" r="1"/></svg>
-            <span>Programas</span>
-          </button>
         </div>
 
-        <!-- NIVEL 3: CINTA ÚNICA CENTRADA DE FILTROS Y ACCIONES -->
+        <!-- NIVEL 3: FILTROS CON DESPLEGABLES + ENLACE PROGRAMAS › -->
         <div class="lib-filter-bar">
           <div class="glass-pill filter-ribbon" role="tablist" aria-label="Organizar biblioteca">
             <button class="ribbon-tab active" data-cls="all" onclick="selectClassification('all', 'Todo', this)">Todo</button>
             <button class="ribbon-tab" data-cls="favorites" onclick="selectClassification('favorites', 'Favoritos', this)">Favoritos</button>
-            <button class="ribbon-tab" data-cls="composer" onclick="selectClassification('composer', 'Compositor', this)">Compositor</button>
-            <button class="ribbon-tab" data-cls="period" onclick="selectClassification('period', 'Periodo', this)">Periodo</button>
+
+            <div class="filter-dd-wrap">
+              <button class="ribbon-tab filter-dd-btn" data-cls="composer" id="btnFilterComposer" onclick="toggleFilterDropdown('composer', event)">
+                <span id="labelFilterComposer">Compositor</span>
+                <svg viewBox="0 0 24 24" class="v-ico wedge-ico"><polyline points="6 9 12 15 18 9"/></svg>
+              </button>
+              <div class="filter-dd-menu hidden" id="composerFilterMenu" onclick="event.stopPropagation()"></div>
+            </div>
+
+            <div class="filter-dd-wrap">
+              <button class="ribbon-tab filter-dd-btn" data-cls="period" id="btnFilterPeriod" onclick="toggleFilterDropdown('period', event)">
+                <span id="labelFilterPeriod">Periodo</span>
+                <svg viewBox="0 0 24 24" class="v-ico wedge-ico"><polyline points="6 9 12 15 18 9"/></svg>
+              </button>
+              <div class="filter-dd-menu hidden" id="periodFilterMenu" onclick="event.stopPropagation()"></div>
+            </div>
+
             <button class="ribbon-tab" data-cls="instrumentation" onclick="selectClassification('instrumentation', 'Dotación', this)">Dotación</button>
             <span class="ribbon-sep"></span>
             <button class="ribbon-tab ribbon-action" id="btnNormalizeRaw" onclick="cleanLibraryWithAI()" title="Limpiar nombres de archivos PDF crudos">✦ Normalizar nombres</button>
           </div>
+
+          <button class="programs-link-btn" id="btnOpenProgramsSlide" onclick="openProgramsSlideView()">
+            <span>Programas</span>
+            <svg viewBox="0 0 24 24" class="v-ico"><polyline points="9 18 15 12 9 6"/></svg>
+          </button>
         </div>
 
         <div class="pilot-status-banner hidden" id="pilotStatusBanner"></div>
 
-        <!-- CONTENEDOR PRINCIPAL DE ARCHIVOS -->
-        <div id="libraryCatalogContainer">
-          <div class="folio-grid" id="scoreList"></div>
+        <!-- CONTENEDOR DESLIZANTE CONTINUO: BIBLIOTECA <-> PROGRAMAS -->
+        <div class="library-slides-viewport" id="librarySlidesViewport">
+          <div class="library-slide catalog-slide" id="libraryCatalogSlide">
+            <div id="libraryCatalogContainer">
+              <div class="folio-grid" id="scoreList"></div>
+            </div>
+          </div>
+
+          <section class="library-slide programs-slide" id="programsSlideView" aria-label="Programas">
+            <div class="programs-slide-card">
+              <div class="setlist-head">
+                <button class="pq-back-btn prog-slide-back" onclick="closeProgramsSlideView()" title="Volver a Biblioteca" aria-label="Volver">
+                  <svg viewBox="0 0 24 24" class="v-ico"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+                </button>
+                <div class="setlist-head-main">
+                  <span class="setlist-eyebrow">Programas:</span>
+                  <div class="setlist-name-row">
+                    <select id="activeProgramSelect" onchange="switchActiveProgram(this.value)" aria-label="Seleccionar programa"></select>
+                    <button class="btn-icon-sm btn-pencil-outline" onclick="renameActiveProgramPrompt()" title="Renombrar programa" aria-label="Renombrar programa">
+                      <svg viewBox="0 0 24 24" class="v-ico"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
+                    </button>
+                    <button class="btn-icon-sm btn-pencil-outline btn-del-prog" onclick="deleteActiveProgramPrompt()" title="Eliminar programa" aria-label="Eliminar programa">
+                      <svg viewBox="0 0 24 24" class="v-ico"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+                    </button>
+                    <button class="btn-new-prog" onclick="toggleNewProgramInput(true)" title="Crear nuevo programa">＋ Nuevo programa</button>
+                  </div>
+                  <div class="new-prog-inline hidden" id="newProgInline">
+                    <input type="text" id="newProgNameInput" placeholder="Nombre del programa..." onkeydown="if(event.key==='Enter') confirmNewProgram()" />
+                    <button class="btn-new-prog-ok" onclick="confirmNewProgram()">Crear</button>
+                    <button class="btn-bare-x" onclick="toggleNewProgramInput(false)" aria-label="Cancelar">✕</button>
+                  </div>
+                </div>
+              </div>
+
+              <div class="setlist-summary-row">
+                <span class="setlist-summary" id="setlistSummary">Obras:</span>
+                <div class="setlist-quick-add">
+                  <select id="quickAddScoreSelect" aria-label="Elegir obra para agregar"></select>
+                  <button class="btn-quick-add" onclick="quickAddSelectedScoreToProgram()">＋ Agregar</button>
+                </div>
+              </div>
+
+              <div class="setlist-items" id="setlistItems"></div>
+
+              <div class="setlist-foot">
+                <button class="btn-launch-concert" id="btnLaunchProgram" onclick="saveSetlistDrawerChanges()">
+                  <span>Guardar cambios</span>
+                </button>
+              </div>
+            </div>
+          </section>
         </div>
       </div>
-
-      <!-- PANEL LATERAL DE PROGRAMAS / SETLIST -->
-      <aside class="setlist-drawer hidden" id="setlistDrawer" onclick="event.stopPropagation()">
-        <div class="setlist-head">
-          <div class="setlist-head-main">
-            <span class="setlist-eyebrow">Programas:</span>
-            <div class="setlist-name-row">
-              <select id="activeProgramSelect" onchange="switchActiveProgram(this.value)" aria-label="Seleccionar programa"></select>
-              <button class="btn-icon-sm btn-pencil-outline" onclick="renameActiveProgramPrompt()" title="Renombrar programa" aria-label="Renombrar programa">
-                <svg viewBox="0 0 24 24" class="v-ico"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
-              </button>
-              <button class="btn-icon-sm btn-pencil-outline btn-del-prog" onclick="deleteActiveProgramPrompt()" title="Eliminar programa" aria-label="Eliminar programa">
-                <svg viewBox="0 0 24 24" class="v-ico"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
-              </button>
-              <button class="btn-new-prog" onclick="toggleNewProgramInput(true)" title="Crear nuevo programa">＋ Nuevo programa</button>
-            </div>
-            <div class="new-prog-inline hidden" id="newProgInline">
-              <input type="text" id="newProgNameInput" placeholder="Nombre del programa..." onkeydown="if(event.key==='Enter') confirmNewProgram()" />
-              <button class="btn-new-prog-ok" onclick="confirmNewProgram()">Crear</button>
-              <button class="btn-bare-x" onclick="toggleNewProgramInput(false)" aria-label="Cancelar">✕</button>
-            </div>
-          </div>
-          <button class="btn-bare-x" onclick="toggleSetlistDrawer(false)" aria-label="Cerrar panel" title="Cerrar">✕</button>
-        </div>
-
-        <div class="setlist-summary-row">
-          <span class="setlist-summary" id="setlistSummary">Obras:</span>
-          <div class="setlist-quick-add">
-            <select id="quickAddScoreSelect" aria-label="Elegir obra para agregar"></select>
-            <button class="btn-quick-add" onclick="quickAddSelectedScoreToProgram()">＋ Agregar</button>
-          </div>
-        </div>
-
-        <div class="setlist-items" id="setlistItems"></div>
-
-        <div class="setlist-foot">
-          <button class="btn-launch-concert" id="btnLaunchProgram" onclick="saveSetlistDrawerChanges()">
-            <span>Guardar cambios</span>
-          </button>
-        </div>
-      </aside>
     </div>
 
     <!-- ================================================================= -->
@@ -611,13 +602,73 @@
       </div>
     </aside>
 
-    <!-- Botón Flotante Principal abajo a la derecha con Pixel Art 8-Bits -->
+  </div>
+
+  <!-- DOCK INFERIOR UNIFICADO: 4 MODOS (SOLO ICONOS) + PÍLDORA BACHGPT -->
+  <div class="bottom-nav-dock" id="bottomNavDock">
+    <nav class="glass-pill mode-segmented bottom-mode-capsule" aria-label="Modos de la aplicación">
+      <button class="seg-btn active" data-mode="library" onclick="switchMode('library')" title="Biblioteca" aria-label="Biblioteca">
+        <svg viewBox="0 0 24 24" class="v-ico"><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/></svg>
+      </button>
+      <button class="seg-btn" data-mode="study" onclick="switchMode('study')" title="Estudio" aria-label="Estudio">
+        <svg viewBox="0 0 24 24" class="v-ico"><path d="M12 19l7-7 3 3-7 7-3-3z"/><path d="M18 13l-1.5-7.5L2 2l3.5 14.5L13 18l5-5z"/><path d="M2 2l7.586 7.586"/><circle cx="11" cy="11" r="2"/></svg>
+      </button>
+      <button class="seg-btn" data-mode="concert" onclick="switchMode('concert')" title="Concierto" aria-label="Concierto">
+        <svg viewBox="0 0 24 24" class="v-ico"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
+      </button>
+      <button class="seg-btn" data-mode="editor" onclick="switchMode('editor')" title="Editor" aria-label="Editor">
+        <svg viewBox="0 0 24 24" class="v-ico"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>
+      </button>
+    </nav>
+
     <button class="bachgpt-fab" id="bachGptFab" onclick="handleMainBachFabClick()" title="BachGPT — Asistente Musical">
       <div class="bach-8bit-icon" id="bachFabIcon"></div>
       <span class="bach-fab-label">BachGPT</span>
       <span class="bach-fab-sparkle" aria-hidden="true">✦</span>
     </button>
   </div>
+
+  <!-- Pestaña mínima para mostrar de nuevo el dock inferior tras ocultarse al escribir -->
+  <button class="dock-reveal-handle hidden" id="dockRevealHandle" onclick="revealBottomNavDock()" title="Mostrar barra de modos" aria-label="Mostrar barra de modos">
+    <span></span>
+  </button>
+
+  <!-- MENÚ LATERAL SUPERPUESTO DE CONFIGURACIÓN (ENGRANAJE) -->
+  <aside class="settings-drawer hidden" id="settingsDrawer" onclick="event.stopPropagation()">
+    <div class="settings-head">
+      <span class="settings-title">Configuración</span>
+      <button class="btn-bare-x" onclick="toggleSettingsDrawer(false)" aria-label="Cerrar configuración">✕</button>
+    </div>
+
+    <div class="settings-section">
+      <span class="settings-label">Paleta de colores</span>
+      <div class="settings-palette-list" id="paletteMenu">
+        <button class="palette-opt active" data-palette="palette-luthier" onclick="setPalette('palette-luthier', this, 'Lutier')">
+          <span class="pal-circle pc-luthier"></span>
+          <span>Lutier &amp; Ébano</span>
+        </button>
+        <button class="palette-opt" data-palette="palette-henle" onclick="setPalette('palette-henle', this, 'Henle')">
+          <span class="pal-circle pc-henle"></span>
+          <span>Henle Urtext</span>
+        </button>
+        <button class="palette-opt" data-palette="palette-linen" onclick="setPalette('palette-linen', this, 'Lino')">
+          <span class="pal-circle pc-linen"></span>
+          <span>Papel Lino</span>
+        </button>
+        <button class="palette-opt" data-palette="palette-velvet" onclick="setPalette('palette-velvet', this, 'Grafito')">
+          <span class="pal-circle pc-velvet"></span>
+          <span>Grafito Studio</span>
+        </button>
+        <button class="palette-opt" data-palette="palette-cadenza" onclick="setPalette('palette-cadenza', this, 'Burdeos')">
+          <span class="pal-circle pc-cadenza"></span>
+          <span>Burdeos &amp; Marfil</span>
+        </button>
+      </div>
+    </div>
+  </aside>
+
+  <!-- MENÚ FLOTANTE COMPACTO DE ACCIONES POR OBRA (•••) -->
+  <div class="work-actions-menu hidden" id="workActionsMenu" onclick="event.stopPropagation()"></div>
 
   <!-- CINTILLO FLOTANTE INFERIOR PARA SELECCIÓN MÚLTIPLE -->
   <div class="glass-pill multi-select-bar hidden" id="multiSelectBar" onclick="event.stopPropagation()">
@@ -642,6 +693,6 @@
     <span class="pdf-loading-text">Cargando...</span>
   </div>
 
-  <script src="app.js?v=34"></script>
+  <script src="app.js?v=35"></script>
 </body>
 </html>

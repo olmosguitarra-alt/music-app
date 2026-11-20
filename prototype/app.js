@@ -798,6 +798,9 @@ function switchMode(mode) {
   document.querySelectorAll(".canvas-view").forEach((v) => v.classList.remove("active"));
   document.getElementById(`mode-${mode}`).classList.add("active");
 
+  document.body.classList.remove("writing-focus");
+  document.getElementById("dockRevealHandle")?.classList.add("hidden");
+
   document.body.classList.toggle("mode-concert-active", mode === "concert");
   if (mode === "concert") {
     toggleBachGptChat(false);
@@ -837,11 +840,87 @@ function setLibraryViewMode(mode) {
   renderLibrary();
 }
 
+let selectedComposerFilter = "all";
+let selectedPeriodFilter = "all";
+
 function selectClassification(clsKey, labelText, btn) {
   currentClassification = clsKey;
   document.querySelectorAll(".ribbon-tab[data-cls]").forEach((item) => item.classList.remove("active"));
   if (btn) btn.classList.add("active");
+  document.getElementById("composerFilterMenu")?.classList.add("hidden");
+  document.getElementById("periodFilterMenu")?.classList.add("hidden");
+  if (clsKey === "all") {
+    selectedComposerFilter = "all";
+    selectedPeriodFilter = "all";
+    const lc = document.getElementById("labelFilterComposer");
+    const lp = document.getElementById("labelFilterPeriod");
+    if (lc) lc.textContent = "Compositor";
+    if (lp) lp.textContent = "Periodo";
+  }
   renderLibrary();
+}
+
+function toggleFilterDropdown(kind, e) {
+  if (e) e.stopPropagation();
+  const isComp = kind === "composer";
+  const menu = document.getElementById(isComp ? "composerFilterMenu" : "periodFilterMenu");
+  const other = document.getElementById(isComp ? "periodFilterMenu" : "composerFilterMenu");
+  if (other) other.classList.add("hidden");
+  if (!menu) return;
+
+  const vals = [...new Set(scores.map((s) => (isComp ? s.composer.split("(")[0].trim() : s.period)).filter(Boolean))];
+  const current = isComp ? selectedComposerFilter : selectedPeriodFilter;
+  const fn = isComp ? "applyComposerFilter" : "applyPeriodFilter";
+
+  menu.innerHTML = [
+    `<button class="filter-dd-opt ${current === "all" ? "active" : ""}" onclick="${fn}('all')">Todos</button>`,
+    ...vals.map(
+      (v) => `<button class="filter-dd-opt ${current === v ? "active" : ""}" onclick="${fn}('${v.replace(/'/g, "\\'")}')">${v}</button>`
+    )
+  ].join("");
+
+  menu.classList.toggle("hidden");
+}
+
+function applyComposerFilter(val) {
+  selectedComposerFilter = val;
+  currentClassification = "composer";
+  document.querySelectorAll(".ribbon-tab[data-cls]").forEach((item) => item.classList.toggle("active", item.dataset.cls === "composer"));
+  const lbl = document.getElementById("labelFilterComposer");
+  if (lbl) lbl.textContent = val === "all" ? "Compositor" : val;
+  document.getElementById("composerFilterMenu")?.classList.add("hidden");
+  renderLibrary();
+}
+
+function applyPeriodFilter(val) {
+  selectedPeriodFilter = val;
+  currentClassification = "period";
+  document.querySelectorAll(".ribbon-tab[data-cls]").forEach((item) => item.classList.toggle("active", item.dataset.cls === "period"));
+  const lbl = document.getElementById("labelFilterPeriod");
+  if (lbl) lbl.textContent = val === "all" ? "Periodo" : val;
+  document.getElementById("periodFilterMenu")?.classList.add("hidden");
+  renderLibrary();
+}
+
+function toggleSettingsDrawer(forceState) {
+  const drw = document.getElementById("settingsDrawer");
+  if (!drw) return;
+  const shouldOpen = typeof forceState === "boolean" ? forceState : drw.classList.contains("hidden");
+  drw.classList.toggle("hidden", !shouldOpen);
+}
+
+function openProgramsSlideView() {
+  renderSetlistDrawer();
+  document.getElementById("librarySlidesViewport")?.classList.add("is-programs-active");
+}
+
+function closeProgramsSlideView() {
+  document.getElementById("librarySlidesViewport")?.classList.remove("is-programs-active");
+}
+
+function revealBottomNavDock() {
+  document.body.classList.remove("writing-focus");
+  document.getElementById("dockRevealHandle")?.classList.add("hidden");
 }
 
 function exitAiModeToCatalog() {
@@ -886,6 +965,12 @@ function renderLibrary() {
 
   const filtered = scores.filter((s) => {
     if (currentClassification === "favorites" && !isFavoriteScore(s.id)) return false;
+    if (currentClassification === "composer" && selectedComposerFilter !== "all") {
+      if (!s.composer.toLowerCase().includes(selectedComposerFilter.toLowerCase())) return false;
+    }
+    if (currentClassification === "period" && selectedPeriodFilter !== "all") {
+      if (s.period !== selectedPeriodFilter) return false;
+    }
     return (
       s.title.toLowerCase().includes(q) ||
       (s.clean && s.clean.toLowerCase().includes(q)) ||
@@ -1000,8 +1085,7 @@ function buildFolioCardHtml(s) {
       `;
 
   const showSub = s.subtitle && !s.isRealPdf && !s.subtitle.startsWith("Archivo PDF de tu Tablet");
-  const aiHeadSvg = buildMonochromeBachHeadSvg();
-  const trashSvg = `<svg viewBox="0 0 24 24" class="v-ico"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>`;
+  const dotsSvg = `<svg viewBox="0 0 24 24" class="v-ico"><circle cx="12" cy="12" r="1.4" fill="currentColor" stroke="none"/><circle cx="19" cy="12" r="1.4" fill="currentColor" stroke="none"/><circle cx="5" cy="12" r="1.4" fill="currentColor" stroke="none"/></svg>`;
 
   const isSelected = multiSelectMode && selectedScoreIds.has(s.id);
   const chkHtml = multiSelectMode
@@ -1032,11 +1116,8 @@ function buildFolioCardHtml(s) {
       <div class="folio-card-foot" onclick="event.stopPropagation()">
         <span class="period-tag">${s.period} • ${s.pages}</span>
         <div class="folio-quick-btns">
-          <button class="mini-action-btn fav-card-btn ${isFavoriteScore(s.id) ? "is-fav" : ""}" onclick="toggleFavoriteScore(${s.id})" title="Marcar como favorita" aria-label="Favorito"><svg viewBox="0 0 24 24" class="heart-ico"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg></button>
-          <button class="mini-action-btn bach-card-btn bach-star-btn" onclick="openAiForWork(${s.id})" title="BachGPT: Consultar sobre esta obra" aria-label="BachGPT">${aiHeadSvg}</button>
-          <button class="mini-action-btn add-prog-btn" onclick="openProgramQuickMenu(event, ${s.id})" title="Agregar a un programa">＋</button>
-          <button class="mini-action-btn" onclick="openPdfModalById(${s.id})" title="Taller PDF y Renombrar">✂</button>
-          <button class="mini-action-btn delete-card-btn" onclick="deleteScoreFromLibrary(${s.id})" title="Eliminar de la biblioteca" aria-label="Eliminar">${trashSvg}</button>
+          <button class="mini-action-btn no-box-btn fav-card-btn ${isFavoriteScore(s.id) ? "is-fav" : ""}" onclick="toggleFavoriteScore(${s.id})" title="Marcar como favorita" aria-label="Favorito"><svg viewBox="0 0 24 24" class="heart-ico"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg></button>
+          <button class="mini-action-btn no-box-btn work-more-btn" onclick="openWorkActionsMenu(event, ${s.id})" title="Más opciones" aria-label="Más opciones">${dotsSvg}</button>
         </div>
       </div>
     </article>
@@ -1045,8 +1126,7 @@ function buildFolioCardHtml(s) {
 
 function buildListRowHtml(s) {
   const showSub = s.subtitle && !s.isRealPdf && !s.subtitle.startsWith("Archivo PDF de tu Tablet");
-  const aiHeadSvg = buildMonochromeBachHeadSvg();
-  const trashSvg = `<svg viewBox="0 0 24 24" class="v-ico"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>`;
+  const dotsSvg = `<svg viewBox="0 0 24 24" class="v-ico"><circle cx="12" cy="12" r="1.4" fill="currentColor" stroke="none"/><circle cx="19" cy="12" r="1.4" fill="currentColor" stroke="none"/><circle cx="5" cy="12" r="1.4" fill="currentColor" stroke="none"/></svg>`;
 
   const isSelected = multiSelectMode && selectedScoreIds.has(s.id);
   const chkHtml = multiSelectMode
@@ -1076,14 +1156,60 @@ function buildListRowHtml(s) {
       </div>
 
       <div class="list-col-actions" onclick="event.stopPropagation()">
-        <button class="mini-action-btn fav-card-btn ${isFavoriteScore(s.id) ? "is-fav" : ""}" onclick="toggleFavoriteScore(${s.id})" title="Marcar como favorita" aria-label="Favorito"><svg viewBox="0 0 24 24" class="heart-ico"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg></button>
-        <button class="mini-action-btn bach-card-btn bach-star-btn" onclick="openAiForWork(${s.id})" title="BachGPT: Consultar sobre esta obra" aria-label="BachGPT">${aiHeadSvg}</button>
-        <button class="mini-action-btn add-prog-btn" onclick="openProgramQuickMenu(event, ${s.id})" title="Agregar a un programa">＋</button>
-        <button class="mini-action-btn" onclick="openPdfModalById(${s.id})" title="Taller PDF y Renombrar">✂</button>
-        <button class="mini-action-btn delete-card-btn" onclick="deleteScoreFromLibrary(${s.id})" title="Eliminar de la biblioteca" aria-label="Eliminar">${trashSvg}</button>
+        <button class="mini-action-btn no-box-btn fav-card-btn ${isFavoriteScore(s.id) ? "is-fav" : ""}" onclick="toggleFavoriteScore(${s.id})" title="Marcar como favorita" aria-label="Favorito"><svg viewBox="0 0 24 24" class="heart-ico"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg></button>
+        <button class="mini-action-btn no-box-btn work-more-btn" onclick="openWorkActionsMenu(event, ${s.id})" title="Más opciones" aria-label="Más opciones">${dotsSvg}</button>
       </div>
     </div>
   `;
+}
+
+function openWorkActionsMenu(e, scoreId) {
+  if (e) e.stopPropagation();
+  const menu = document.getElementById("workActionsMenu");
+  if (!menu) return;
+  const id = Number(scoreId);
+  const aiHead = buildMonochromeBachHeadSvg();
+  const addSvg = `<svg viewBox="0 0 24 24" class="v-ico"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>`;
+  const cutSvg = `<svg viewBox="0 0 24 24" class="v-ico"><circle cx="6" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><line x1="20" y1="4" x2="8.12" y2="15.88"/><line x1="14.47" y1="14.48" x2="20" y2="20"/><line x1="8.12" y1="8.12" x2="12" y2="12"/></svg>`;
+  const trashSvg = `<svg viewBox="0 0 24 24" class="v-ico"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>`;
+
+  menu.innerHTML = `
+    <button class="wa-menu-item bach-card-btn" onclick="closeWorkActionsMenu(); openAiForWork(${id})">
+      ${aiHead}
+      <span>Consultar a BachGPT</span>
+    </button>
+    <button class="wa-menu-item add-prog-btn" onclick="openProgFromWorkMenu(event, ${id})">
+      ${addSvg}
+      <span>Agregar a programa</span>
+    </button>
+    <button class="wa-menu-item" onclick="closeWorkActionsMenu(); openPdfModalById(${id})">
+      ${cutSvg}
+      <span>Taller PDF</span>
+    </button>
+    <button class="wa-menu-item wa-danger" onclick="closeWorkActionsMenu(); deleteScoreFromLibrary(${id})">
+      ${trashSvg}
+      <span>Eliminar</span>
+    </button>
+  `;
+
+  menu.classList.remove("hidden");
+  if (e && e.currentTarget) {
+    const rect = e.currentTarget.getBoundingClientRect();
+    const mw = 210;
+    const left = Math.max(12, Math.min(window.innerWidth - mw - 12, rect.right - mw));
+    const top = Math.max(12, Math.min(window.innerHeight - 190, rect.bottom + 6));
+    menu.style.left = `${left}px`;
+    menu.style.top = `${top}px`;
+  }
+}
+
+function closeWorkActionsMenu() {
+  document.getElementById("workActionsMenu")?.classList.add("hidden");
+}
+
+function openProgFromWorkMenu(e, scoreId) {
+  closeWorkActionsMenu();
+  openProgramQuickMenu(e, scoreId);
 }
 
 // ==========================================================================
@@ -2445,6 +2571,8 @@ function initStudyInteraction() {
 
   const down = (e) => {
     e.preventDefault();
+    document.body.classList.add("writing-focus");
+    document.getElementById("dockRevealHandle")?.classList.remove("hidden");
     document.getElementById("brushPopover")?.classList.add("hidden");
     const pt = getPt(e);
     pushStudyUndoSnapshot();
@@ -2693,6 +2821,8 @@ function initEditorInteraction() {
 
   const down = (e) => {
     e.preventDefault();
+    document.body.classList.add("writing-focus");
+    document.getElementById("dockRevealHandle")?.classList.remove("hidden");
     drawing = true;
     last = getPt(e);
   };
@@ -2828,12 +2958,13 @@ function getActiveProgram() {
 }
 
 function toggleSetlistDrawer(forceState) {
-  const drawer = document.getElementById("setlistDrawer");
-  const btn = document.getElementById("btnToggleSetlist");
-  if (!drawer) return;
-  const shouldOpen = typeof forceState === "boolean" ? forceState : drawer.classList.contains("hidden");
-  drawer.classList.toggle("hidden", !shouldOpen);
-  if (btn) btn.classList.toggle("active", shouldOpen);
+  if (forceState === true) openProgramsSlideView();
+  else if (forceState === false) closeProgramsSlideView();
+  else {
+    const vp = document.getElementById("librarySlidesViewport");
+    if (vp?.classList.contains("is-programs-active")) closeProgramsSlideView();
+    else openProgramsSlideView();
+  }
 }
 
 function toggleNewProgramInput(show) {
@@ -3065,7 +3196,7 @@ function onSlPointerDown(e, idx) {
 function saveSetlistDrawerChanges() {
   saveProgramsState();
   renderSetlistDrawer();
-  toggleSetlistDrawer(false);
+  closeProgramsSlideView();
 }
 
 async function launchActiveProgramInConcert() {
@@ -3530,6 +3661,26 @@ document.addEventListener("pointerdown", (e) => {
 
 // Cerrar menús flotantes al tocar cualquier parte fuera de ellos
 document.addEventListener("click", (e) => {
+  const settingsDrw = document.getElementById("settingsDrawer");
+  if (settingsDrw && !settingsDrw.classList.contains("hidden") && !e.target.closest("#settingsDrawer") && !e.target.closest("#btnSettingsDrawer")) {
+    settingsDrw.classList.add("hidden");
+  }
+
+  const workMenu = document.getElementById("workActionsMenu");
+  if (workMenu && !workMenu.classList.contains("hidden") && !e.target.closest("#workActionsMenu") && !e.target.closest(".work-more-btn")) {
+    workMenu.classList.add("hidden");
+  }
+
+  const compMenu = document.getElementById("composerFilterMenu");
+  if (compMenu && !compMenu.classList.contains("hidden") && !e.target.closest("#composerFilterMenu") && !e.target.closest("#btnFilterComposer")) {
+    compMenu.classList.add("hidden");
+  }
+
+  const perMenu = document.getElementById("periodFilterMenu");
+  if (perMenu && !perMenu.classList.contains("hidden") && !e.target.closest("#periodFilterMenu") && !e.target.closest("#btnFilterPeriod")) {
+    perMenu.classList.add("hidden");
+  }
+
   const pqPop = document.getElementById("progQuickPopover");
   if (pqPop && !pqPop.classList.contains("hidden") && !e.target.closest("#progQuickPopover") && !e.target.closest(".add-prog-btn")) {
     pqPop.classList.add("hidden");
@@ -3539,27 +3690,12 @@ document.addEventListener("click", (e) => {
     impMenu.classList.add("hidden");
   }
 
-  const palMenu = document.getElementById("paletteMenu");
-  if (palMenu && !palMenu.classList.contains("hidden") && !e.target.closest("#paletteDropdownWrap")) {
-    palMenu.classList.add("hidden");
-  }
-
-  const drawer = document.getElementById("setlistDrawer");
-  if (
-    drawer &&
-    !drawer.classList.contains("hidden") &&
-    !e.target.closest("#setlistDrawer") &&
-    !e.target.closest("#btnToggleSetlist") &&
-    !e.target.closest(".add-prog-btn")
-  ) {
-    toggleSetlistDrawer(false);
-  }
-
   const bachWin = document.getElementById("bachGptWindow");
   if (
     bachWin &&
     !bachWin.classList.contains("hidden") &&
     !e.target.closest("#bachWidgetRoot") &&
+    !e.target.closest("#bachGptFab") &&
     !e.target.closest(".bach-card-btn")
   ) {
     toggleBachGptChat(false);
