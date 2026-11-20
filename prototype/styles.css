@@ -4119,3 +4119,17 @@ body.concert-immersion #mode-concert .concert-stage {
     padding: 0 7px !important;
   }
 }
+
+
+/* V28: asegurar centrado absoluto de #progQuickPopover en body */
+.prog-quick-popover {
+  position: fixed !important;
+  top: 50% !important;
+  left: 50% !important;
+  right: auto !important;
+  bottom: auto !important;
+  transform: translate(-50%, -50%) !important;
+  width: min(340px, calc(100vw - 32px));
+  max-height: min(400px, calc(100dvh - 100px));
+  z-index: 120;
+}

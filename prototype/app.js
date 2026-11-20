@@ -2769,13 +2769,7 @@ function renderSetlistDrawer() {
     .map(
       (s, idx) => `
       <div class="setlist-item"
-           draggable="true"
            data-sl-idx="${idx}"
-           ondragstart="onSlDragStart(event, ${idx})"
-           ondragover="onSlDragOver(event, ${idx})"
-           ondragleave="onSlDragLeave(event)"
-           ondrop="onSlDrop(event, ${idx})"
-           ondragend="onSlDragEnd(event)"
            onpointerdown="onSlPointerDown(event, ${idx})">
         <svg viewBox="0 0 24 24" class="pq-drag-ico" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="8" y1="7" x2="16" y2="7"/><line x1="8" y1="12" x2="16" y2="12"/><line x1="8" y1="17" x2="16" y2="17"/></svg>
         <span class="setlist-num">${idx + 1}</span>
@@ -2832,7 +2826,8 @@ function onSlDragEnd(e) {
 }
 
 function onSlPointerDown(e, idx) {
-  if (e.pointerType === "mouse" || e.target.closest("button")) return;
+  if (e.target.closest("button")) return;
+  e.preventDefault();
   const itemEl = e.currentTarget;
   let currentIdx = idx;
   itemEl.classList.add("dragging");
@@ -3065,13 +3060,7 @@ function renderProgQuickOrderView() {
     .map(
       (s, idx) => `
       <div class="pq-work-item ${s.id === pqTargetScoreId ? "is-target-work" : ""}"
-           draggable="true"
            data-pq-idx="${idx}"
-           ondragstart="onPqDragStart(event, ${idx})"
-           ondragover="onPqDragOver(event, ${idx})"
-           ondragleave="onPqDragLeave(event)"
-           ondrop="onPqDrop(event, ${idx})"
-           ondragend="onPqDragEnd(event)"
            onpointerdown="onPqPointerDown(event, ${idx})">
         <svg viewBox="0 0 24 24" class="pq-drag-ico" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="8" y1="7" x2="16" y2="7"/><line x1="8" y1="12" x2="16" y2="12"/><line x1="8" y1="17" x2="16" y2="17"/></svg>
         <span class="pq-work-num">${idx + 1}</span>
@@ -3137,9 +3126,10 @@ function onPqDragEnd(e) {
   pqDragIndex = null;
 }
 
-// Soporte táctil / stylus para deslizar obras entre niveles en tablet
+// Soporte unificado (ratón, dedo y lápiz) para deslizar obras entre niveles
 function onPqPointerDown(e, idx) {
-  if (e.pointerType === "mouse") return;
+  if (e.target.closest("button")) return;
+  e.preventDefault();
   const itemEl = e.currentTarget;
   const startY = e.clientY;
   let currentIdx = idx;
