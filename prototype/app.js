@@ -808,7 +808,7 @@ function buildFolioCardHtml(s) {
         <div class="folio-quick-btns">
           <button class="mini-action-btn fav-card-btn ${isFavoriteScore(s.id) ? "is-fav" : ""}" onclick="toggleFavoriteScore(${s.id})" title="Marcar como favorita" aria-label="Favorito"><svg viewBox="0 0 24 24" class="heart-ico"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg></button>
           <button class="mini-action-btn bach-card-btn bach-star-btn" onclick="openAiForWork(${s.id})" title="BachGPT: Consultar sobre esta obra" aria-label="BachGPT"><svg viewBox="0 0 24 24" class="v-ico"><path d="m12 3-1.9 5.8a2 2 0 0 1-1.3 1.3L3 12l5.8 1.9a2 2 0 0 1 1.3 1.3L12 21l1.9-5.8a2 2 0 0 1 1.3-1.3L21 12l-5.8-1.9a2 2 0 0 1-1.3-1.3Z"/></svg></button>
-          <button class="mini-action-btn with-label add-prog-btn" onclick="openProgramQuickMenu(event, ${s.id})" title="Agregar a un programa">＋ Prog</button>
+          <button class="mini-action-btn add-prog-btn" onclick="openProgramQuickMenu(event, ${s.id})" title="Agregar a un programa">＋</button>
           <button class="mini-action-btn" onclick="openPdfModalById(${s.id})" title="Taller PDF y Renombrar">✂</button>
         </div>
       </div>
@@ -836,7 +836,7 @@ function buildListRowHtml(s) {
       <div class="list-col-actions" onclick="event.stopPropagation()">
         <button class="mini-action-btn fav-card-btn ${isFavoriteScore(s.id) ? "is-fav" : ""}" onclick="toggleFavoriteScore(${s.id})" title="Marcar como favorita" aria-label="Favorito"><svg viewBox="0 0 24 24" class="heart-ico"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg></button>
         <button class="mini-action-btn bach-card-btn bach-star-btn" onclick="openAiForWork(${s.id})" title="BachGPT: Consultar sobre esta obra" aria-label="BachGPT"><svg viewBox="0 0 24 24" class="v-ico"><path d="m12 3-1.9 5.8a2 2 0 0 1-1.3 1.3L3 12l5.8 1.9a2 2 0 0 1 1.3 1.3L12 21l1.9-5.8a2 2 0 0 1 1.3-1.3L21 12l-5.8-1.9a2 2 0 0 1-1.3-1.3Z"/></svg></button>
-        <button class="mini-action-btn with-label add-prog-btn" onclick="openProgramQuickMenu(event, ${s.id})" title="Agregar a un programa">＋ Prog</button>
+        <button class="mini-action-btn add-prog-btn" onclick="openProgramQuickMenu(event, ${s.id})" title="Agregar a un programa">＋</button>
         <button class="mini-action-btn" onclick="openPdfModalById(${s.id})" title="Taller PDF y Renombrar">✂</button>
       </div>
     </div>
@@ -2587,9 +2587,8 @@ function renderSetlistDrawer() {
     .map((id) => scores.find((s) => s.id === id))
     .filter(Boolean);
 
-  const totalPages = validScores.reduce((acc, s) => acc + (s.pageCount || 10), 0);
-  if (sumEl) sumEl.textContent = `${validScores.length} ${validScores.length === 1 ? "obra" : "obras"} • ${totalPages} págs. en total`;
-  if (launchBtn) launchBtn.disabled = validScores.length === 0;
+  if (sumEl) sumEl.textContent = "Obras:";
+  if (launchBtn) launchBtn.disabled = false;
 
   const concertFooterLeft = document.getElementById("concertFooterLeft");
   if (concertFooterLeft && prog) {
@@ -2597,28 +2596,109 @@ function renderSetlistDrawer() {
   }
 
   if (validScores.length === 0) {
-    itemsEl.innerHTML = `<div class="setlist-empty">Tu programa está vacío.<br>Toca <strong>"＋ Prog"</strong> en cualquier obra para agregarla aquí.</div>`;
+    itemsEl.innerHTML = `<div class="setlist-empty">Tu programa está vacío.<br>Toca <strong>"＋"</strong> en cualquier obra para agregarla aquí.</div>`;
     return;
   }
 
   itemsEl.innerHTML = validScores
     .map(
       (s, idx) => `
-      <div class="setlist-item">
+      <div class="setlist-item"
+           draggable="true"
+           data-sl-idx="${idx}"
+           ondragstart="onSlDragStart(event, ${idx})"
+           ondragover="onSlDragOver(event, ${idx})"
+           ondragleave="onSlDragLeave(event)"
+           ondrop="onSlDrop(event, ${idx})"
+           ondragend="onSlDragEnd(event)"
+           onpointerdown="onSlPointerDown(event, ${idx})">
+        <svg viewBox="0 0 24 24" class="pq-drag-ico" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="8" y1="7" x2="16" y2="7"/><line x1="8" y1="12" x2="16" y2="12"/><line x1="8" y1="17" x2="16" y2="17"/></svg>
         <span class="setlist-num">${idx + 1}</span>
         <div class="setlist-item-info" onclick="openScoreById(${s.id}, 'study')">
           <strong>${s.clean || s.title}</strong>
           <small>${s.composer.split("(")[0].trim()} • ${s.pages}</small>
         </div>
-        <div class="setlist-item-actions">
-          <button onclick="moveProgramItem(${idx}, -1)" title="Subir">↑</button>
-          <button onclick="moveProgramItem(${idx}, 1)" title="Bajar">↓</button>
-          <button onclick="removeProgramItem(${idx})" title="Quitar">✕</button>
-        </div>
+        <button class="pq-remove-btn" onclick="event.stopPropagation(); removeProgramItem(${idx})" title="Quitar del programa" aria-label="Quitar">−</button>
       </div>
     `
     )
     .join("");
+}
+
+let slDragIndex = null;
+
+function reorderSetlist(fromIdx, toIdx) {
+  const prog = getActiveProgram();
+  if (!prog || fromIdx === null || fromIdx === toIdx) return;
+  if (fromIdx < 0 || toIdx < 0 || fromIdx >= prog.scoreIds.length || toIdx >= prog.scoreIds.length) return;
+  const [moved] = prog.scoreIds.splice(fromIdx, 1);
+  prog.scoreIds.splice(toIdx, 0, moved);
+  saveProgramsState();
+  renderSetlistDrawer();
+}
+
+function onSlDragStart(e, idx) {
+  slDragIndex = idx;
+  e.currentTarget.classList.add("dragging");
+  if (e.dataTransfer) e.dataTransfer.effectAllowed = "move";
+}
+
+function onSlDragOver(e, idx) {
+  e.preventDefault();
+  if (slDragIndex !== null && slDragIndex !== idx) {
+    e.currentTarget.classList.add("drag-over");
+  }
+}
+
+function onSlDragLeave(e) {
+  e.currentTarget.classList.remove("drag-over");
+}
+
+function onSlDrop(e, idx) {
+  e.preventDefault();
+  e.currentTarget.classList.remove("drag-over");
+  reorderSetlist(slDragIndex, idx);
+  slDragIndex = null;
+}
+
+function onSlDragEnd(e) {
+  e.currentTarget.classList.remove("dragging");
+  slDragIndex = null;
+}
+
+function onSlPointerDown(e, idx) {
+  if (e.pointerType === "mouse" || e.target.closest("button")) return;
+  const itemEl = e.currentTarget;
+  let currentIdx = idx;
+  itemEl.classList.add("dragging");
+
+  const onMove = (ev) => {
+    const elUnder = document.elementFromPoint(ev.clientX, ev.clientY)?.closest(".setlist-item");
+    if (elUnder) {
+      const targetIdx = Number(elUnder.dataset.slIdx);
+      if (!Number.isNaN(targetIdx) && targetIdx !== currentIdx) {
+        reorderSetlist(currentIdx, targetIdx);
+        currentIdx = targetIdx;
+      }
+    }
+  };
+
+  const onUp = () => {
+    window.removeEventListener("pointermove", onMove);
+    window.removeEventListener("pointerup", onUp);
+    window.removeEventListener("pointercancel", onUp);
+    document.querySelectorAll(".setlist-item.dragging").forEach((el) => el.classList.remove("dragging"));
+  };
+
+  window.addEventListener("pointermove", onMove);
+  window.addEventListener("pointerup", onUp);
+  window.addEventListener("pointercancel", onUp);
+}
+
+function saveSetlistDrawerChanges() {
+  saveProgramsState();
+  renderSetlistDrawer();
+  toggleSetlistDrawer(false);
 }
 
 async function launchActiveProgramInConcert() {
@@ -2840,6 +2920,7 @@ function renderProgQuickOrderView() {
         <svg viewBox="0 0 24 24" class="pq-drag-ico" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="8" y1="7" x2="16" y2="7"/><line x1="8" y1="12" x2="16" y2="12"/><line x1="8" y1="17" x2="16" y2="17"/></svg>
         <span class="pq-work-num">${idx + 1}</span>
         <span class="pq-work-title">${s.clean || s.title}</span>
+        <button class="pq-remove-btn" onclick="event.stopPropagation(); removeFromPqDraft(${idx})" onpointerdown="event.stopPropagation()" title="Eliminar del programa" aria-label="Eliminar">−</button>
       </div>
     `
     )
@@ -2855,6 +2936,12 @@ function renderProgQuickOrderView() {
     <div class="pq-list" id="pqOrderList">${itemsHtml}</div>
     <button class="pq-save-btn" onclick="saveProgramQuickOrder()">Guardar cambios</button>
   `;
+}
+
+function removeFromPqDraft(idx) {
+  if (idx < 0 || idx >= pqDraftIds.length) return;
+  pqDraftIds.splice(idx, 1);
+  renderProgQuickOrderView();
 }
 
 function reorderPqDraft(fromIdx, toIdx) {
@@ -2940,7 +3027,6 @@ function saveProgramQuickOrder() {
   saveProgramsState();
   renderSetlistDrawer();
   document.getElementById("progQuickPopover")?.classList.add("hidden");
-  showPilotBanner(`Programa "${prog.name}" actualizado.`);
 }
 
 // Cerrar menús flotantes al tocar cualquier parte fuera de ellos

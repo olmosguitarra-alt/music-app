@@ -3881,3 +3881,131 @@ body.concert-immersion #mode-concert .concert-stage {
 .pq-save-btn:hover {
   opacity: 0.92;
 }
+
+
+/* ==========================================================================
+   V24 JERARQUÍA PROGRESIVA 3 NIVELES, BOTÓN − Y DRAG & DROP EN PROGRAMAS
+   ========================================================================== */
+
+/* 1. Escala progresiva clara: Nivel 1 > Nivel 2 > Nivel 3 */
+.floating-hud-top .seg-btn {
+  padding: 8px 16px;
+  font-size: 14px;
+  gap: 7px;
+}
+
+.palette-trigger-btn {
+  min-height: 42px;
+  padding: 6px 11px;
+}
+
+.library-workspace {
+  padding: 68px 24px 20px;
+}
+
+.lib-subbar .btn-import-pdf,
+.lib-subbar .btn-setlist-toggle,
+.lib-subbar .glass-search,
+.lib-subbar .view-toggle-pill {
+  height: 32px;
+  min-height: 32px;
+}
+
+.lib-subbar .btn-import-pdf,
+.lib-subbar .btn-setlist-toggle {
+  padding: 0 10px;
+  font-size: 12px;
+  border-radius: 10px;
+}
+
+.lib-subbar .btn-import-pdf .v-ico,
+.lib-subbar .btn-setlist-toggle .v-ico,
+.lib-subbar .glass-search .v-ico,
+.lib-subbar .vt-btn .v-ico {
+  width: 14px;
+  height: 14px;
+}
+
+.lib-subbar .vt-btn {
+  padding: 3px 8px;
+  font-size: 11.5px;
+}
+
+.lib-subbar .glass-search input {
+  font-size: 12px;
+}
+
+.filter-ribbon {
+  padding: 3px;
+}
+
+.ribbon-tab {
+  min-height: 25px;
+  padding: 2px 9px;
+  font-size: 11px;
+}
+
+/* 2. Lápiz outline en Programas y botón − discreto en ventana flotante */
+.btn-pencil-outline {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.btn-pencil-outline .v-ico {
+  width: 15px;
+  height: 15px;
+}
+
+.pq-remove-btn {
+  width: 24px;
+  height: 24px;
+  border-radius: 7px;
+  border: none;
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: 15px;
+  line-height: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.pq-remove-btn:hover {
+  background: rgba(224, 79, 95, 0.14);
+  color: #e04f5f;
+}
+
+/* 3. Items deslizables en el panel lateral de Programas */
+.setlist-item {
+  cursor: grab;
+  user-select: none;
+  touch-action: none;
+  transition: transform 0.14s ease, border-color 0.14s ease, opacity 0.14s ease;
+}
+
+.setlist-item.dragging {
+  opacity: 0.45;
+  border-style: dashed;
+}
+
+.setlist-item.drag-over {
+  border-color: var(--accent);
+  transform: translateY(-2px);
+}
+
+@media (max-width: 900px) {
+  .floating-hud-top .seg-btn {
+    padding: 7px 6px;
+    font-size: 12.5px;
+  }
+  .palette-trigger-btn {
+    min-height: 36px;
+  }
+  .library-workspace {
+    padding: 60px 12px 20px !important;
+  }
+}

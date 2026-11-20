@@ -7,7 +7,7 @@
   <meta http-equiv="Pragma" content="no-cache" />
   <meta http-equiv="Expires" content="0" />
   <title>Atril — Plataforma Musical</title>
-  <link rel="stylesheet" href="styles.css?v=23" />
+  <link rel="stylesheet" href="styles.css?v=24" />
   <!-- Motores Oficiales para Renderizar (PDF.js) y Particionar/Editar PDFs Reales (pdf-lib) -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf-lib/1.17.1/pdf-lib.min.js"></script>
@@ -128,10 +128,9 @@
           <div class="glass-pill filter-ribbon" role="tablist" aria-label="Organizar biblioteca">
             <button class="ribbon-tab active" data-cls="all" onclick="selectClassification('all', 'Todo', this)">Todo</button>
             <button class="ribbon-tab" data-cls="favorites" onclick="selectClassification('favorites', 'Favoritos', this)">Favoritos</button>
-            <button class="ribbon-tab" data-cls="composer" onclick="selectClassification('composer', 'Compositor', this)">Por Compositor</button>
-            <button class="ribbon-tab" data-cls="period" onclick="selectClassification('period', 'Periodo', this)">Por Periodo</button>
-            <button class="ribbon-tab" data-cls="instrumentation" onclick="selectClassification('instrumentation', 'Dotación', this)">Por Dotación</button>
-            <button class="ribbon-tab" data-cls="programs" onclick="selectClassification('programs', 'Programas', this)">Programas</button>
+            <button class="ribbon-tab" data-cls="composer" onclick="selectClassification('composer', 'Compositor', this)">Compositor</button>
+            <button class="ribbon-tab" data-cls="period" onclick="selectClassification('period', 'Periodo', this)">Periodo</button>
+            <button class="ribbon-tab" data-cls="instrumentation" onclick="selectClassification('instrumentation', 'Dotación', this)">Dotación</button>
             <span class="ribbon-sep"></span>
             <button class="ribbon-tab ribbon-action" id="btnNormalizeRaw" onclick="cleanLibraryWithAI()" title="Limpiar nombres de archivos PDF crudos">✦ Normalizar nombres</button>
           </div>
@@ -149,11 +148,13 @@
       <aside class="setlist-drawer hidden" id="setlistDrawer" onclick="event.stopPropagation()">
         <div class="setlist-head">
           <div class="setlist-head-main">
-            <span class="setlist-eyebrow">PROGRAMAS DE CONCIERTO</span>
+            <span class="setlist-eyebrow">Programas:</span>
             <div class="setlist-name-row">
               <select id="activeProgramSelect" onchange="switchActiveProgram(this.value)" aria-label="Seleccionar programa"></select>
-              <button class="btn-new-prog" onclick="toggleNewProgramInput(true)" title="Crear nuevo programa">＋ Nuevo</button>
-              <button class="btn-icon-sm" onclick="renameActiveProgramPrompt()" title="Renombrar programa">✎</button>
+              <button class="btn-icon-sm btn-pencil-outline" onclick="renameActiveProgramPrompt()" title="Renombrar programa" aria-label="Renombrar programa">
+                <svg viewBox="0 0 24 24" class="v-ico"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
+              </button>
+              <button class="btn-new-prog" onclick="toggleNewProgramInput(true)" title="Crear nuevo programa">＋ Nuevo programa</button>
             </div>
             <div class="new-prog-inline hidden" id="newProgInline">
               <input type="text" id="newProgNameInput" placeholder="Nombre del programa..." onkeydown="if(event.key==='Enter') confirmNewProgram()" />
@@ -165,7 +166,7 @@
         </div>
 
         <div class="setlist-summary-row">
-          <span class="setlist-summary" id="setlistSummary">0 obras • 0 págs.</span>
+          <span class="setlist-summary" id="setlistSummary">Obras:</span>
           <div class="setlist-quick-add">
             <select id="quickAddScoreSelect" aria-label="Elegir obra para agregar"></select>
             <button class="btn-quick-add" onclick="quickAddSelectedScoreToProgram()">＋ Agregar</button>
@@ -175,9 +176,8 @@
         <div class="setlist-items" id="setlistItems"></div>
 
         <div class="setlist-foot">
-          <button class="btn-launch-concert" id="btnLaunchProgram" onclick="launchActiveProgramInConcert()">
-            <svg viewBox="0 0 24 24" class="v-ico"><polygon points="5 3 19 12 5 21 5 3" fill="currentColor"/></svg>
-            <span>Iniciar en Concierto</span>
+          <button class="btn-launch-concert" id="btnLaunchProgram" onclick="saveSetlistDrawerChanges()">
+            <span>Guardar cambios</span>
           </button>
         </div>
       </aside>
@@ -613,6 +613,6 @@
     </button>
   </div>
 
-  <script src="app.js?v=23"></script>
+  <script src="app.js?v=24"></script>
 </body>
 </html>
