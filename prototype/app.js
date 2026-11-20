@@ -2661,6 +2661,9 @@ window.addEventListener("DOMContentLoaded", async () => {
   initBachGptWidget();
   renderLibrary();
   renderSetlistDrawer();
+  if (window.innerWidth <= 1024) {
+    toggleSetlistDrawer(false);
+  }
   switchStampTab("guitar");
   document.getElementById("studySvg").innerHTML = buildPortraitScoreSvg(-1);
   document.getElementById("concertSvg").innerHTML = buildPortraitScoreSvg(-1);

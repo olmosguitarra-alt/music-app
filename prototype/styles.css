@@ -2845,7 +2845,7 @@ body.concert-immersion #mode-concert .concert-stage {
   .setlist-drawer {
     position: fixed;
     right: 14px;
-    top: 76px;
+    top: 80px;
     bottom: 16px;
     z-index: 50;
     box-shadow: 0 20px 50px rgba(0, 0, 0, 0.45);
@@ -2854,7 +2854,7 @@ body.concert-immersion #mode-concert .concert-stage {
     display: inline-flex;
   }
   .concert-spread-wrap.two-pages .concert-folio {
-    width: min(94vw, 820px);
+    width: min(46vw, 480px);
   }
 }
 
@@ -2863,18 +2863,55 @@ body.concert-immersion #mode-concert .concert-stage {
     display: none;
   }
   .library-workspace {
-    padding: 0 10px 16px;
+    padding: 132px 14px 20px;
+  }
+  .setlist-drawer {
+    top: 126px;
   }
   .lib-filter-bar {
     flex-direction: column;
     align-items: stretch;
   }
+  .folio-card-foot {
+    flex-wrap: wrap;
+  }
+
+  /* Estudio vertical: espacio limpio entre HUD (2 filas) y dock inferior */
+  #mode-study .full-bleed-canvas {
+    padding: 124px 12px 86px;
+  }
+  #mode-study .invisible-page-zone.left {
+    left: 6px;
+  }
+  #mode-study .concepts-popover {
+    left: 12px;
+    right: 12px;
+    top: auto;
+    bottom: 78px;
+    width: auto;
+    max-width: none;
+    transform: none;
+  }
+
+  /* Concierto vertical: evitar que la barra inferior tape los botones de escenario */
+  #mode-concert .concert-stage {
+    padding: 124px 12px 118px;
+  }
+  body.concert-immersion #mode-concert .concert-stage {
+    padding: 16px 12px 66px;
+  }
   .concert-stage-pills {
-    right: 10px;
-    bottom: 12px;
+    right: 12px;
+    bottom: 68px;
+  }
+  body.concert-immersion .concert-stage-pills {
+    bottom: 14px;
   }
   .concert-quick-palette {
-    right: 10px;
-    bottom: 56px;
+    right: 12px;
+    bottom: 112px;
+  }
+  body.concert-immersion .concert-quick-palette {
+    bottom: 58px;
   }
 }
