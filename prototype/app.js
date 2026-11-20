@@ -725,7 +725,7 @@ function renderLibrary() {
     container.innerHTML = `
       <div class="empty-pilot-box">
         <h4>No hay archivos en esta vista</h4>
-        <p>${currentClassification === "favorites" ? "Marca cualquier obra con ☆ para verla en Favoritos." : 'Toca el botón <strong>"Importar PDF"</strong> arriba para cargar partituras reales desde tu tablet.'}</p>
+        <p>${currentClassification === "favorites" ? "Toca el corazón en cualquier obra para verla en Favoritos." : 'Toca el botón <strong>"Importar"</strong> arriba para cargar partituras reales desde tu tablet.'}</p>
       </div>
     `;
     return;
@@ -806,7 +806,7 @@ function buildFolioCardHtml(s) {
       <div class="folio-card-foot" onclick="event.stopPropagation()">
         <span class="period-tag">${s.period} • ${s.pages}</span>
         <div class="folio-quick-btns">
-          <button class="mini-action-btn fav-card-btn ${isFavoriteScore(s.id) ? "is-fav" : ""}" onclick="toggleFavoriteScore(${s.id})" title="Marcar como favorita">${isFavoriteScore(s.id) ? "★" : "☆"}</button>
+          <button class="mini-action-btn fav-card-btn ${isFavoriteScore(s.id) ? "is-fav" : ""}" onclick="toggleFavoriteScore(${s.id})" title="Marcar como favorita" aria-label="Favorito"><svg viewBox="0 0 24 24" class="heart-ico"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg></button>
           <button class="mini-action-btn bach-card-btn bach-star-btn" onclick="openAiForWork(${s.id})" title="BachGPT: Consultar sobre esta obra">✦</button>
           <button class="mini-action-btn with-label add-prog-btn" onclick="addScoreToActiveProgram(${s.id})" title="Agregar al programa activo">＋ Prog</button>
           <button class="mini-action-btn" onclick="openPdfModalById(${s.id})" title="Taller PDF y Renombrar">✂</button>
@@ -834,7 +834,7 @@ function buildListRowHtml(s) {
       </div>
 
       <div class="list-col-actions" onclick="event.stopPropagation()">
-        <button class="mini-action-btn fav-card-btn ${isFavoriteScore(s.id) ? "is-fav" : ""}" onclick="toggleFavoriteScore(${s.id})" title="Marcar como favorita">${isFavoriteScore(s.id) ? "★" : "☆"}</button>
+        <button class="mini-action-btn fav-card-btn ${isFavoriteScore(s.id) ? "is-fav" : ""}" onclick="toggleFavoriteScore(${s.id})" title="Marcar como favorita" aria-label="Favorito"><svg viewBox="0 0 24 24" class="heart-ico"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg></button>
         <button class="mini-action-btn bach-card-btn bach-star-btn" onclick="openAiForWork(${s.id})" title="BachGPT: Consultar sobre esta obra">✦</button>
         <button class="mini-action-btn with-label add-prog-btn" onclick="addScoreToActiveProgram(${s.id})" title="Agregar al programa activo">＋ Prog</button>
         <button class="mini-action-btn" onclick="openPdfModalById(${s.id})" title="Taller PDF y Renombrar">✂</button>
