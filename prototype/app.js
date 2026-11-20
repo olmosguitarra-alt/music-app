@@ -1218,6 +1218,7 @@ function openWorkActionsMenu(e, scoreId) {
   const id = Number(scoreId);
   const aiHead = buildMonochromeBachHeadSvg();
   const addSvg = `<svg viewBox="0 0 24 24" class="v-ico"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>`;
+  const starSvg = `<svg viewBox="0 0 24 24" class="v-ico"><path d="M12 2L14.6 9.4L22 12L14.6 14.6L12 22L9.4 14.6L2 12L9.4 9.4Z"/></svg>`;
   const cutSvg = `<svg viewBox="0 0 24 24" class="v-ico"><circle cx="6" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><line x1="20" y1="4" x2="8.12" y2="15.88"/><line x1="14.47" y1="14.48" x2="20" y2="20"/><line x1="8.12" y1="8.12" x2="12" y2="12"/></svg>`;
   const trashSvg = `<svg viewBox="0 0 24 24" class="v-ico"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>`;
 
@@ -1229,6 +1230,10 @@ function openWorkActionsMenu(e, scoreId) {
     <button class="wa-menu-item add-prog-btn" onclick="openProgFromWorkMenu(event, ${id})">
       ${addSvg}
       <span>Agregar a programa</span>
+    </button>
+    <button class="wa-menu-item" onclick="closeWorkActionsMenu(); normalizeSingleScoreWithAI(${id})">
+      ${starSvg}
+      <span>Normalizar nombre</span>
     </button>
     <button class="wa-menu-item" onclick="closeWorkActionsMenu(); openPdfModalById(${id})">
       ${cutSvg}
@@ -1245,7 +1250,7 @@ function openWorkActionsMenu(e, scoreId) {
     const rect = e.currentTarget.getBoundingClientRect();
     const mw = 210;
     const left = Math.max(12, Math.min(window.innerWidth - mw - 12, rect.right - mw));
-    const top = Math.max(12, Math.min(window.innerHeight - 190, rect.bottom + 6));
+    const top = Math.max(12, Math.min(window.innerHeight - 235, rect.bottom + 6));
     menu.style.left = `${left}px`;
     menu.style.top = `${top}px`;
   }
@@ -2298,48 +2303,68 @@ Responde ÚNICAMENTE con un JSON válido (sin markdown ni texto extra) con estas
   }
 }
 
-async function cleanLibraryWithAI() {
-  const btn = document.getElementById("btnNormalizeRaw");
-  if (btn) {
-    btn.disabled = true;
-    btn.textContent = "✦ Normalizando...";
+async function normalizeSingleScoreRecord(s) {
+  if (!s) return false;
+  if (!s.isRealPdf) {
+    if (s.clean && s.title !== s.clean) {
+      s.title = s.clean;
+      s.raw = false;
+      return true;
+    }
+    const fallback = inferMusicMetadataFromFilename(s.rawFilename || s.title);
+    if (fallback.title && fallback.title !== s.title) {
+      s.title = fallback.title;
+      s.clean = fallback.title;
+    }
+    if (fallback.composer && (!s.composer || s.composer === "Compositor por clasificar")) {
+      s.composer = fallback.composer;
+    }
+    s.raw = false;
+    return true;
   }
-  showPilotBanner("✦ Analizando archivos PDF de tu biblioteca...");
 
+  const rawName = s.rawFilename || s.title;
+  const pdfMeta = await extractRealPdfTextAndMeta(s.pdfBytes);
+  const aiMeta = await normalizePdfMetadataWithGemini(rawName, pdfMeta, s.thumbDataUrl);
+  const fallback = inferMusicMetadataFromFilename(rawName);
+
+  s.title = (aiMeta && aiMeta.title) ? aiMeta.title : fallback.title;
+  s.clean = s.title;
+  if (aiMeta && aiMeta.composer) s.composer = aiMeta.composer;
+  else if (fallback.composer && s.composer === "Compositor por clasificar") s.composer = fallback.composer;
+
+  const validPeriods = ["Renacimiento", "Barroco", "Clasicismo", "Romanticismo", "Siglo XX"];
+  if (aiMeta && validPeriods.includes(aiMeta.period)) s.period = aiMeta.period;
+
+  const validGroups = ["Guitarra Sola", "Dúo / Cámara", "Guitarra y Orquesta", "Otro Instrumento"];
+  if (aiMeta && validGroups.includes(aiMeta.group)) s.group = aiMeta.group;
+
+  s.raw = false;
+  await saveRealPdfToDb(s);
+  return true;
+}
+
+async function normalizeSingleScoreWithAI(scoreId) {
+  const s = scores.find((item) => item.id === Number(scoreId));
+  if (!s) return;
+  showPilotBanner(`✦ Normalizando "${s.clean || s.title}"...`);
+  await normalizeSingleScoreRecord(s);
+  renderLibrary();
+  renderSetlistDrawer();
+  showPilotBanner(`✓ "${s.clean || s.title}" normalizada (${s.composer}).`);
+}
+
+async function cleanLibraryWithAI() {
+  showPilotBanner("✦ Analizando archivos PDF de tu biblioteca...");
   let updatedCount = 0;
 
   for (const s of scores) {
-    if (s.raw && s.clean && !s.isRealPdf) {
-      s.title = s.clean;
-      s.raw = false;
-      updatedCount++;
-    } else if (s.isRealPdf) {
-      const rawName = s.rawFilename || s.title;
-      const pdfMeta = await extractRealPdfTextAndMeta(s.pdfBytes);
-      const aiMeta = await normalizePdfMetadataWithGemini(rawName, pdfMeta, s.thumbDataUrl);
-      const fallback = inferMusicMetadataFromFilename(rawName);
-
-      s.title = (aiMeta && aiMeta.title) ? aiMeta.title : fallback.title;
-      s.clean = s.title;
-      if (aiMeta && aiMeta.composer) s.composer = aiMeta.composer;
-      else if (fallback.composer && s.composer === "Compositor por clasificar") s.composer = fallback.composer;
-
-      const validPeriods = ["Renacimiento", "Barroco", "Clasicismo", "Romanticismo", "Siglo XX"];
-      if (aiMeta && validPeriods.includes(aiMeta.period)) s.period = aiMeta.period;
-
-      const validGroups = ["Guitarra Sola", "Dúo / Cámara", "Guitarra y Orquesta", "Otro Instrumento"];
-      if (aiMeta && validGroups.includes(aiMeta.group)) s.group = aiMeta.group;
-
-      s.raw = false;
-      await saveRealPdfToDb(s);
-      updatedCount++;
+    if ((s.raw && s.clean && !s.isRealPdf) || s.isRealPdf) {
+      const changed = await normalizeSingleScoreRecord(s);
+      if (changed) updatedCount++;
     }
   }
 
-  if (btn) {
-    btn.disabled = false;
-    btn.textContent = "✦ Normalizar nombres";
-  }
   renderLibrary();
   renderSetlistDrawer();
   showPilotBanner(`✓ ${updatedCount} ${updatedCount === 1 ? "obra normalizada" : "obras normalizadas"} y guardadas.`);

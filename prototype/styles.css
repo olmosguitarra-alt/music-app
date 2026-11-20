@@ -5436,3 +5436,187 @@ body:not(.mode-library-active) .cadenza-brand-text .hud-piece-name {
     top: 66px !important;
   }
 }
+
+/* ==========================================================================
+   V41: PROGRAMAS MISMO NIVEL + ALINEACIÓN CON BÚSQUEDA + RESCALE MÓVIL/TABLET
+   ========================================================================== */
+.lib-subbar,
+.lib-filter-bar {
+  width: 100% !important;
+  max-width: 100% !important;
+  margin-left: 0 !important;
+  margin-right: 0 !important;
+  box-sizing: border-box !important;
+}
+
+.lib-filter-bar {
+  display: flex !important;
+  flex-direction: row !important;
+  flex-wrap: nowrap !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  gap: 10px !important;
+  margin-bottom: 12px !important;
+}
+
+.lib-filter-bar .filter-ribbon {
+  flex: 1 1 auto !important;
+  min-width: 0 !important;
+  height: 34px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  margin: 0 !important;
+  padding: 3px 5px !important;
+  overflow-x: auto !important;
+  scrollbar-width: none;
+}
+
+.lib-filter-bar .programs-pill-btn {
+  flex: 0 0 auto !important;
+  height: 34px !important;
+  min-height: 34px !important;
+  margin: 0 !important;
+  align-self: center !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+
+/* Tablet (601px - 1024px) */
+@media (min-width: 601px) and (max-width: 1024px) {
+  .library-workspace {
+    padding: 66px 18px 82px !important;
+  }
+  .lib-subbar {
+    flex-wrap: nowrap !important;
+    gap: 8px !important;
+  }
+  .lib-subbar .glass-search {
+    flex: 1 1 auto !important;
+    min-width: 160px !important;
+    order: 0 !important;
+  }
+  .folio-grid {
+    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)) !important;
+    gap: 12px !important;
+  }
+}
+
+/* Celular (<= 600px) */
+@media (max-width: 600px) {
+  .floating-hud-top {
+    top: max(10px, env(safe-area-inset-top)) !important;
+    left: 10px !important;
+    right: 10px !important;
+    gap: 8px !important;
+  }
+  .cadenza-logo-badge {
+    width: 30px !important;
+    height: 30px !important;
+    border-radius: 9px !important;
+  }
+  .cadenza-wordmark {
+    font-size: 18px !important;
+  }
+  .btn-gear-minimal {
+    width: 34px !important;
+    height: 34px !important;
+  }
+  #mode-study .concepts-tool-rail,
+  #mode-editor .staffpad-dock,
+  #mode-concert .floating-bottom-bar {
+    top: max(10px, env(safe-area-inset-top)) !important;
+    left: calc(50% + 34px) !important;
+    transform: translateX(-50%) !important;
+    max-width: calc(100vw - 168px) !important;
+    height: 34px !important;
+    min-height: 34px !important;
+    padding: 2px 6px !important;
+  }
+  #mode-study .full-bleed-canvas,
+  #mode-editor .full-bleed-canvas,
+  #mode-concert .concert-stage {
+    padding: 56px 10px 72px !important;
+  }
+  .library-workspace {
+    padding: 54px 12px 74px !important;
+  }
+  .lib-subbar {
+    flex-wrap: wrap !important;
+    gap: 6px !important;
+  }
+  .lib-subbar .import-popover-wrap {
+    order: 1;
+  }
+  .lib-subbar .view-toggle-pill {
+    order: 2;
+    margin-left: auto !important;
+  }
+  .lib-subbar .glass-search {
+    order: 3 !important;
+    flex: 1 1 100% !important;
+    min-width: 100% !important;
+    height: 36px !important;
+  }
+  .lib-filter-bar {
+    gap: 6px !important;
+    margin-bottom: 10px !important;
+  }
+  .lib-filter-bar .filter-ribbon {
+    height: 32px !important;
+    padding: 2px 4px !important;
+    gap: 2px !important;
+  }
+  .lib-filter-bar .ribbon-tab {
+    padding: 0 8px !important;
+    font-size: 11px !important;
+    min-height: 26px !important;
+    height: 26px !important;
+  }
+  .lib-filter-bar .programs-pill-btn {
+    height: 32px !important;
+    min-height: 32px !important;
+    padding: 0 10px !important;
+    font-size: 11px !important;
+  }
+  .folio-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 10px !important;
+  }
+  .folio-thumb {
+    height: 112px !important;
+  }
+  .folio-title {
+    font-size: 12.5px !important;
+  }
+  .folio-meta {
+    font-size: 10.5px !important;
+  }
+  .editorial-list-row {
+    padding: 9px 10px !important;
+    gap: 8px !important;
+  }
+  #bottomNavDock.bottom-nav-dock {
+    left: 10px !important;
+    right: auto !important;
+    transform: none !important;
+    bottom: max(12px, env(safe-area-inset-bottom)) !important;
+    height: 40px !important;
+    padding: 3px !important;
+    gap: 2px !important;
+  }
+  #bottomNavDock .dock-mode-btn {
+    width: 34px !important;
+    height: 34px !important;
+  }
+  #bachGptFab.bachgpt-fab {
+    right: 10px !important;
+    bottom: max(12px, env(safe-area-inset-bottom)) !important;
+    height: 40px !important;
+    padding: 0 10px 0 6px !important;
+    gap: 6px !important;
+  }
+  #bachGptFab .bach-fab-label {
+    font-size: 11px !important;
+  }
+}
