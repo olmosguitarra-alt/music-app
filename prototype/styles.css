@@ -1149,12 +1149,9 @@ body.palette-linen .pdf-page-canvas {
   text-align: center;
 }
 
-/* Mini icono de Bach 8-bits en cada tarjeta de PDF en la Biblioteca */
+/* Botón de IA en tarjetas de Biblioteca (tono neutro igual al resto) */
 .bach-card-btn {
-  padding: 3px !important;
-  background: #1e293b !important;
-  border: 1px solid var(--accent) !important;
-  overflow: hidden;
+  color: var(--text-secondary);
 }
 
 .bach-work-context-bar select {
@@ -3688,4 +3685,199 @@ body.concert-immersion #mode-concert .concert-stage {
   .library-workspace {
     padding: 58px 12px 20px !important;
   }
+}
+
+
+/* ==========================================================================
+   V23 BOTÓN IA NEUTRO + MENÚ FLOTANTE DISCRETO DE PROGRAMAS CON DRAG & DROP
+   ========================================================================== */
+.mini-action-btn.bach-card-btn,
+.mini-action-btn.bach-star-btn {
+  background: transparent !important;
+  border: 1px solid var(--glass-border) !important;
+  color: var(--text-secondary) !important;
+  padding: 0 9px !important;
+}
+
+.mini-action-btn.bach-card-btn:hover,
+.mini-action-btn.bach-star-btn:hover {
+  color: var(--text-primary) !important;
+  border-color: var(--text-secondary) !important;
+}
+
+.mini-action-btn .v-ico {
+  width: 15px;
+  height: 15px;
+}
+
+/* Ventana flotante discreta para agregar/ordenar obra en un programa */
+.prog-quick-popover {
+  position: fixed;
+  width: min(310px, calc(100vw - 24px));
+  max-height: 390px;
+  background: var(--card-bg);
+  border: 1px solid var(--glass-border);
+  border-radius: 16px;
+  backdrop-filter: blur(22px);
+  box-shadow: 0 20px 48px rgba(0, 0, 0, 0.48);
+  padding: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  z-index: 95;
+}
+
+.prog-quick-popover.hidden {
+  display: none;
+}
+
+.pq-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding-bottom: 6px;
+  border-bottom: 1px solid var(--glass-border);
+}
+
+.pq-back-btn {
+  width: 30px;
+  height: 30px;
+  border-radius: 8px;
+  border: none;
+  background: transparent;
+  color: var(--text-secondary);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.pq-back-btn:hover {
+  background: var(--glass-bg);
+  color: var(--text-primary);
+}
+
+.pq-title {
+  font-size: 12.5px;
+  font-weight: 700;
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.pq-list {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  overflow-y: auto;
+  max-height: 255px;
+  scrollbar-width: thin;
+  scrollbar-color: var(--glass-border) transparent;
+}
+
+.pq-prog-btn {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 9px 10px;
+  border-radius: 10px;
+  border: 1px solid transparent;
+  background: var(--glass-bg);
+  color: var(--text-primary);
+  font-size: 12.5px;
+  font-weight: 600;
+  text-align: left;
+  cursor: pointer;
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+
+.pq-prog-btn:hover {
+  border-color: var(--text-secondary);
+}
+
+.pq-prog-btn .v-ico {
+  width: 15px;
+  height: 15px;
+  color: var(--text-secondary);
+  flex-shrink: 0;
+}
+
+.pq-prog-btn span:last-child {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.pq-work-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 9px;
+  border-radius: 10px;
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  color: var(--text-primary);
+  font-size: 12.5px;
+  cursor: grab;
+  user-select: none;
+  touch-action: none;
+  transition: transform 0.14s ease, border-color 0.14s ease, opacity 0.14s ease;
+}
+
+.pq-work-item.dragging {
+  opacity: 0.45;
+  border-style: dashed;
+}
+
+.pq-work-item.drag-over {
+  border-color: var(--text-primary);
+  transform: translateY(-2px);
+}
+
+.pq-work-item.is-target-work {
+  border-color: var(--accent);
+}
+
+.pq-drag-ico {
+  width: 15px;
+  height: 15px;
+  color: var(--text-secondary);
+  flex-shrink: 0;
+}
+
+.pq-work-title {
+  flex: 1;
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-weight: 600;
+}
+
+.pq-work-num {
+  font-size: 11px;
+  color: var(--text-secondary);
+  min-width: 16px;
+  text-align: center;
+}
+
+.pq-save-btn {
+  width: 100%;
+  min-height: 36px;
+  border-radius: 10px;
+  border: none;
+  background: var(--accent);
+  color: var(--accent-ink);
+  font-size: 12.5px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.pq-save-btn:hover {
+  opacity: 0.92;
 }

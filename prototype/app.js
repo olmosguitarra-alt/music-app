@@ -807,8 +807,8 @@ function buildFolioCardHtml(s) {
         <span class="period-tag">${s.period} • ${s.pages}</span>
         <div class="folio-quick-btns">
           <button class="mini-action-btn fav-card-btn ${isFavoriteScore(s.id) ? "is-fav" : ""}" onclick="toggleFavoriteScore(${s.id})" title="Marcar como favorita" aria-label="Favorito"><svg viewBox="0 0 24 24" class="heart-ico"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg></button>
-          <button class="mini-action-btn bach-card-btn bach-star-btn" onclick="openAiForWork(${s.id})" title="BachGPT: Consultar sobre esta obra">✦</button>
-          <button class="mini-action-btn with-label add-prog-btn" onclick="addScoreToActiveProgram(${s.id})" title="Agregar al programa activo">＋ Prog</button>
+          <button class="mini-action-btn bach-card-btn bach-star-btn" onclick="openAiForWork(${s.id})" title="BachGPT: Consultar sobre esta obra" aria-label="BachGPT"><svg viewBox="0 0 24 24" class="v-ico"><path d="m12 3-1.9 5.8a2 2 0 0 1-1.3 1.3L3 12l5.8 1.9a2 2 0 0 1 1.3 1.3L12 21l1.9-5.8a2 2 0 0 1 1.3-1.3L21 12l-5.8-1.9a2 2 0 0 1-1.3-1.3Z"/></svg></button>
+          <button class="mini-action-btn with-label add-prog-btn" onclick="openProgramQuickMenu(event, ${s.id})" title="Agregar a un programa">＋ Prog</button>
           <button class="mini-action-btn" onclick="openPdfModalById(${s.id})" title="Taller PDF y Renombrar">✂</button>
         </div>
       </div>
@@ -835,8 +835,8 @@ function buildListRowHtml(s) {
 
       <div class="list-col-actions" onclick="event.stopPropagation()">
         <button class="mini-action-btn fav-card-btn ${isFavoriteScore(s.id) ? "is-fav" : ""}" onclick="toggleFavoriteScore(${s.id})" title="Marcar como favorita" aria-label="Favorito"><svg viewBox="0 0 24 24" class="heart-ico"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg></button>
-        <button class="mini-action-btn bach-card-btn bach-star-btn" onclick="openAiForWork(${s.id})" title="BachGPT: Consultar sobre esta obra">✦</button>
-        <button class="mini-action-btn with-label add-prog-btn" onclick="addScoreToActiveProgram(${s.id})" title="Agregar al programa activo">＋ Prog</button>
+        <button class="mini-action-btn bach-card-btn bach-star-btn" onclick="openAiForWork(${s.id})" title="BachGPT: Consultar sobre esta obra" aria-label="BachGPT"><svg viewBox="0 0 24 24" class="v-ico"><path d="m12 3-1.9 5.8a2 2 0 0 1-1.3 1.3L3 12l5.8 1.9a2 2 0 0 1 1.3 1.3L12 21l1.9-5.8a2 2 0 0 1 1.3-1.3L21 12l-5.8-1.9a2 2 0 0 1-1.3-1.3Z"/></svg></button>
+        <button class="mini-action-btn with-label add-prog-btn" onclick="openProgramQuickMenu(event, ${s.id})" title="Agregar a un programa">＋ Prog</button>
         <button class="mini-action-btn" onclick="openPdfModalById(${s.id})" title="Taller PDF y Renombrar">✂</button>
       </div>
     </div>
@@ -2755,8 +2755,200 @@ async function handleRealPdfFolderUpload(fileList) {
   await handleRealPdfUpload(pdfFiles);
 }
 
+// ==========================================================================
+// 6. MENÚ FLOTANTE DISCRETO PARA AGREGAR Y ORDENAR EN PROGRAMA (DRAG & DROP)
+// ==========================================================================
+let pqTargetScoreId = null;
+let pqSelectedProgId = null;
+let pqDraftIds = [];
+let pqDragIndex = null;
+
+function openProgramQuickMenu(e, scoreId) {
+  if (e) e.stopPropagation();
+  const pop = document.getElementById("progQuickPopover");
+  if (!pop) return;
+
+  pqTargetScoreId = Number(scoreId);
+  pqSelectedProgId = null;
+  renderProgQuickListView();
+  pop.classList.remove("hidden");
+
+  if (e && e.currentTarget) {
+    const rect = e.currentTarget.getBoundingClientRect();
+    const popW = Math.min(310, window.innerWidth - 24);
+    const left = Math.max(12, Math.min(window.innerWidth - popW - 12, rect.left - popW / 2 + rect.width / 2));
+    const top = Math.max(12, Math.min(window.innerHeight - 380, rect.bottom + 8));
+    pop.style.left = `${left}px`;
+    pop.style.top = `${top}px`;
+  }
+}
+
+function renderProgQuickListView() {
+  const pop = document.getElementById("progQuickPopover");
+  if (!pop) return;
+  const listHtml = programsState.list
+    .map(
+      (p) => `
+      <button class="pq-prog-btn" onclick="selectProgramInQuickMenu('${p.id}')">
+        <svg viewBox="0 0 24 24" class="v-ico"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><circle cx="4" cy="6" r="1"/><circle cx="4" cy="12" r="1"/><circle cx="4" cy="18" r="1"/></svg>
+        <span>${p.name}</span>
+      </button>
+    `
+    )
+    .join("");
+
+  pop.innerHTML = `
+    <div class="pq-head">
+      <span class="pq-title">Agregar a programa</span>
+    </div>
+    <div class="pq-list">${listHtml}</div>
+  `;
+}
+
+function selectProgramInQuickMenu(progId) {
+  const prog = programsState.list.find((p) => p.id === progId);
+  if (!prog) return;
+  pqSelectedProgId = progId;
+  pqDraftIds = [...prog.scoreIds];
+  if (pqTargetScoreId && !pqDraftIds.includes(pqTargetScoreId)) {
+    pqDraftIds.push(pqTargetScoreId);
+  }
+  renderProgQuickOrderView();
+}
+
+function renderProgQuickOrderView() {
+  const pop = document.getElementById("progQuickPopover");
+  const prog = programsState.list.find((p) => p.id === pqSelectedProgId);
+  if (!pop || !prog) return;
+
+  const validItems = pqDraftIds
+    .map((id) => scores.find((s) => s.id === id))
+    .filter(Boolean);
+
+  const itemsHtml = validItems
+    .map(
+      (s, idx) => `
+      <div class="pq-work-item ${s.id === pqTargetScoreId ? "is-target-work" : ""}"
+           draggable="true"
+           data-pq-idx="${idx}"
+           ondragstart="onPqDragStart(event, ${idx})"
+           ondragover="onPqDragOver(event, ${idx})"
+           ondragleave="onPqDragLeave(event)"
+           ondrop="onPqDrop(event, ${idx})"
+           ondragend="onPqDragEnd(event)"
+           onpointerdown="onPqPointerDown(event, ${idx})">
+        <svg viewBox="0 0 24 24" class="pq-drag-ico" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="8" y1="7" x2="16" y2="7"/><line x1="8" y1="12" x2="16" y2="12"/><line x1="8" y1="17" x2="16" y2="17"/></svg>
+        <span class="pq-work-num">${idx + 1}</span>
+        <span class="pq-work-title">${s.clean || s.title}</span>
+      </div>
+    `
+    )
+    .join("");
+
+  pop.innerHTML = `
+    <div class="pq-head">
+      <button class="pq-back-btn" onclick="renderProgQuickListView()" title="Volver a programas" aria-label="Regresar">
+        <svg viewBox="0 0 24 24" class="v-ico"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+      </button>
+      <span class="pq-title">${prog.name}</span>
+    </div>
+    <div class="pq-list" id="pqOrderList">${itemsHtml}</div>
+    <button class="pq-save-btn" onclick="saveProgramQuickOrder()">Guardar cambios</button>
+  `;
+}
+
+function reorderPqDraft(fromIdx, toIdx) {
+  if (fromIdx === null || fromIdx === toIdx || fromIdx < 0 || toIdx < 0) return;
+  if (fromIdx >= pqDraftIds.length || toIdx >= pqDraftIds.length) return;
+  const [moved] = pqDraftIds.splice(fromIdx, 1);
+  pqDraftIds.splice(toIdx, 0, moved);
+  renderProgQuickOrderView();
+}
+
+function onPqDragStart(e, idx) {
+  pqDragIndex = idx;
+  e.currentTarget.classList.add("dragging");
+  if (e.dataTransfer) e.dataTransfer.effectAllowed = "move";
+}
+
+function onPqDragOver(e, idx) {
+  e.preventDefault();
+  if (pqDragIndex !== null && pqDragIndex !== idx) {
+    e.currentTarget.classList.add("drag-over");
+  }
+}
+
+function onPqDragLeave(e) {
+  e.currentTarget.classList.remove("drag-over");
+}
+
+function onPqDrop(e, idx) {
+  e.preventDefault();
+  e.currentTarget.classList.remove("drag-over");
+  reorderPqDraft(pqDragIndex, idx);
+  pqDragIndex = null;
+}
+
+function onPqDragEnd(e) {
+  e.currentTarget.classList.remove("dragging");
+  pqDragIndex = null;
+}
+
+// Soporte táctil / stylus para deslizar obras entre niveles en tablet
+function onPqPointerDown(e, idx) {
+  if (e.pointerType === "mouse") return;
+  const itemEl = e.currentTarget;
+  const startY = e.clientY;
+  let currentIdx = idx;
+  itemEl.classList.add("dragging");
+
+  const onMove = (ev) => {
+    const elUnder = document.elementFromPoint(ev.clientX, ev.clientY)?.closest(".pq-work-item");
+    if (elUnder) {
+      const targetIdx = Number(elUnder.dataset.pqIdx);
+      if (!Number.isNaN(targetIdx) && targetIdx !== currentIdx) {
+        reorderPqDraft(currentIdx, targetIdx);
+        currentIdx = targetIdx;
+      }
+    } else if (Math.abs(ev.clientY - startY) > 28) {
+      const dir = ev.clientY > startY ? 1 : -1;
+      const next = Math.max(0, Math.min(pqDraftIds.length - 1, currentIdx + dir));
+      if (next !== currentIdx) {
+        reorderPqDraft(currentIdx, next);
+        currentIdx = next;
+      }
+    }
+  };
+
+  const onUp = () => {
+    window.removeEventListener("pointermove", onMove);
+    window.removeEventListener("pointerup", onUp);
+    window.removeEventListener("pointercancel", onUp);
+    document.querySelectorAll(".pq-work-item.dragging").forEach((el) => el.classList.remove("dragging"));
+  };
+
+  window.addEventListener("pointermove", onMove);
+  window.addEventListener("pointerup", onUp);
+  window.addEventListener("pointercancel", onUp);
+}
+
+function saveProgramQuickOrder() {
+  const prog = programsState.list.find((p) => p.id === pqSelectedProgId);
+  if (!prog) return;
+  prog.scoreIds = [...pqDraftIds];
+  programsState.activeId = prog.id;
+  saveProgramsState();
+  renderSetlistDrawer();
+  document.getElementById("progQuickPopover")?.classList.add("hidden");
+  showPilotBanner(`Programa "${prog.name}" actualizado.`);
+}
+
 // Cerrar menús flotantes al tocar cualquier parte fuera de ellos
 document.addEventListener("click", (e) => {
+  const pqPop = document.getElementById("progQuickPopover");
+  if (pqPop && !pqPop.classList.contains("hidden") && !e.target.closest("#progQuickPopover") && !e.target.closest(".add-prog-btn")) {
+    pqPop.classList.add("hidden");
+  }
   const impMenu = document.getElementById("importPdfMenu");
   if (impMenu && !impMenu.classList.contains("hidden") && !e.target.closest("#importPopoverWrap")) {
     impMenu.classList.add("hidden");
