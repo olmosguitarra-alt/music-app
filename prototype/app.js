@@ -280,44 +280,175 @@ async function generatePdfThumbnailDataUrl(pdfBytes) {
 async function handleRealPdfUpload(fileList) {
   if (!fileList || fileList.length === 0) return;
 
-  for (let i = 0; i < fileList.length; i++) {
-    const file = fileList[i];
-    const arrayBuffer = await file.arrayBuffer();
-    const uint8 = new Uint8Array(arrayBuffer);
-    const meta = inferMusicMetadataFromFilename(file.name);
-    const previewInfo = await generatePdfThumbnailDataUrl(uint8);
-    const numPages = previewInfo ? previewInfo.numPages : 1;
+  startPdfLoadingAnimation();
+  try {
+    for (let i = 0; i < fileList.length; i++) {
+      const file = fileList[i];
+      const arrayBuffer = await file.arrayBuffer();
+      const uint8 = new Uint8Array(arrayBuffer);
+      const meta = inferMusicMetadataFromFilename(file.name);
+      const previewInfo = await generatePdfThumbnailDataUrl(uint8);
+      const numPages = previewInfo ? previewInfo.numPages : 1;
 
-    const isMessyName = /(_|IMSLP|PMLP|^\d{3,}|partition|free-scores)/i.test(file.name);
-    const newScore = {
-      id: Date.now() + i,
-      title: isMessyName ? file.name.replace(/\.pdf$/i, "") : meta.title,
-      clean: meta.title,
-      rawFilename: file.name,
-      subtitle: `Archivo PDF de tu Tablet (${file.name})`,
-      composer: meta.composer,
-      period: meta.period,
-      group: meta.group,
-      program: "Biblioteca Piloto Tablet",
-      pages: `${numPages} ${numPages === 1 ? "pág." : "págs."}`,
-      pageCount: numPages,
-      tuning: "PDF Real",
-      raw: isMessyName,
-      isRealPdf: true,
-      pdfBytes: uint8,
-      thumbDataUrl: previewInfo ? previewInfo.thumbUrl : null,
-      aiData: meta.aiData
-    };
+      const isMessyName = /(_|IMSLP|PMLP|^\d{3,}|partition|free-scores)/i.test(file.name);
+      const newScore = {
+        id: Date.now() + i,
+        title: isMessyName ? file.name.replace(/\.pdf$/i, "") : meta.title,
+        clean: meta.title,
+        rawFilename: file.name,
+        subtitle: `Archivo PDF de tu Tablet (${file.name})`,
+        composer: meta.composer,
+        period: meta.period,
+        group: meta.group,
+        program: "Biblioteca Piloto Tablet",
+        pages: `${numPages} ${numPages === 1 ? "pág." : "págs."}`,
+        pageCount: numPages,
+        tuning: "PDF Real",
+        raw: isMessyName,
+        isRealPdf: true,
+        pdfBytes: uint8,
+        thumbDataUrl: previewInfo ? previewInfo.thumbUrl : null,
+        aiData: meta.aiData
+      };
 
-    scores.unshift(newScore);
-    await saveRealPdfToDb(newScore);
+      scores.unshift(newScore);
+      await saveRealPdfToDb(newScore);
+    }
+
+    document.getElementById("realPdfFileInput").value = "";
+    const folderInp = document.getElementById("realPdfFolderInput");
+    if (folderInp) folderInp.value = "";
+    renderLibrary();
+    renderSetlistDrawer();
+  } finally {
+    stopPdfLoadingAnimation();
+  }
+}
+
+let pdfLoadDelayTimer = null;
+let pdfLoadAnimInterval = null;
+let pdfLoadFadeTimer = null;
+
+function buildFullBodyThinkingBachSvg(frame = 0) {
+  const head = [
+    "....WWWWWWWW....",
+    "..WWWWWWWWWWWW..",
+    ".WWWWGGGGGGWWWW.",
+    ".WWWGGGGGGGGWWW.",
+    "WWWWGSSSSSSGWWWW",
+    "WWWGSSSSSSSSGWWW",
+    "WWWGSEESSSSEESWW",
+    "WWWGSSSSSSSSGWWW",
+    "WWGGSSSDDSSSGGWW",
+    "WWGGSSSMMMSSGGWW",
+    "WWWGGSSSSSSGGWWW",
+    ".WWW.RRRRRR.WWW."
+  ];
+
+  const body = [
+    "..C..RRRRRR.....",
+    ".CS.CCRRRRCC....",
+    ".C.CCCRBBRCCC...",
+    "...CCCRBBRCCC...",
+    "...CCCRRRRCCCC..",
+    "...CCCCCCCCCCS..",
+    "...CCCCCCCCCC...",
+    "....CCCCCCCC....",
+    "....KKK..KKK....",
+    "....KKK..KKK....",
+    "....KKK..KKK....",
+    "...EEEE..EEEE..."
+  ];
+
+  // Frame 0: cabeza normal, mano rascando la peluca arriba
+  // Frame 1: cabeza baja 1px (asintiendo suavemente), mano rascando ligeramente desplazada
+  const grid = Array(25).fill("................");
+  const headY = frame === 1 ? 1 : 0;
+  for (let y = 0; y < head.length; y++) {
+    grid[y + headY] = head[y];
+  }
+  for (let y = 0; y < body.length; y++) {
+    grid[y + 12] = body[y];
   }
 
-  document.getElementById("realPdfFileInput").value = "";
-  const folderInp = document.getElementById("realPdfFolderInput");
-  if (folderInp) folderInp.value = "";
-  renderLibrary();
-  renderSetlistDrawer();
+  // Brazo izquierdo levantado rascándose la peluca
+  const setPx = (x, y, ch) => {
+    if (y < 0 || y >= grid.length || x < 0 || x >= 16) return;
+    const arr = grid[y].split("");
+    arr[x] = ch;
+    grid[y] = arr.join("");
+  };
+
+  if (frame === 0) {
+    setPx(1, 3, "S"); setPx(2, 3, "S");
+    setPx(1, 4, "C"); setPx(1, 5, "C"); setPx(1, 6, "C");
+    setPx(1, 7, "C"); setPx(1, 8, "C"); setPx(1, 9, "C");
+    setPx(2, 10, "C"); setPx(2, 11, "C");
+  } else {
+    setPx(2, 3, "S"); setPx(3, 3, "S");
+    setPx(1, 5, "C"); setPx(1, 6, "C"); setPx(1, 7, "C");
+    setPx(1, 8, "C"); setPx(1, 9, "C"); setPx(1, 10, "C");
+    setPx(2, 11, "C");
+  }
+
+  const palette = {
+    W: "#f8fafc",
+    G: "#cbd5e1",
+    S: "#f3c69f",
+    D: "#d99f72",
+    E: "#1e1b18",
+    M: "#9a5b42",
+    R: "#ffffff",
+    C: "#7c2d12",
+    B: "#facc15",
+    K: "#292524"
+  };
+
+  let rects = "";
+  for (let y = 0; y < grid.length; y++) {
+    const row = grid[y];
+    for (let x = 0; x < 16; x++) {
+      const ch = row[x];
+      if (ch !== "." && palette[ch]) {
+        rects += `<rect x="${x}" y="${y}" width="1" height="1" fill="${palette[ch]}" />`;
+      }
+    }
+  }
+  return `<svg viewBox="0 0 16 25" width="100%" height="100%" shape-rendering="crispEdges" xmlns="http://www.w3.org/2000/svg">${rects}</svg>`;
+}
+
+function startPdfLoadingAnimation() {
+  clearTimeout(pdfLoadDelayTimer);
+  clearTimeout(pdfLoadFadeTimer);
+  clearInterval(pdfLoadAnimInterval);
+
+  pdfLoadDelayTimer = setTimeout(() => {
+    const overlay = document.getElementById("pdfLoadingOverlay");
+    const sprite = document.getElementById("pdfLoadingSprite");
+    if (!overlay || !sprite) return;
+    let frame = 0;
+    sprite.innerHTML = buildFullBodyThinkingBachSvg(0);
+    overlay.classList.remove("hidden", "is-fading-out");
+    pdfLoadAnimInterval = setInterval(() => {
+      frame = frame === 0 ? 1 : 0;
+      sprite.innerHTML = buildFullBodyThinkingBachSvg(frame);
+    }, 320);
+  }, 2000);
+}
+
+function stopPdfLoadingAnimation() {
+  clearTimeout(pdfLoadDelayTimer);
+  pdfLoadDelayTimer = null;
+  clearInterval(pdfLoadAnimInterval);
+  pdfLoadAnimInterval = null;
+
+  const overlay = document.getElementById("pdfLoadingOverlay");
+  if (!overlay || overlay.classList.contains("hidden")) return;
+  overlay.classList.add("is-fading-out");
+  pdfLoadFadeTimer = setTimeout(() => {
+    overlay.classList.add("hidden");
+    overlay.classList.remove("is-fading-out");
+  }, 220);
 }
 
 function showPilotBanner(msg) {
