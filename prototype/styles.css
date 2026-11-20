@@ -3584,3 +3584,108 @@ body.concert-immersion #mode-concert .concert-stage {
 .pc-henle   { background: linear-gradient(90deg, #141b24 50%, #769ec4 50%); }
 .pc-linen   { background: linear-gradient(90deg, #dfd8ca 50%, #335244 50%); }
 .pc-velvet  { background: linear-gradient(90deg, #18191c 50%, #9bb0a5 50%); }
+
+
+/* ==========================================================================
+   V22 ESCALA JERÁRQUICA Y ESPACIADO EQUITATIVO DE LOS 3 NIVELES SUPERIORES
+   ========================================================================== */
+
+/* Nivel 1 (Principal, el más grande de los 3) */
+.floating-hud-top {
+  top: max(12px, env(safe-area-inset-top));
+}
+
+.floating-hud-top .mode-segmented {
+  padding: 4px;
+}
+
+.floating-hud-top .seg-btn {
+  padding: 7px 14px;
+  font-size: 13.5px;
+  gap: 7px;
+}
+
+.floating-hud-top .seg-btn .v-ico {
+  width: 16px;
+  height: 16px;
+}
+
+.palette-trigger-btn {
+  min-height: 40px;
+  padding: 6px 10px;
+}
+
+/* Distancia equitativa exacta (10px) entre Nivel 1 -> Nivel 2 -> Nivel 3 */
+.library-workspace {
+  padding: 66px 24px 20px;
+}
+
+.library-workspace .library-stage {
+  gap: 10px;
+}
+
+.lib-command-bar {
+  margin-bottom: 0 !important;
+}
+
+.lib-filter-bar {
+  margin-bottom: 6px !important;
+}
+
+/* Nivel 2 (Intermedio, más pequeño que Nivel 1) */
+.lib-subbar .btn-import-pdf,
+.lib-subbar .btn-setlist-toggle,
+.lib-subbar .glass-search,
+.lib-subbar .view-toggle-pill {
+  height: 36px;
+  min-height: 36px;
+}
+
+.lib-subbar .btn-import-pdf,
+.lib-subbar .btn-setlist-toggle {
+  padding: 0 11px;
+  font-size: 12.5px;
+}
+
+.lib-subbar .vt-btn {
+  padding: 4px 9px;
+  font-size: 12px;
+}
+
+.lib-subbar .glass-search input {
+  font-size: 12.5px;
+}
+
+/* Nivel 3 (Filtros, el más pequeño de los 3) */
+.filter-ribbon {
+  padding: 3px;
+  gap: 2px;
+}
+
+.ribbon-tab {
+  min-height: 28px;
+  padding: 3px 11px;
+  font-size: 11.5px;
+}
+
+.ribbon-sep {
+  height: 14px;
+}
+
+@media (max-width: 900px) {
+  .floating-hud-top {
+    top: max(8px, env(safe-area-inset-top));
+  }
+  .floating-hud-top .seg-btn {
+    padding: 6px 6px;
+    font-size: 12px;
+    gap: 4px;
+  }
+  .palette-trigger-btn {
+    min-height: 34px;
+    padding: 4px 8px;
+  }
+  .library-workspace {
+    padding: 58px 12px 20px !important;
+  }
+}
