@@ -4011,3 +4011,111 @@ body.concert-immersion #mode-concert .concert-stage {
     padding: 60px 12px 20px !important;
   }
 }
+
+
+/* ==========================================================================
+   V27 POPOVER CENTRADO DE PROGRAMAS, ELIMINAR DISCRETO Y PROPORCIONES MÓVIL
+   ========================================================================== */
+
+/* Centrar ventana flotante de programas en medio de la pantalla */
+.prog-quick-popover {
+  top: 50% !important;
+  left: 50% !important;
+  transform: translate(-50%, -50%);
+  width: min(320px, calc(100vw - 32px));
+  max-height: min(380px, calc(100dvh - 100px));
+}
+
+/* Botón discreto para eliminar obra */
+.mini-action-btn.delete-card-btn {
+  color: var(--text-secondary);
+}
+
+.mini-action-btn.delete-card-btn:hover {
+  color: #e04f5f;
+  border-color: rgba(224, 79, 95, 0.45);
+}
+
+/* Optimización proporcional en celular (<= 600px) */
+@media (max-width: 600px) {
+  .floating-hud-top {
+    left: 8px;
+    right: 8px;
+    gap: 6px;
+  }
+
+  .floating-hud-top .seg-btn {
+    flex-direction: row !important;
+    padding: 6px 4px !important;
+    font-size: 11px !important;
+    gap: 3px !important;
+  }
+
+  .floating-hud-top .seg-btn .v-ico {
+    width: 13px !important;
+    height: 13px !important;
+  }
+
+  .palette-trigger-btn {
+    min-height: 32px !important;
+    padding: 4px 7px !important;
+    gap: 4px;
+  }
+
+  .pal-circle-active {
+    width: 15px;
+    height: 15px;
+  }
+
+  .library-workspace {
+    padding: 54px 10px 16px !important;
+  }
+
+  .lib-subbar {
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+
+  .lib-subbar .glass-search {
+    order: 4;
+    flex: 1 1 100%;
+    min-width: 100%;
+  }
+
+  .lib-subbar .btn-import-pdf,
+  .lib-subbar .view-toggle-pill,
+  .lib-subbar .btn-setlist-toggle {
+    flex: 0 0 auto;
+  }
+
+  .lib-subbar .btn-setlist-toggle {
+    margin-left: auto;
+  }
+
+  .filter-ribbon {
+    border-radius: 14px;
+    padding: 3px;
+    gap: 2px;
+  }
+
+  .ribbon-tab {
+    min-height: 24px;
+    padding: 2px 8px;
+    font-size: 10.5px;
+  }
+
+  .folio-grid {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+
+  .folio-card-foot {
+    flex-wrap: nowrap;
+  }
+
+  .mini-action-btn {
+    min-width: 32px;
+    min-height: 32px;
+    padding: 0 7px !important;
+  }
+}

@@ -148,6 +148,44 @@ async function loadSavedPdfsFromDb() {
   }
 }
 
+async function deleteRealPdfFromDb(scoreId) {
+  try {
+    const db = await openPilotDb();
+    return new Promise((resolve) => {
+      const tx = db.transaction(STORE_NAME, "readwrite");
+      tx.objectStore(STORE_NAME).delete(Number(scoreId));
+      tx.oncomplete = () => resolve();
+      tx.onerror = () => resolve();
+    });
+  } catch {
+    return;
+  }
+}
+
+async function deleteScoreFromLibrary(scoreId) {
+  const id = Number(scoreId);
+  const idx = scores.findIndex((s) => s.id === id);
+  if (idx === -1) return;
+  const target = scores[idx];
+  const label = target.clean || target.title;
+  if (!window.confirm(`¿Eliminar "${label}" de tu biblioteca?`)) return;
+
+  scores.splice(idx, 1);
+  if (target.isRealPdf) {
+    await deleteRealPdfFromDb(id);
+  }
+  favoriteScoreIds.delete(id);
+  saveFavoritesState();
+
+  programsState.list.forEach((p) => {
+    p.scoreIds = p.scoreIds.filter((sid) => sid !== id);
+  });
+  saveProgramsState();
+
+  renderLibrary();
+  renderSetlistDrawer();
+}
+
 // ==========================================================================
 // IMPORTADOR INTELIGENTE DE PDFs REALES DESDE LA TABLET O CELULAR
 // ==========================================================================
@@ -241,7 +279,6 @@ async function generatePdfThumbnailDataUrl(pdfBytes) {
 
 async function handleRealPdfUpload(fileList) {
   if (!fileList || fileList.length === 0) return;
-  showPilotBanner(`⏳ Importando y catalogando ${fileList.length} archivo(s) PDF de tu tablet...`);
 
   for (let i = 0; i < fileList.length; i++) {
     const file = fileList[i];
@@ -277,8 +314,10 @@ async function handleRealPdfUpload(fileList) {
   }
 
   document.getElementById("realPdfFileInput").value = "";
-  showPilotBanner(`✓ ${fileList.length} PDF(s) importados con éxito. Toca cualquiera para abrirlo en Hoja Parada o usa ✂ para particionarlo.`);
+  const folderInp = document.getElementById("realPdfFolderInput");
+  if (folderInp) folderInp.value = "";
   renderLibrary();
+  renderSetlistDrawer();
 }
 
 function showPilotBanner(msg) {
@@ -793,6 +832,10 @@ function buildFolioCardHtml(s) {
         </div>
       `;
 
+  const showSub = s.subtitle && !s.isRealPdf && !s.subtitle.startsWith("Archivo PDF de tu Tablet");
+  const aiQuestionStarSvg = `<svg viewBox="0 0 24 24" class="v-ico"><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><path d="M12 16.5l.65 1.85 1.85.65-1.85.65-.65 1.85-.65-1.85-1.85-.65 1.85-.65z" fill="currentColor" stroke="none"/></svg>`;
+  const trashSvg = `<svg viewBox="0 0 24 24" class="v-ico"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>`;
+
   return `
     <article class="folio-card" onclick="openScoreById(${s.id}, 'study')">
       <div class="folio-preview-sheet ${s.thumbDataUrl ? "has-real-thumb" : ""}">
@@ -802,19 +845,20 @@ function buildFolioCardHtml(s) {
       <div class="folio-card-body">
         <div class="folio-card-title">
           <span>${s.title}</span>
-          ${s.isRealPdf ? `<span class="real-pdf-badge">PDF Tablet</span>` : s.raw ? `<span class="raw-badge">PDF Crudo</span>` : ""}
+          ${s.raw && !s.isRealPdf ? `<span class="raw-badge">PDF Crudo</span>` : ""}
         </div>
         <span class="folio-card-sub">${s.composer}</span>
-        <span class="folio-card-detail">${s.subtitle}</span>
+        ${showSub ? `<span class="folio-card-detail">${s.subtitle}</span>` : ""}
       </div>
 
       <div class="folio-card-foot" onclick="event.stopPropagation()">
         <span class="period-tag">${s.period} • ${s.pages}</span>
         <div class="folio-quick-btns">
           <button class="mini-action-btn fav-card-btn ${isFavoriteScore(s.id) ? "is-fav" : ""}" onclick="toggleFavoriteScore(${s.id})" title="Marcar como favorita" aria-label="Favorito"><svg viewBox="0 0 24 24" class="heart-ico"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg></button>
-          <button class="mini-action-btn bach-card-btn bach-star-btn" onclick="openAiForWork(${s.id})" title="BachGPT: Consultar sobre esta obra" aria-label="BachGPT"><svg viewBox="0 0 24 24" class="v-ico"><path d="m12 3-1.9 5.8a2 2 0 0 1-1.3 1.3L3 12l5.8 1.9a2 2 0 0 1 1.3 1.3L12 21l1.9-5.8a2 2 0 0 1 1.3-1.3L21 12l-5.8-1.9a2 2 0 0 1-1.3-1.3Z"/></svg></button>
+          <button class="mini-action-btn bach-card-btn bach-star-btn" onclick="openAiForWork(${s.id})" title="BachGPT: Consultar sobre esta obra" aria-label="BachGPT">${aiQuestionStarSvg}</button>
           <button class="mini-action-btn add-prog-btn" onclick="openProgramQuickMenu(event, ${s.id})" title="Agregar a un programa">＋</button>
           <button class="mini-action-btn" onclick="openPdfModalById(${s.id})" title="Taller PDF y Renombrar">✂</button>
+          <button class="mini-action-btn delete-card-btn" onclick="deleteScoreFromLibrary(${s.id})" title="Eliminar de la biblioteca" aria-label="Eliminar">${trashSvg}</button>
         </div>
       </div>
     </article>
@@ -822,14 +866,18 @@ function buildFolioCardHtml(s) {
 }
 
 function buildListRowHtml(s) {
+  const showSub = s.subtitle && !s.isRealPdf && !s.subtitle.startsWith("Archivo PDF de tu Tablet");
+  const aiQuestionStarSvg = `<svg viewBox="0 0 24 24" class="v-ico"><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><path d="M12 16.5l.65 1.85 1.85.65-1.85.65-.65 1.85-.65-1.85-1.85-.65 1.85-.65z" fill="currentColor" stroke="none"/></svg>`;
+  const trashSvg = `<svg viewBox="0 0 24 24" class="v-ico"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>`;
+
   return `
     <div class="list-detail-row" onclick="openScoreById(${s.id}, 'study')">
       <div class="list-col-main">
         <div class="list-title-line">
           <strong class="list-work-title">${s.title}</strong>
-          ${s.isRealPdf ? `<span class="real-pdf-badge">PDF Tablet</span>` : s.raw ? `<span class="raw-badge">PDF Crudo</span>` : ""}
+          ${s.raw && !s.isRealPdf ? `<span class="raw-badge">PDF Crudo</span>` : ""}
         </div>
-        <span class="list-work-subtitle">${s.composer} — <em>${s.subtitle}</em></span>
+        <span class="list-work-subtitle">${s.composer}${showSub ? ` — <em>${s.subtitle}</em>` : ""}</span>
       </div>
 
       <div class="list-col-meta">
@@ -840,9 +888,10 @@ function buildListRowHtml(s) {
 
       <div class="list-col-actions" onclick="event.stopPropagation()">
         <button class="mini-action-btn fav-card-btn ${isFavoriteScore(s.id) ? "is-fav" : ""}" onclick="toggleFavoriteScore(${s.id})" title="Marcar como favorita" aria-label="Favorito"><svg viewBox="0 0 24 24" class="heart-ico"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg></button>
-        <button class="mini-action-btn bach-card-btn bach-star-btn" onclick="openAiForWork(${s.id})" title="BachGPT: Consultar sobre esta obra" aria-label="BachGPT"><svg viewBox="0 0 24 24" class="v-ico"><path d="m12 3-1.9 5.8a2 2 0 0 1-1.3 1.3L3 12l5.8 1.9a2 2 0 0 1 1.3 1.3L12 21l1.9-5.8a2 2 0 0 1 1.3-1.3L21 12l-5.8-1.9a2 2 0 0 1-1.3-1.3Z"/></svg></button>
+        <button class="mini-action-btn bach-card-btn bach-star-btn" onclick="openAiForWork(${s.id})" title="BachGPT: Consultar sobre esta obra" aria-label="BachGPT">${aiQuestionStarSvg}</button>
         <button class="mini-action-btn add-prog-btn" onclick="openProgramQuickMenu(event, ${s.id})" title="Agregar a un programa">＋</button>
         <button class="mini-action-btn" onclick="openPdfModalById(${s.id})" title="Taller PDF y Renombrar">✂</button>
+        <button class="mini-action-btn delete-card-btn" onclick="deleteScoreFromLibrary(${s.id})" title="Eliminar de la biblioteca" aria-label="Eliminar">${trashSvg}</button>
       </div>
     </div>
   `;
@@ -2968,15 +3017,6 @@ function openProgramQuickMenu(e, scoreId) {
   pqSelectedProgId = null;
   renderProgQuickListView();
   pop.classList.remove("hidden");
-
-  if (e && e.currentTarget) {
-    const rect = e.currentTarget.getBoundingClientRect();
-    const popW = Math.min(310, window.innerWidth - 24);
-    const left = Math.max(12, Math.min(window.innerWidth - popW - 12, rect.left - popW / 2 + rect.width / 2));
-    const top = Math.max(12, Math.min(window.innerHeight - 380, rect.bottom + 8));
-    pop.style.left = `${left}px`;
-    pop.style.top = `${top}px`;
-  }
 }
 
 function renderProgQuickListView() {
