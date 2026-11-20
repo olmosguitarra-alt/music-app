@@ -813,6 +813,42 @@ function renderLibrary() {
   container.innerHTML = html;
 }
 
+function buildMonochromeBachHeadSvg() {
+  const grid = [
+    "....WWWWWWWW....",
+    "..WWWWWWWWWWWW..",
+    ".WWWWGGGGGGWWWW.",
+    ".WWWGGGGGGGGWWW.",
+    "WWWWGSSSSSSGWWWW",
+    "WWWGSSSSSSSSGWWW",
+    "WWWGSEESSSSEESWW",
+    "WWWGSSSSSSSSGWWW",
+    "WWGGSSSDDSSSGGWW",
+    "WWGGSSSMMMSSGGWW",
+    "WWWGGSSSSSSGGWWW",
+    ".WWW........WWW."
+  ];
+  const fills = {
+    W: "var(--bach-wig, #e6dfd5)",
+    G: "var(--bach-shade, #b8afa3)",
+    S: "var(--bach-skin, #999085)",
+    D: "var(--bach-nose, #756d63)",
+    E: "#111111",
+    M: "var(--bach-mouth, #59524a)"
+  };
+  let rects = "";
+  for (let y = 0; y < grid.length; y++) {
+    const row = grid[y];
+    for (let x = 0; x < 16; x++) {
+      const ch = row[x];
+      if (ch !== "." && fills[ch]) {
+        rects += `<rect x="${x}" y="${y}" width="1" height="1" fill="${fills[ch]}" />`;
+      }
+    }
+  }
+  return `<svg viewBox="0 0 16 12" class="bach-head-mono-svg" shape-rendering="crispEdges" xmlns="http://www.w3.org/2000/svg">${rects}</svg>`;
+}
+
 function buildFolioCardHtml(s) {
   const previewInner = s.thumbDataUrl
     ? `<img src="${s.thumbDataUrl}" alt="Portada PDF" class="real-pdf-thumb-img" />`
@@ -833,7 +869,7 @@ function buildFolioCardHtml(s) {
       `;
 
   const showSub = s.subtitle && !s.isRealPdf && !s.subtitle.startsWith("Archivo PDF de tu Tablet");
-  const aiQuestionStarSvg = `<svg viewBox="0 0 24 24" class="v-ico"><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><path d="M12 16.5l.65 1.85 1.85.65-1.85.65-.65 1.85-.65-1.85-1.85-.65 1.85-.65z" fill="currentColor" stroke="none"/></svg>`;
+  const aiHeadSvg = buildMonochromeBachHeadSvg();
   const trashSvg = `<svg viewBox="0 0 24 24" class="v-ico"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>`;
 
   return `
@@ -855,7 +891,7 @@ function buildFolioCardHtml(s) {
         <span class="period-tag">${s.period} • ${s.pages}</span>
         <div class="folio-quick-btns">
           <button class="mini-action-btn fav-card-btn ${isFavoriteScore(s.id) ? "is-fav" : ""}" onclick="toggleFavoriteScore(${s.id})" title="Marcar como favorita" aria-label="Favorito"><svg viewBox="0 0 24 24" class="heart-ico"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg></button>
-          <button class="mini-action-btn bach-card-btn bach-star-btn" onclick="openAiForWork(${s.id})" title="BachGPT: Consultar sobre esta obra" aria-label="BachGPT">${aiQuestionStarSvg}</button>
+          <button class="mini-action-btn bach-card-btn bach-star-btn" onclick="openAiForWork(${s.id})" title="BachGPT: Consultar sobre esta obra" aria-label="BachGPT">${aiHeadSvg}</button>
           <button class="mini-action-btn add-prog-btn" onclick="openProgramQuickMenu(event, ${s.id})" title="Agregar a un programa">＋</button>
           <button class="mini-action-btn" onclick="openPdfModalById(${s.id})" title="Taller PDF y Renombrar">✂</button>
           <button class="mini-action-btn delete-card-btn" onclick="deleteScoreFromLibrary(${s.id})" title="Eliminar de la biblioteca" aria-label="Eliminar">${trashSvg}</button>
@@ -867,7 +903,7 @@ function buildFolioCardHtml(s) {
 
 function buildListRowHtml(s) {
   const showSub = s.subtitle && !s.isRealPdf && !s.subtitle.startsWith("Archivo PDF de tu Tablet");
-  const aiQuestionStarSvg = `<svg viewBox="0 0 24 24" class="v-ico"><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><path d="M12 16.5l.65 1.85 1.85.65-1.85.65-.65 1.85-.65-1.85-1.85-.65 1.85-.65z" fill="currentColor" stroke="none"/></svg>`;
+  const aiHeadSvg = buildMonochromeBachHeadSvg();
   const trashSvg = `<svg viewBox="0 0 24 24" class="v-ico"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>`;
 
   return `
@@ -888,7 +924,7 @@ function buildListRowHtml(s) {
 
       <div class="list-col-actions" onclick="event.stopPropagation()">
         <button class="mini-action-btn fav-card-btn ${isFavoriteScore(s.id) ? "is-fav" : ""}" onclick="toggleFavoriteScore(${s.id})" title="Marcar como favorita" aria-label="Favorito"><svg viewBox="0 0 24 24" class="heart-ico"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg></button>
-        <button class="mini-action-btn bach-card-btn bach-star-btn" onclick="openAiForWork(${s.id})" title="BachGPT: Consultar sobre esta obra" aria-label="BachGPT">${aiQuestionStarSvg}</button>
+        <button class="mini-action-btn bach-card-btn bach-star-btn" onclick="openAiForWork(${s.id})" title="BachGPT: Consultar sobre esta obra" aria-label="BachGPT">${aiHeadSvg}</button>
         <button class="mini-action-btn add-prog-btn" onclick="openProgramQuickMenu(event, ${s.id})" title="Agregar a un programa">＋</button>
         <button class="mini-action-btn" onclick="openPdfModalById(${s.id})" title="Taller PDF y Renombrar">✂</button>
         <button class="mini-action-btn delete-card-btn" onclick="deleteScoreFromLibrary(${s.id})" title="Eliminar de la biblioteca" aria-label="Eliminar">${trashSvg}</button>
@@ -3012,6 +3048,15 @@ function openProgramQuickMenu(e, scoreId) {
   pqSelectedProgId = null;
   renderProgQuickListView();
   pop.classList.remove("hidden");
+
+  if (e && e.currentTarget) {
+    const rect = e.currentTarget.getBoundingClientRect();
+    const popW = Math.min(310, window.innerWidth - 24);
+    const left = Math.max(12, Math.min(window.innerWidth - popW - 12, rect.left - popW / 2 + rect.width / 2));
+    const top = Math.max(12, Math.min(window.innerHeight - 360, rect.bottom + 8));
+    pop.style.left = `${left}px`;
+    pop.style.top = `${top}px`;
+  }
 }
 
 function renderProgQuickListView() {

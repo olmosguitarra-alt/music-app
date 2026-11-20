@@ -4017,14 +4017,7 @@ body.concert-immersion #mode-concert .concert-stage {
    V27 POPOVER CENTRADO DE PROGRAMAS, ELIMINAR DISCRETO Y PROPORCIONES MÓVIL
    ========================================================================== */
 
-/* Centrar ventana flotante de programas en medio de la pantalla */
-.prog-quick-popover {
-  top: 50% !important;
-  left: 50% !important;
-  transform: translate(-50%, -50%);
-  width: min(320px, calc(100vw - 32px));
-  max-height: min(380px, calc(100dvh - 100px));
-}
+/* Menú flotante discreto debajo del botón + */
 
 /* Botón discreto para eliminar obra */
 .mini-action-btn.delete-card-btn {
@@ -4121,15 +4114,52 @@ body.concert-immersion #mode-concert .concert-stage {
 }
 
 
-/* V28: asegurar centrado absoluto de #progQuickPopover en body */
+/* V29: popover de programas anclado debajo del botón + y paleta monocromática BachGPT */
 .prog-quick-popover {
-  position: fixed !important;
-  top: 50% !important;
-  left: 50% !important;
-  right: auto !important;
-  bottom: auto !important;
-  transform: translate(-50%, -50%) !important;
-  width: min(340px, calc(100vw - 32px));
-  max-height: min(400px, calc(100dvh - 100px));
+  position: fixed;
+  width: min(310px, calc(100vw - 24px));
+  max-height: 390px;
   z-index: 120;
+}
+
+body.palette-luthier {
+  --bach-wig: #e6dfd5;
+  --bach-shade: #b8afa3;
+  --bach-skin: #999085;
+  --bach-nose: #756d63;
+  --bach-mouth: #59524a;
+}
+
+body.palette-henle {
+  --bach-wig: #e2e8f0;
+  --bach-shade: #b0bccb;
+  --bach-skin: #909dad;
+  --bach-nose: #6c7a8c;
+  --bach-mouth: #525f70;
+}
+
+body.palette-linen {
+  --bach-wig: #4a453e;
+  --bach-shade: #6e675e;
+  --bach-skin: #8c8479;
+  --bach-nose: #a89f93;
+  --bach-mouth: #5c554c;
+}
+
+body.palette-velvet {
+  --bach-wig: #e2e4e8;
+  --bach-shade: #b2b5bc;
+  --bach-skin: #93979f;
+  --bach-nose: #6f737c;
+  --bach-mouth: #545861;
+}
+
+.mini-action-btn.bach-card-btn {
+  padding: 0 7px !important;
+}
+
+.bach-head-mono-svg {
+  width: 20px;
+  height: 15px;
+  display: block;
 }
