@@ -4326,3 +4326,149 @@ body.palette-velvet {
   color: #e04f5f;
   border-color: rgba(224, 79, 95, 0.45);
 }
+
+
+/* ==========================================================================
+   V34 CADENZA: NUEVA PALETA BURDEOS & MARFIL + TEXTURA PENTAGRAMA + ACABADOS
+   ========================================================================== */
+
+/* Nueva Paleta: Burdeos & Marfil (Cadenza) */
+body.palette-cadenza {
+  --bg-canvas: #f6efe9;
+  --glass-bg: rgba(255, 251, 248, 0.78);
+  --glass-border: rgba(122, 28, 50, 0.14);
+  --card-bg: rgba(255, 253, 250, 0.90);
+  --text-primary: #27161b;
+  --text-secondary: #755b62;
+
+  --accent: #7a1c32;
+  --accent-ink: #fdf8f5;
+  --paper-bg: #fcfaf6;
+  --paper-ink: #221519;
+  --paper-line: rgba(39, 22, 27, 0.12);
+
+  --bach-wig: #5a3c43;
+  --bach-shade: #7c5860;
+  --bach-skin: #9a7780;
+  --bach-nose: #b5959d;
+  --bach-mouth: #663d46;
+}
+
+.pc-cadenza {
+  background: linear-gradient(90deg, #f6efe9 50%, #7a1c32 50%);
+}
+
+/* Textura sutil de ondas de pentagrama en el fondo para todas las paletas */
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  opacity: 0.28;
+  background-image:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1200 320' preserveAspectRatio='none'%3E%3Cg fill='none' stroke='%238a7c70' stroke-opacity='0.18' stroke-width='1.1'%3E%3Cpath d='M-40 160 C 260 60, 560 270, 920 130 S 1180 80, 1260 150'/%3E%3Cpath d='M-40 172 C 260 72, 560 282, 920 142 S 1180 92, 1260 162'/%3E%3Cpath d='M-40 184 C 260 84, 560 294, 920 154 S 1180 104, 1260 174'/%3E%3Cpath d='M-40 196 C 260 96, 560 306, 920 166 S 1180 116, 1260 186'/%3E%3Cpath d='M-40 208 C 260 108, 560 318, 920 178 S 1180 128, 1260 198'/%3E%3C/g%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right -40px top 60px;
+  background-size: 920px 260px;
+}
+
+body.palette-cadenza::before {
+  opacity: 0.42;
+  background-image:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1200 320' preserveAspectRatio='none'%3E%3Cg fill='none' stroke='%237a1c32' stroke-opacity='0.16' stroke-width='1.15'%3E%3Cpath d='M-40 160 C 260 60, 560 270, 920 130 S 1180 80, 1260 150'/%3E%3Cpath d='M-40 172 C 260 72, 560 282, 920 142 S 1180 92, 1260 162'/%3E%3Cpath d='M-40 184 C 260 84, 560 294, 920 154 S 1180 104, 1260 174'/%3E%3Cpath d='M-40 196 C 260 96, 560 306, 920 166 S 1180 116, 1260 186'/%3E%3Cpath d='M-40 208 C 260 108, 560 318, 920 178 S 1180 128, 1260 198'/%3E%3C/g%3E%3C/svg%3E");
+}
+
+/* Acabados suaves, transparencias y sombras difusas uniformes en todas las paletas */
+.glass-pill,
+.setlist-drawer,
+.prog-quick-popover,
+.palette-dropdown-menu,
+.import-floating-menu,
+.bachgpt-chat-window {
+  backdrop-filter: blur(24px) saturate(165%);
+  -webkit-backdrop-filter: blur(24px) saturate(165%);
+  box-shadow:
+    0 12px 32px rgba(0, 0, 0, 0.16),
+    inset 0 1px 0 rgba(255, 255, 255, 0.10);
+}
+
+body.palette-linen .glass-pill,
+body.palette-cadenza .glass-pill,
+body.palette-linen .folio-card,
+body.palette-cadenza .folio-card,
+body.palette-linen .list-detail-row,
+body.palette-cadenza .list-detail-row {
+  box-shadow:
+    0 10px 28px rgba(42, 24, 28, 0.07),
+    inset 0 1px 0 rgba(255, 255, 255, 0.78);
+}
+
+/* Tarjetas, filas y tipografía editorial refinada */
+.folio-card {
+  border-radius: 20px;
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+  box-shadow:
+    0 12px 30px rgba(0, 0, 0, 0.18),
+    inset 0 1px 0 rgba(255, 255, 255, 0.08);
+}
+
+.folio-card-title,
+.list-work-title {
+  font-family: "Georgia", "Times New Roman", serif;
+  letter-spacing: -0.01em;
+}
+
+.list-detail-row {
+  border-radius: 16px;
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  box-shadow:
+    0 8px 22px rgba(0, 0, 0, 0.12),
+    inset 0 1px 0 rgba(255, 255, 255, 0.07);
+}
+
+/* Botones táctiles suaves */
+.btn-import-pdf,
+.btn-setlist-toggle,
+.glass-search,
+.view-toggle-pill {
+  backdrop-filter: blur(18px) saturate(150%);
+  -webkit-backdrop-filter: blur(18px) saturate(150%);
+  box-shadow:
+    0 6px 18px rgba(0, 0, 0, 0.10),
+    inset 0 1px 0 rgba(255, 255, 255, 0.10);
+}
+
+.mini-action-btn {
+  border-radius: 11px;
+  transition: transform 0.14s ease, background 0.16s ease, border-color 0.16s ease, color 0.16s ease;
+}
+
+.mini-action-btn:hover {
+  transform: translateY(-1px);
+  background: var(--glass-bg);
+}
+
+/* Botón flotante BachGPT estilizado con el tono de acento de cada paleta */
+.bachgpt-fab {
+  background: var(--accent) !important;
+  color: var(--accent-ink) !important;
+  border: 1px solid rgba(255, 255, 255, 0.18) !important;
+  box-shadow:
+    0 14px 34px rgba(0, 0, 0, 0.28),
+    inset 0 1px 0 rgba(255, 255, 255, 0.22) !important;
+  padding: 7px 15px 7px 9px !important;
+  gap: 8px;
+}
+
+.bachgpt-fab .bach-fab-label {
+  color: var(--accent-ink) !important;
+}
+
+.bach-fab-sparkle {
+  font-size: 13px;
+  opacity: 0.9;
+  color: var(--accent-ink);
+}
