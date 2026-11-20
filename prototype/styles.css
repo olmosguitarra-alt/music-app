@@ -4321,3 +4321,8 @@ body.palette-velvet {
   letter-spacing: 0.3px;
   color: var(--text-secondary);
 }
+
+.btn-del-prog:hover {
+  color: #e04f5f;
+  border-color: rgba(224, 79, 95, 0.45);
+}

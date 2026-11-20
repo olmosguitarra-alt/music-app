@@ -2873,6 +2873,24 @@ function renameActiveProgramPrompt() {
   renderSetlistDrawer();
 }
 
+function deleteActiveProgramPrompt() {
+  const prog = getActiveProgram();
+  if (!prog) return;
+  if (programsState.list.length <= 1) {
+    if (!window.confirm(`"${prog.name}" es el único programa. ¿Deseas vaciar sus obras?`)) return;
+    prog.scoreIds = [];
+    saveProgramsState();
+    renderSetlistDrawer();
+    return;
+  }
+  if (!window.confirm(`¿Eliminar el programa "${prog.name}"?`)) return;
+  programsState.list = programsState.list.filter((p) => p.id !== prog.id);
+  programsState.activeId = programsState.list[0].id;
+  activeProgramScoreIndex = 0;
+  saveProgramsState();
+  renderSetlistDrawer();
+}
+
 function quickAddSelectedScoreToProgram() {
   const sel = document.getElementById("quickAddScoreSelect");
   if (!sel || !sel.value) return;
