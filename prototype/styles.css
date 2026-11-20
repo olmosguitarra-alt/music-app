@@ -3519,3 +3519,68 @@ body.concert-immersion #mode-concert .concert-stage {
 .sw-henle   { background: linear-gradient(90deg, #16202b 48%, #769ec4 48%); }
 .sw-linen   { background: linear-gradient(90deg, #ece6da 48%, #335244 48%); border-color: rgba(0, 0, 0, 0.18); }
 .sw-velvet  { background: linear-gradient(90deg, #1e2024 48%, #9bb0a5 48%); }
+
+
+/* ==========================================================================
+   V21 PALETAS: CÍRCULOS SÓLIDOS DIVIDIDOS A LA MITAD SIN BORDES NI TEXTO
+   ========================================================================== */
+.palette-trigger-btn {
+  min-height: 34px;
+  padding: 5px 9px;
+  gap: 6px;
+}
+
+.palette-dropdown-menu {
+  width: auto !important;
+  min-width: 0;
+  padding: 6px !important;
+  border-radius: 999px !important;
+  gap: 4px !important;
+  align-items: center;
+}
+
+.palette-opt {
+  width: 36px;
+  height: 36px;
+  padding: 0 !important;
+  border-radius: 50% !important;
+  border: none !important;
+  justify-content: center;
+  align-items: center;
+  background: transparent;
+}
+
+.palette-opt:hover {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.palette-opt.active {
+  background: rgba(255, 255, 255, 0.14);
+  border: none !important;
+}
+
+.pal-circle {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  border: none !important;
+  box-shadow: none !important;
+  display: block;
+  flex-shrink: 0;
+  transition: transform 0.16s ease;
+}
+
+.palette-opt.active .pal-circle {
+  transform: scale(1.12);
+}
+
+.pal-circle-active {
+  width: 18px;
+  height: 18px;
+  background: linear-gradient(90deg, var(--bg-canvas) 50%, var(--accent) 50%);
+}
+
+.pc-luthier { background: linear-gradient(90deg, #161311 50%, #cfa972 50%); }
+.pc-henle   { background: linear-gradient(90deg, #141b24 50%, #769ec4 50%); }
+.pc-linen   { background: linear-gradient(90deg, #dfd8ca 50%, #335244 50%); }
+.pc-velvet  { background: linear-gradient(90deg, #18191c 50%, #9bb0a5 50%); }

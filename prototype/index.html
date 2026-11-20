@@ -7,7 +7,7 @@
   <meta http-equiv="Pragma" content="no-cache" />
   <meta http-equiv="Expires" content="0" />
   <title>Atril — Plataforma Musical</title>
-  <link rel="stylesheet" href="styles.css?v=20" />
+  <link rel="stylesheet" href="styles.css?v=21" />
   <!-- Motores Oficiales para Renderizar (PDF.js) y Particionar/Editar PDFs Reales (pdf-lib) -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf-lib/1.17.1/pdf-lib.min.js"></script>
@@ -51,27 +51,22 @@
     <div class="hud-right-cluster">
       <div class="palette-dropdown-wrap" id="paletteDropdownWrap">
         <button class="glass-pill palette-trigger-btn" id="paletteTriggerBtn" onclick="togglePaletteMenu(event)" title="Paleta de color" aria-label="Paleta de color">
-          <span class="pal-swatch pal-swatch-active" id="paletteActiveDot"></span>
-          <span class="palette-trigger-label" id="paletteTriggerLabel">Lutier</span>
+          <span class="pal-circle pal-circle-active" id="paletteActiveDot"></span>
           <svg viewBox="0 0 24 24" class="v-ico chevron-sm"><polyline points="6 9 12 15 18 9"/></svg>
         </button>
 
         <div class="palette-dropdown-menu hidden" id="paletteMenu" onclick="event.stopPropagation()">
-          <button class="palette-opt active" data-palette="palette-luthier" onclick="setPalette('palette-luthier', this, 'Lutier')">
-            <span class="pal-swatch sw-luthier"></span>
-            <span class="pal-opt-name">Lutier &amp; Ébano</span>
+          <button class="palette-opt active" data-palette="palette-luthier" onclick="setPalette('palette-luthier', this, 'Lutier')" title="Lutier & Ébano" aria-label="Lutier & Ébano">
+            <span class="pal-circle pc-luthier"></span>
           </button>
-          <button class="palette-opt" data-palette="palette-henle" onclick="setPalette('palette-henle', this, 'Henle')">
-            <span class="pal-swatch sw-henle"></span>
-            <span class="pal-opt-name">Henle Urtext</span>
+          <button class="palette-opt" data-palette="palette-henle" onclick="setPalette('palette-henle', this, 'Henle')" title="Henle Urtext" aria-label="Henle Urtext">
+            <span class="pal-circle pc-henle"></span>
           </button>
-          <button class="palette-opt" data-palette="palette-linen" onclick="setPalette('palette-linen', this, 'Lino')">
-            <span class="pal-swatch sw-linen"></span>
-            <span class="pal-opt-name">Papel Lino</span>
+          <button class="palette-opt" data-palette="palette-linen" onclick="setPalette('palette-linen', this, 'Lino')" title="Papel Lino" aria-label="Papel Lino">
+            <span class="pal-circle pc-linen"></span>
           </button>
-          <button class="palette-opt" data-palette="palette-velvet" onclick="setPalette('palette-velvet', this, 'Grafito')">
-            <span class="pal-swatch sw-velvet"></span>
-            <span class="pal-opt-name">Grafito Studio</span>
+          <button class="palette-opt" data-palette="palette-velvet" onclick="setPalette('palette-velvet', this, 'Grafito')" title="Grafito Studio" aria-label="Grafito Studio">
+            <span class="pal-circle pc-velvet"></span>
           </button>
         </div>
       </div>
@@ -616,6 +611,6 @@
     </button>
   </div>
 
-  <script src="app.js?v=20"></script>
+  <script src="app.js?v=21"></script>
 </body>
 </html>
