@@ -1777,10 +1777,15 @@ function cleanLibraryWithAI() {
     if (s.raw && s.clean) {
       s.title = s.clean;
       s.raw = false;
+    } else if (s.isRealPdf && s.title) {
+      const inferred = inferMusicMetadataFromFilename(s.title);
+      if (inferred && inferred.title) {
+        s.title = inferred.title;
+        if (inferred.composer && s.composer === "Por clasificar") s.composer = inferred.composer;
+      }
     }
   });
-  document.getElementById("classifyMenu").classList.add("hidden");
-  showPilotBanner("✦ Todos los títulos de la biblioteca fueron normalizados por IA.");
+  showPilotBanner("✦ Nombres de la biblioteca normalizados.");
   renderLibrary();
 }
 
