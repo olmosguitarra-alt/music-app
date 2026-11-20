@@ -3220,6 +3220,27 @@ function saveProgramQuickOrder() {
   document.getElementById("progQuickPopover")?.classList.add("hidden");
 }
 
+// Cierre inmediato de #progQuickPopover al tocar cualquier lugar fuera (excepto los 3 cintillos superiores)
+document.addEventListener("pointerdown", (e) => {
+  const pqPop = document.getElementById("progQuickPopover");
+  if (!pqPop || pqPop.classList.contains("hidden")) return;
+  if (e.target.closest("#progQuickPopover")) return;
+
+  const isTopBars = e.target.closest(".floating-hud-top, .lib-subbar, .lib-filter-bar, #importPdfMenu, #paletteMenu");
+  pqPop.classList.add("hidden");
+
+  if (!isTopBars) {
+    e.preventDefault();
+    e.stopPropagation();
+    const suppressNextClick = (ev) => {
+      ev.preventDefault();
+      ev.stopPropagation();
+    };
+    document.addEventListener("click", suppressNextClick, { capture: true, once: true });
+    setTimeout(() => document.removeEventListener("click", suppressNextClick, true), 300);
+  }
+}, true);
+
 // Cerrar menús flotantes al tocar cualquier parte fuera de ellos
 document.addEventListener("click", (e) => {
   const pqPop = document.getElementById("progQuickPopover");
