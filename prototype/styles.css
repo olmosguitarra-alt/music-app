@@ -2915,3 +2915,350 @@ body.concert-immersion #mode-concert .concert-stage {
     bottom: 58px;
   }
 }
+
+
+/* ==========================================================================
+   V16 BIBLIOTECA REFINADA: PALETA UNIFICADA, CINTA CENTRADA, FAVORITOS Y FAB
+   ========================================================================== */
+
+/* 1. Selector único elegante de paleta de colores */
+.palette-dropdown-wrap {
+  position: relative;
+}
+
+.palette-trigger-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 38px;
+  padding: 5px 12px 5px 9px;
+  cursor: pointer;
+  color: var(--text-primary);
+  font-size: 12.5px;
+  font-weight: 600;
+  border: 1px solid var(--glass-border);
+  transition: border-color 0.2s ease, transform 0.15s ease;
+}
+
+.palette-trigger-btn:hover {
+  border-color: var(--accent);
+}
+
+.palette-active-dot {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--accent);
+  border: 2px solid var(--text-primary);
+  flex-shrink: 0;
+}
+
+.chevron-sm {
+  width: 14px;
+  height: 14px;
+  opacity: 0.7;
+}
+
+.palette-dropdown-menu {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  width: 224px;
+  padding: 6px;
+  border-radius: 16px;
+  background: var(--card-bg);
+  border: 1px solid var(--glass-border);
+  backdrop-filter: blur(22px);
+  box-shadow: 0 18px 42px rgba(0, 0, 0, 0.42);
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  z-index: 90;
+}
+
+.palette-dropdown-menu.hidden {
+  display: none;
+}
+
+.palette-opt {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  border-radius: 11px;
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--text-primary);
+  cursor: pointer;
+  text-align: left;
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+
+.palette-opt:hover {
+  background: var(--glass-bg);
+}
+
+.palette-opt.active {
+  background: var(--glass-bg);
+  border-color: var(--accent);
+}
+
+.pal-opt-text {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.2;
+}
+
+.pal-opt-text strong {
+  font-size: 12.5px;
+  font-weight: 600;
+}
+
+.pal-opt-text small {
+  font-size: 11px;
+  color: var(--text-secondary);
+}
+
+/* 2. Consolidar niveles en Biblioteca + Cinta única centrada */
+.library-workspace {
+  padding: 66px 24px 20px;
+}
+
+.library-workspace .library-stage {
+  gap: 10px;
+}
+
+.lib-command-bar {
+  margin-bottom: 2px;
+}
+
+.lib-filter-bar {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.filter-ribbon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 2px;
+  padding: 4px;
+  border-radius: 999px;
+  max-width: 100%;
+}
+
+.ribbon-tab {
+  min-height: 34px;
+  padding: 5px 13px;
+  border-radius: 999px;
+  border: none;
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: 12.5px;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.16s ease, color 0.16s ease;
+}
+
+.ribbon-tab:hover {
+  color: var(--text-primary);
+}
+
+.ribbon-tab.active {
+  background: var(--accent);
+  color: var(--accent-ink);
+}
+
+.ribbon-sep {
+  width: 1px;
+  height: 18px;
+  background: var(--glass-border);
+  margin: 0 4px;
+}
+
+.ribbon-action {
+  color: var(--accent);
+}
+
+/* 3. Favoritos y Estrella IA en tarjetas/lista */
+.fav-card-btn {
+  font-size: 15px;
+  color: var(--text-secondary);
+}
+
+.fav-card-btn.is-fav {
+  color: #e2b04a;
+  border-color: rgba(226, 176, 74, 0.45);
+  background: rgba(226, 176, 74, 0.12);
+}
+
+.bach-star-btn {
+  font-size: 14px;
+  color: var(--accent);
+}
+
+/* 4. Menú flotante de Programas: limpio, X sin círculo, creación/edición intuitiva */
+.setlist-drawer {
+  position: fixed;
+  right: 24px;
+  top: 68px;
+  bottom: 20px;
+  width: 340px;
+  z-index: 75;
+  box-shadow: 0 24px 56px rgba(0, 0, 0, 0.45);
+  max-height: none;
+}
+
+.setlist-head-main {
+  flex: 1;
+  min-width: 0;
+}
+
+.btn-bare-x {
+  border: none;
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: 18px;
+  line-height: 1;
+  padding: 4px 6px;
+  cursor: pointer;
+  border-radius: 6px;
+}
+
+.btn-bare-x:hover {
+  color: var(--text-primary);
+}
+
+.setlist-name-row {
+  flex-wrap: wrap;
+}
+
+.setlist-name-row select {
+  flex: 1;
+  min-width: 120px;
+  max-width: none;
+}
+
+.btn-new-prog {
+  height: 34px;
+  padding: 0 10px;
+  border-radius: 10px;
+  border: 1px solid var(--accent);
+  background: transparent;
+  color: var(--accent);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.btn-new-prog:hover {
+  background: var(--accent);
+  color: var(--accent-ink);
+}
+
+.new-prog-inline {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 8px;
+}
+
+.new-prog-inline.hidden {
+  display: none;
+}
+
+.new-prog-inline input {
+  flex: 1;
+  min-width: 0;
+  height: 34px;
+  padding: 0 10px;
+  border-radius: 10px;
+  border: 1px solid var(--glass-border);
+  background: var(--glass-bg);
+  color: var(--text-primary);
+  font-size: 12.5px;
+}
+
+.btn-new-prog-ok {
+  height: 34px;
+  padding: 0 12px;
+  border-radius: 10px;
+  border: none;
+  background: var(--accent);
+  color: var(--accent-ink);
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.setlist-summary-row {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--glass-border);
+}
+
+.setlist-summary-row .setlist-summary {
+  padding-bottom: 0;
+  border-bottom: none;
+}
+
+.setlist-quick-add {
+  display: flex;
+  gap: 6px;
+}
+
+.setlist-quick-add select {
+  flex: 1;
+  min-width: 0;
+  height: 34px;
+  padding: 0 8px;
+  border-radius: 10px;
+  border: 1px solid var(--glass-border);
+  background: var(--glass-bg);
+  color: var(--text-primary);
+  font-size: 12px;
+}
+
+.btn-quick-add {
+  height: 34px;
+  padding: 0 10px;
+  border-radius: 10px;
+  border: 1px solid var(--glass-border);
+  background: var(--glass-bg);
+  color: var(--text-primary);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.btn-quick-add:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+@media (max-width: 900px) {
+  .palette-trigger-label {
+    display: none;
+  }
+  .library-workspace {
+    padding: 112px 12px 20px;
+  }
+  .setlist-drawer {
+    top: 112px;
+    right: 12px;
+    left: 12px;
+    width: auto;
+  }
+  .filter-ribbon {
+    border-radius: 16px;
+    justify-content: center;
+  }
+}

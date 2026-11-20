@@ -7,7 +7,7 @@
   <meta http-equiv="Pragma" content="no-cache" />
   <meta http-equiv="Expires" content="0" />
   <title>Atril — Plataforma Musical</title>
-  <link rel="stylesheet" href="styles.css?v=15" />
+  <link rel="stylesheet" href="styles.css?v=16" />
   <!-- Motores Oficiales para Renderizar (PDF.js) y Particionar/Editar PDFs Reales (pdf-lib) -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf-lib/1.17.1/pdf-lib.min.js"></script>
@@ -48,18 +48,32 @@
     </nav>
 
     <div class="hud-right-cluster">
-      <div class="glass-pill hud-palettes" title="Paleta visual">
-        <button class="theme-orb orb-luthier active" onclick="setPalette('palette-luthier', this)" title="Lutier & Ébano" aria-label="Paleta Lutier"></button>
-        <button class="theme-orb orb-henle" onclick="setPalette('palette-henle', this)" title="Henle Urtext" aria-label="Paleta Henle"></button>
-        <button class="theme-orb orb-linen" onclick="setPalette('palette-linen', this)" title="Papel Lino Claro" aria-label="Paleta Lino"></button>
-        <button class="theme-orb orb-velvet" onclick="setPalette('palette-velvet', this)" title="Grafito Studio" aria-label="Paleta Grafito"></button>
-      </div>
+      <div class="palette-dropdown-wrap" id="paletteDropdownWrap">
+        <button class="glass-pill palette-trigger-btn" id="paletteTriggerBtn" onclick="togglePaletteMenu(event)" title="Cambiar paleta de color" aria-label="Paleta de color">
+          <span class="palette-active-dot" id="paletteActiveDot"></span>
+          <span class="palette-trigger-label" id="paletteTriggerLabel">Lutier</span>
+          <svg viewBox="0 0 24 24" class="v-ico chevron-sm"><polyline points="6 9 12 15 18 9"/></svg>
+        </button>
 
-      <!-- Acceso limpio a BachGPT en el HUD (oculto automáticamente en Modo Concierto) -->
-      <button class="glass-pill hud-bach-btn" id="hudBachBtn" onclick="handleMainBachFabClick()" title="Abrir BachGPT (Asistente musical)">
-        <span class="bach-8bit-icon hud-bach-icon" id="bachFabIcon"></span>
-        <span class="hud-bach-label">BachGPT</span>
-      </button>
+        <div class="palette-dropdown-menu hidden" id="paletteMenu" onclick="event.stopPropagation()">
+          <button class="palette-opt active" data-palette="palette-luthier" onclick="setPalette('palette-luthier', this, 'Lutier')">
+            <span class="theme-orb orb-luthier"></span>
+            <span class="pal-opt-text"><strong>Lutier &amp; Ébano</strong><small>Bronce y papel cálido</small></span>
+          </button>
+          <button class="palette-opt" data-palette="palette-henle" onclick="setPalette('palette-henle', this, 'Henle')">
+            <span class="theme-orb orb-henle"></span>
+            <span class="pal-opt-text"><strong>Henle Urtext</strong><small>Azul pizarra y crema</small></span>
+          </button>
+          <button class="palette-opt" data-palette="palette-linen" onclick="setPalette('palette-linen', this, 'Lino')">
+            <span class="theme-orb orb-linen"></span>
+            <span class="pal-opt-text"><strong>Papel Lino</strong><small>Modo claro orgánico</small></span>
+          </button>
+          <button class="palette-opt" data-palette="palette-velvet" onclick="setPalette('palette-velvet', this, 'Grafito')">
+            <span class="theme-orb orb-velvet"></span>
+            <span class="pal-opt-text"><strong>Grafito Studio</strong><small>Oscuro neutro</small></span>
+          </button>
+        </div>
+      </div>
     </div>
   </header>
 
@@ -82,9 +96,9 @@
             <input type="text" id="searchInput" placeholder="Buscar obra, compositor, BWV o programa..." oninput="renderLibrary()" />
           </div>
 
-          <button class="btn-setlist-toggle" id="btnToggleSetlist" onclick="toggleSetlistDrawer()" title="Mostrar u ocultar panel de Programa de Concierto">
+          <button class="btn-setlist-toggle" id="btnToggleSetlist" onclick="toggleSetlistDrawer()" title="Mostrar u ocultar Programas de Concierto">
             <svg viewBox="0 0 24 24" class="v-ico"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><circle cx="4" cy="6" r="1"/><circle cx="4" cy="12" r="1"/><circle cx="4" cy="18" r="1"/></svg>
-            <span>Programa (<span id="setlistCountBadge">0</span>)</span>
+            <span>Programas</span>
           </button>
 
           <!-- Alternar Vista Folio vs Lista -->
@@ -100,20 +114,18 @@
           </div>
         </div>
 
-        <!-- CHIPS DIRECTOS DE FILTRO Y ORGANIZACIÓN (Sin menús ocultos) -->
+        <!-- CINTA ÚNICA CENTRADA DE FILTROS Y ACCIONES -->
         <div class="lib-filter-bar">
-          <div class="filter-chips-scroll" role="tablist" aria-label="Organizar biblioteca">
-            <button class="filter-chip active" data-cls="all" onclick="selectClassification('all', 'Todo', this)">Todo</button>
-            <button class="filter-chip" data-cls="real-only" onclick="selectClassification('real-only', 'Mis PDFs', this)">Mis PDFs</button>
-            <button class="filter-chip" data-cls="composer" onclick="selectClassification('composer', 'Compositor', this)">Por Compositor</button>
-            <button class="filter-chip" data-cls="period" onclick="selectClassification('period', 'Periodo', this)">Por Periodo</button>
-            <button class="filter-chip" data-cls="instrumentation" onclick="selectClassification('instrumentation', 'Dotación', this)">Por Dotación</button>
-            <button class="filter-chip" data-cls="programs" onclick="selectClassification('programs', 'Programas', this)">Por Programa</button>
+          <div class="glass-pill filter-ribbon" role="tablist" aria-label="Organizar biblioteca">
+            <button class="ribbon-tab active" data-cls="all" onclick="selectClassification('all', 'Todo', this)">Todo</button>
+            <button class="ribbon-tab" data-cls="favorites" onclick="selectClassification('favorites', 'Favoritos', this)">★ Favoritos</button>
+            <button class="ribbon-tab" data-cls="composer" onclick="selectClassification('composer', 'Compositor', this)">Por Compositor</button>
+            <button class="ribbon-tab" data-cls="period" onclick="selectClassification('period', 'Periodo', this)">Por Periodo</button>
+            <button class="ribbon-tab" data-cls="instrumentation" onclick="selectClassification('instrumentation', 'Dotación', this)">Por Dotación</button>
+            <button class="ribbon-tab" data-cls="programs" onclick="selectClassification('programs', 'Programas', this)">Programas</button>
+            <span class="ribbon-sep"></span>
+            <button class="ribbon-tab ribbon-action" id="btnNormalizeRaw" onclick="cleanLibraryWithAI()" title="Limpiar nombres de archivos PDF crudos">✦ Normalizar nombres</button>
           </div>
-
-          <button class="btn-normalize-subtle" id="btnNormalizeRaw" onclick="cleanLibraryWithAI()" title="Limpiar nombres de archivos PDF crudos">
-            ✦ Normalizar nombres
-          </button>
         </div>
 
         <div class="pilot-status-banner hidden" id="pilotStatusBanner"></div>
@@ -124,20 +136,32 @@
         </div>
       </div>
 
-      <!-- PANEL LATERAL DE PROGRAMA / SETLIST -->
-      <aside class="setlist-drawer" id="setlistDrawer">
+      <!-- PANEL LATERAL DE PROGRAMAS / SETLIST -->
+      <aside class="setlist-drawer hidden" id="setlistDrawer" onclick="event.stopPropagation()">
         <div class="setlist-head">
-          <div>
-            <span class="setlist-eyebrow">PROGRAMA DE CONCIERTO</span>
+          <div class="setlist-head-main">
+            <span class="setlist-eyebrow">PROGRAMAS DE CONCIERTO</span>
             <div class="setlist-name-row">
               <select id="activeProgramSelect" onchange="switchActiveProgram(this.value)" aria-label="Seleccionar programa"></select>
-              <button class="btn-icon-sm" onclick="createNewProgramPrompt()" title="Crear nuevo programa">＋</button>
+              <button class="btn-new-prog" onclick="toggleNewProgramInput(true)" title="Crear nuevo programa">＋ Nuevo</button>
+              <button class="btn-icon-sm" onclick="renameActiveProgramPrompt()" title="Renombrar programa">✎</button>
+            </div>
+            <div class="new-prog-inline hidden" id="newProgInline">
+              <input type="text" id="newProgNameInput" placeholder="Nombre del programa..." onkeydown="if(event.key==='Enter') confirmNewProgram()" />
+              <button class="btn-new-prog-ok" onclick="confirmNewProgram()">Crear</button>
+              <button class="btn-bare-x" onclick="toggleNewProgramInput(false)" aria-label="Cancelar">✕</button>
             </div>
           </div>
-          <button class="btn-circle-ghost drawer-close-mobile" onclick="toggleSetlistDrawer(false)" aria-label="Cerrar panel">✕</button>
+          <button class="btn-bare-x" onclick="toggleSetlistDrawer(false)" aria-label="Cerrar panel" title="Cerrar">✕</button>
         </div>
 
-        <div class="setlist-summary" id="setlistSummary">0 obras • 0 págs.</div>
+        <div class="setlist-summary-row">
+          <span class="setlist-summary" id="setlistSummary">0 obras • 0 págs.</span>
+          <div class="setlist-quick-add">
+            <select id="quickAddScoreSelect" aria-label="Elegir obra para agregar"></select>
+            <button class="btn-quick-add" onclick="quickAddSelectedScoreToProgram()">＋ Agregar</button>
+          </div>
+        </div>
 
         <div class="setlist-items" id="setlistItems"></div>
 
@@ -570,8 +594,14 @@
         <button class="bach-send-btn" onclick="sendUserMessageToBach()" aria-label="Enviar">➤</button>
       </div>
     </aside>
+
+    <!-- Botón Flotante Principal abajo a la derecha con Pixel Art 8-Bits -->
+    <button class="bachgpt-fab" id="bachGptFab" onclick="handleMainBachFabClick()" title="BachGPT — Asistente Musical">
+      <div class="bach-8bit-icon" id="bachFabIcon"></div>
+      <span class="bach-fab-label">BachGPT</span>
+    </button>
   </div>
 
-  <script src="app.js?v=15"></script>
+  <script src="app.js?v=16"></script>
 </body>
 </html>

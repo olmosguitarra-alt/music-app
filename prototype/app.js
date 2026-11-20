@@ -637,14 +637,22 @@ function switchMode(mode) {
   if (mode === "editor") setTimeout(setupEditorCanvas, 40);
 }
 
-function setPalette(paletteClass, btn) {
+function togglePaletteMenu(e) {
+  if (e) e.stopPropagation();
+  document.getElementById("paletteMenu")?.classList.toggle("hidden");
+}
+
+function setPalette(paletteClass, btn, labelText) {
   const keepConcert = document.body.classList.contains("mode-concert-active");
   const keepImmersion = document.body.classList.contains("concert-immersion");
   document.body.className = paletteClass;
   if (keepConcert) document.body.classList.add("mode-concert-active");
   if (keepImmersion) document.body.classList.add("concert-immersion");
-  document.querySelectorAll(".theme-orb").forEach((c) => c.classList.remove("active"));
+  document.querySelectorAll(".palette-opt").forEach((c) => c.classList.remove("active"));
   if (btn) btn.classList.add("active");
+  const lbl = document.getElementById("paletteTriggerLabel");
+  if (lbl && labelText) lbl.textContent = labelText;
+  document.getElementById("paletteMenu")?.classList.add("hidden");
 }
 
 function setLibraryViewMode(mode) {
@@ -656,14 +664,45 @@ function setLibraryViewMode(mode) {
 
 function selectClassification(clsKey, labelText, btn) {
   currentClassification = clsKey;
-  document.querySelectorAll(".filter-chip").forEach((item) => item.classList.remove("active"));
+  document.querySelectorAll(".ribbon-tab[data-cls]").forEach((item) => item.classList.remove("active"));
   if (btn) btn.classList.add("active");
   renderLibrary();
 }
 
 function exitAiModeToCatalog() {
-  const allBtn = document.querySelector('.filter-chip[data-cls="all"]');
+  const allBtn = document.querySelector('.ribbon-tab[data-cls="all"]');
   selectClassification("all", "Todo", allBtn);
+}
+
+const FAVORITES_STORAGE_KEY = "atrilFavoritesV16";
+let favoriteScoreIds = new Set([1]);
+
+function loadFavoritesState() {
+  try {
+    const raw = localStorage.getItem(FAVORITES_STORAGE_KEY);
+    if (raw) {
+      const arr = JSON.parse(raw);
+      if (Array.isArray(arr)) favoriteScoreIds = new Set(arr.map(Number));
+    }
+  } catch (_) {}
+}
+
+function saveFavoritesState() {
+  try {
+    localStorage.setItem(FAVORITES_STORAGE_KEY, JSON.stringify([...favoriteScoreIds]));
+  } catch (_) {}
+}
+
+function isFavoriteScore(scoreId) {
+  return favoriteScoreIds.has(Number(scoreId));
+}
+
+function toggleFavoriteScore(scoreId) {
+  const id = Number(scoreId);
+  if (favoriteScoreIds.has(id)) favoriteScoreIds.delete(id);
+  else favoriteScoreIds.add(id);
+  saveFavoritesState();
+  renderLibrary();
 }
 
 function renderLibrary() {
@@ -671,7 +710,7 @@ function renderLibrary() {
   const q = (document.getElementById("searchInput").value || "").toLowerCase();
 
   const filtered = scores.filter((s) => {
-    if (currentClassification === "real-only" && !s.isRealPdf) return false;
+    if (currentClassification === "favorites" && !isFavoriteScore(s.id)) return false;
     return (
       s.title.toLowerCase().includes(q) ||
       (s.clean && s.clean.toLowerCase().includes(q)) ||
@@ -686,7 +725,7 @@ function renderLibrary() {
     container.innerHTML = `
       <div class="empty-pilot-box">
         <h4>No hay archivos en esta vista</h4>
-        <p>Toca el botón <strong>"＋ Importar PDF"</strong> arriba a la izquierda para cargar partituras reales desde tu tablet.</p>
+        <p>${currentClassification === "favorites" ? "Marca cualquier obra con ☆ para verla en Favoritos." : 'Toca el botón <strong>"Importar PDF"</strong> arriba para cargar partituras reales desde tu tablet.'}</p>
       </div>
     `;
     return;
@@ -699,7 +738,7 @@ function renderLibrary() {
     else if (currentClassification === "period") key = `Periodo ${s.period}`;
     else if (currentClassification === "instrumentation") key = `Dotación: ${s.group}`;
     else if (currentClassification === "programs") key = `Programa: ${s.program}`;
-    else if (currentClassification === "real-only") key = "Mis PDFs Importados de la Tablet";
+    else if (currentClassification === "favorites") key = "Obras Favoritas";
 
     if (!groups[key]) groups[key] = [];
     groups[key].push(s);
@@ -767,10 +806,10 @@ function buildFolioCardHtml(s) {
       <div class="folio-card-foot" onclick="event.stopPropagation()">
         <span class="period-tag">${s.period} • ${s.pages}</span>
         <div class="folio-quick-btns">
-          <button class="mini-action-btn bach-card-btn" onclick="openAiForWork(${s.id})" title="BachGPT: Consultar sobre esta obra">${build8BitBachSvg(false)}</button>
-          <button class="mini-action-btn with-label" onclick="addScoreToActiveProgram(${s.id})" title="Agregar al programa activo">＋ Prog</button>
+          <button class="mini-action-btn fav-card-btn ${isFavoriteScore(s.id) ? "is-fav" : ""}" onclick="toggleFavoriteScore(${s.id})" title="Marcar como favorita">${isFavoriteScore(s.id) ? "★" : "☆"}</button>
+          <button class="mini-action-btn bach-card-btn bach-star-btn" onclick="openAiForWork(${s.id})" title="BachGPT: Consultar sobre esta obra">✦</button>
+          <button class="mini-action-btn with-label add-prog-btn" onclick="addScoreToActiveProgram(${s.id})" title="Agregar al programa activo">＋ Prog</button>
           <button class="mini-action-btn" onclick="openPdfModalById(${s.id})" title="Taller PDF y Renombrar">✂</button>
-          <button class="mini-action-btn" onclick="openScoreById(${s.id}, 'concert')" title="Abrir en Concierto">◉</button>
         </div>
       </div>
     </article>
@@ -795,10 +834,10 @@ function buildListRowHtml(s) {
       </div>
 
       <div class="list-col-actions" onclick="event.stopPropagation()">
-        <button class="mini-action-btn bach-card-btn" onclick="openAiForWork(${s.id})" title="BachGPT: Consultar sobre esta obra">${build8BitBachSvg(false)}</button>
-        <button class="mini-action-btn with-label" onclick="addScoreToActiveProgram(${s.id})" title="Agregar al programa activo">＋ Prog</button>
+        <button class="mini-action-btn fav-card-btn ${isFavoriteScore(s.id) ? "is-fav" : ""}" onclick="toggleFavoriteScore(${s.id})" title="Marcar como favorita">${isFavoriteScore(s.id) ? "★" : "☆"}</button>
+        <button class="mini-action-btn bach-card-btn bach-star-btn" onclick="openAiForWork(${s.id})" title="BachGPT: Consultar sobre esta obra">✦</button>
+        <button class="mini-action-btn with-label add-prog-btn" onclick="addScoreToActiveProgram(${s.id})" title="Agregar al programa activo">＋ Prog</button>
         <button class="mini-action-btn" onclick="openPdfModalById(${s.id})" title="Taller PDF y Renombrar">✂</button>
-        <button class="mini-action-btn" onclick="openScoreById(${s.id}, 'concert')" title="Abrir en Concierto">◉</button>
       </div>
     </div>
   `;
@@ -2443,18 +2482,47 @@ function toggleSetlistDrawer(forceState) {
   if (btn) btn.classList.toggle("active", shouldOpen);
 }
 
-function createNewProgramPrompt() {
-  const name = window.prompt("Nombre del nuevo programa de concierto:");
-  if (!name || !name.trim()) return;
+function toggleNewProgramInput(show) {
+  const row = document.getElementById("newProgInline");
+  const inp = document.getElementById("newProgNameInput");
+  if (!row) return;
+  row.classList.toggle("hidden", !show);
+  if (show && inp) {
+    inp.value = "";
+    setTimeout(() => inp.focus(), 40);
+  }
+}
+
+function confirmNewProgram() {
+  const inp = document.getElementById("newProgNameInput");
+  const name = inp ? inp.value.trim() : "";
+  if (!name) return;
   const newProg = {
     id: `prog-${Date.now()}`,
-    name: name.trim(),
+    name,
     scoreIds: []
   };
   programsState.list.push(newProg);
   programsState.activeId = newProg.id;
   saveProgramsState();
+  toggleNewProgramInput(false);
   renderSetlistDrawer();
+}
+
+function renameActiveProgramPrompt() {
+  const prog = getActiveProgram();
+  if (!prog) return;
+  const next = window.prompt("Nuevo nombre para el programa:", prog.name);
+  if (!next || !next.trim()) return;
+  prog.name = next.trim();
+  saveProgramsState();
+  renderSetlistDrawer();
+}
+
+function quickAddSelectedScoreToProgram() {
+  const sel = document.getElementById("quickAddScoreSelect");
+  if (!sel || !sel.value) return;
+  addScoreToActiveProgram(Number(sel.value));
 }
 
 function switchActiveProgram(progId) {
@@ -2500,20 +2568,25 @@ function renderSetlistDrawer() {
   const sel = document.getElementById("activeProgramSelect");
   const itemsEl = document.getElementById("setlistItems");
   const sumEl = document.getElementById("setlistSummary");
-  const badgeEl = document.getElementById("setlistCountBadge");
   const launchBtn = document.getElementById("btnLaunchProgram");
+  const quickSel = document.getElementById("quickAddScoreSelect");
   if (!sel || !itemsEl) return;
 
   sel.innerHTML = programsState.list
     .map((p) => `<option value="${p.id}" ${p.id === programsState.activeId ? "selected" : ""}>${p.name}</option>`)
     .join("");
 
+  if (quickSel) {
+    quickSel.innerHTML = scores
+      .map((s) => `<option value="${s.id}">${s.clean || s.title}</option>`)
+      .join("");
+  }
+
   const prog = getActiveProgram();
   const validScores = (prog ? prog.scoreIds : [])
     .map((id) => scores.find((s) => s.id === id))
     .filter(Boolean);
 
-  if (badgeEl) badgeEl.textContent = String(validScores.length);
   const totalPages = validScores.reduce((acc, s) => acc + (s.pageCount || 10), 0);
   if (sumEl) sumEl.textContent = `${validScores.length} ${validScores.length === 1 ? "obra" : "obras"} • ${totalPages} págs. en total`;
   if (launchBtn) launchBtn.disabled = validScores.length === 0;
@@ -2655,15 +2728,52 @@ function initConcertQuickInteraction() {
   window.addEventListener("touchend", up);
 }
 
+// Cerrar menús flotantes al tocar cualquier parte fuera de ellos
+document.addEventListener("click", (e) => {
+  const palMenu = document.getElementById("paletteMenu");
+  if (palMenu && !palMenu.classList.contains("hidden") && !e.target.closest("#paletteDropdownWrap")) {
+    palMenu.classList.add("hidden");
+  }
+
+  const drawer = document.getElementById("setlistDrawer");
+  if (
+    drawer &&
+    !drawer.classList.contains("hidden") &&
+    !e.target.closest("#setlistDrawer") &&
+    !e.target.closest("#btnToggleSetlist") &&
+    !e.target.closest(".add-prog-btn")
+  ) {
+    toggleSetlistDrawer(false);
+  }
+
+  const bachWin = document.getElementById("bachGptWindow");
+  if (
+    bachWin &&
+    !bachWin.classList.contains("hidden") &&
+    !e.target.closest("#bachWidgetRoot") &&
+    !e.target.closest(".bach-card-btn")
+  ) {
+    toggleBachGptChat(false);
+  }
+
+  const brushPop = document.getElementById("brushPopover");
+  if (brushPop && !brushPop.classList.contains("hidden") && !e.target.closest("#brushPopover") && !e.target.closest("#btnBrushStyle")) {
+    brushPop.classList.add("hidden");
+  }
+
+  const stampPop = document.getElementById("stampPopover");
+  if (stampPop && !stampPop.classList.contains("hidden") && !e.target.closest("#stampPopover") && !e.target.closest("#btnStamps")) {
+    stampPop.classList.add("hidden");
+  }
+});
+
 window.addEventListener("DOMContentLoaded", async () => {
   await loadSavedPdfsFromDb();
+  loadFavoritesState();
   loadProgramsState();
   initBachGptWidget();
   renderLibrary();
   renderSetlistDrawer();
-  if (window.innerWidth <= 1024) {
-    toggleSetlistDrawer(false);
-  }
   switchStampTab("guitar");
   document.getElementById("studySvg").innerHTML = buildPortraitScoreSvg(-1);
   document.getElementById("concertSvg").innerHTML = buildPortraitScoreSvg(-1);
