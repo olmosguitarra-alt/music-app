@@ -6602,3 +6602,15 @@ textarea {
     height: 28px !important;
   }
 }
+
+/* V57: Icono lineal de micrófono para dictado en BachGPT */
+.bach-mic-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.bach-mic-btn .v-ico {
+  width: 17px;
+  height: 17px;
+}
