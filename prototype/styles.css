@@ -6704,7 +6704,8 @@ body.mode-library-active .programs-slide {
   padding-bottom: 0 !important;
   margin-bottom: 12px !important;
   display: flex;
-  align-items: center;
+  flex-direction: row !important;
+  align-items: center !important;
   justify-content: space-between;
   gap: 12px;
 }
