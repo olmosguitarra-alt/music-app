@@ -5407,7 +5407,6 @@ body:not(.mode-library-active) .cadenza-brand-text .hud-piece-name {
 
 /* Mismo tamaño al sustituir menú ••• por Agregar a programa */
 .work-actions-menu.is-prog-mode {
-  width: 210px !important;
   padding: 8px !important;
 }
 
