@@ -6272,14 +6272,17 @@ body.programs-slide-open .lib-unified-row {
   body.mode-library-active .catalog-slide {
     padding-top: 120px !important;
   }
+  .lib-unified-row .view-toggle-pill {
+    min-width: 60px !important;
+  }
   .lib-unified-row .glass-search {
-    min-width: 96px !important;
+    min-width: 84px !important;
   }
   .lib-unified-row .filter-ribbon {
     gap: 2px !important;
   }
   .lib-unified-row .filter-ribbon .ribbon-tab {
-    padding: 0 5px !important;
+    padding: 0 4px !important;
     font-size: 11px !important;
   }
 }
