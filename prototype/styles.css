@@ -6099,6 +6099,10 @@ body.mode-library-active .top-glass-cintillo {
   border-bottom: 1px solid var(--glass-border);
 }
 
+body.mode-library-active.programs-slide-open .top-glass-cintillo {
+  height: 64px;
+}
+
 body.mode-library-active .bottom-glass-cintillo {
   display: block;
   position: fixed;
@@ -6111,6 +6115,13 @@ body.mode-library-active .bottom-glass-cintillo {
   backdrop-filter: blur(20px) saturate(155%);
   -webkit-backdrop-filter: blur(20px) saturate(155%);
   border-top: 1px solid var(--glass-border);
+}
+
+/* Centrado vertical exacto de (+), modos y BachGPT dentro del cinto inferior */
+body.mode-library-active .floating-import-fab-wrap,
+body.mode-library-active #bottomNavDock.bottom-nav-dock,
+body.mode-library-active #bachGptFab.bachgpt-fab {
+  bottom: max(16px, env(safe-area-inset-bottom)) !important;
 }
 
 .floating-hud-top {
@@ -6144,8 +6155,26 @@ body.mode-library-active .catalog-slide {
 }
 
 body.mode-library-active .programs-slide {
-  padding-top: 76px !important;
+  padding-top: 72px !important;
   padding-bottom: 92px !important;
+}
+
+body.programs-slide-open .library-slides-viewport {
+  z-index: 35 !important;
+}
+
+.programs-slide-top-nav {
+  position: relative;
+  z-index: 46;
+  margin-bottom: 12px !important;
+}
+
+.prog-slide-back-btn {
+  width: 40px !important;
+  height: 40px !important;
+  background: color-mix(in srgb, var(--card-bg) 100%, var(--bg-canvas)) !important;
+  border: 1px solid var(--glass-border) !important;
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.12) !important;
 }
 
 /* Fila superior fija (+15% tamaño), búsqueda extendida, filtros con espaciado uniforme */
@@ -6292,7 +6321,12 @@ body.programs-slide-open .lib-unified-row {
     height: 104px;
   }
   body.mode-library-active .bottom-glass-cintillo {
-    height: 66px;
+    height: 70px;
+  }
+  body.mode-library-active .floating-import-fab-wrap,
+  body.mode-library-active #bottomNavDock.bottom-nav-dock,
+  body.mode-library-active #bachGptFab.bachgpt-fab {
+    bottom: max(15px, env(safe-area-inset-bottom)) !important;
   }
   body.mode-library-active .library-workspace {
     padding: 0 12px !important;
