@@ -957,10 +957,12 @@ function toggleSettingsDrawer(forceState) {
 function openProgramsSlideView() {
   renderSetlistDrawer();
   document.getElementById("librarySlidesViewport")?.classList.add("is-programs-active");
+  document.body.classList.add("programs-slide-open");
 }
 
 function closeProgramsSlideView() {
   document.getElementById("librarySlidesViewport")?.classList.remove("is-programs-active");
+  document.body.classList.remove("programs-slide-open");
 }
 
 function revealBottomNavDock() {

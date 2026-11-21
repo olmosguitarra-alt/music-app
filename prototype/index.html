@@ -8,7 +8,7 @@
   <meta http-equiv="Expires" content="0" />
   <title>Cadenza — Estudio y Lectura Musical</title>
   <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='16' fill='%236b172b'/%3E%3Cpath d='M4 34c16-10 34 8 56-4M4 38c16-10 34 8 56-4M4 42c16-10 34 8 56-4' stroke='%23f7efe7' stroke-opacity='.45' stroke-width='1.5' fill='none'/%3E%3Ctext x='18' y='45' font-family='Georgia,serif' font-size='38' fill='%23fcf8f4'%3EC%3C/text%3E%3C/svg%3E" />
-  <link rel="stylesheet" href="styles.css?v=48" />
+  <link rel="stylesheet" href="styles.css?v=49" />
   <!-- Motores Oficiales para Renderizar (PDF.js) y Particionar/Editar PDFs Reales (pdf-lib) -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf-lib/1.17.1/pdf-lib.min.js"></script>
@@ -61,61 +61,61 @@
 
         <div class="pilot-status-banner hidden" id="pilotStatusBanner"></div>
 
+        <!-- FILA ÚNICA FIJA (+15%): VISTA + BÚSQUEDA EXTENDIDA + FILTROS INTEGRADOS CON PROGRAMAS -->
+        <div class="lib-unified-row" id="libUnifiedRow">
+          <div class="view-toggle-pill" id="viewTogglePill" title="Alternar vista Tarjeta / Lista">
+            <button class="vt-btn active" id="btnViewFolio" onclick="setLibraryViewMode('folio')" aria-label="Vista Tarjeta">
+              <svg viewBox="0 0 24 24" class="v-ico"><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="9" rx="1.5"/><rect x="3" y="15" width="7" height="6" rx="1.5"/><rect x="14" y="15" width="7" height="6" rx="1.5"/></svg>
+              <span class="vt-label">Tarjeta</span>
+            </button>
+            <button class="vt-btn" id="btnViewList" onclick="setLibraryViewMode('list')" aria-label="Vista Lista">
+              <svg viewBox="0 0 24 24" class="v-ico"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
+              <span class="vt-label">Lista</span>
+            </button>
+          </div>
+
+          <div class="glass-search">
+            <svg viewBox="0 0 24 24" class="v-ico"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+            <input type="text" id="searchInput" placeholder="Buscar..." oninput="renderLibrary()" />
+          </div>
+
+          <div class="lib-filter-bar">
+            <div class="glass-pill filter-ribbon" role="tablist" aria-label="Organizar biblioteca">
+              <button class="ribbon-tab active" data-cls="all" onclick="selectClassification('all', 'Todo', this)">Todo</button>
+              <button class="ribbon-tab" data-cls="favorites" onclick="selectClassification('favorites', 'Favoritos', this)">Favoritos</button>
+
+              <div class="filter-dd-wrap">
+                <button class="ribbon-tab filter-dd-btn" data-cls="composer" id="btnFilterComposer" onclick="toggleFilterDropdown('composer', event)">
+                  <span id="labelFilterComposer">Compositor</span>
+                  <svg viewBox="0 0 24 24" class="v-ico wedge-ico"><polyline points="6 9 12 15 18 9"/></svg>
+                </button>
+              </div>
+
+              <div class="filter-dd-wrap">
+                <button class="ribbon-tab filter-dd-btn" data-cls="period" id="btnFilterPeriod" onclick="toggleFilterDropdown('period', event)">
+                  <span id="labelFilterPeriod">Periodo</span>
+                  <svg viewBox="0 0 24 24" class="v-ico wedge-ico"><polyline points="6 9 12 15 18 9"/></svg>
+                </button>
+              </div>
+
+              <div class="filter-dd-wrap">
+                <button class="ribbon-tab filter-dd-btn" data-cls="instrumentation" id="btnFilterGroup" onclick="toggleFilterDropdown('group', event)">
+                  <span id="labelFilterGroup">Dotación</span>
+                  <svg viewBox="0 0 24 24" class="v-ico wedge-ico"><polyline points="6 9 12 15 18 9"/></svg>
+                </button>
+              </div>
+
+              <button class="ribbon-tab programs-inline-btn" id="btnOpenProgramsSlide" onclick="openProgramsSlideView()">
+                <span>Programas</span>
+                <svg viewBox="0 0 24 24" class="v-ico"><polyline points="9 18 15 12 9 6"/></svg>
+              </button>
+            </div>
+          </div>
+        </div>
+
         <!-- CONTENEDOR DESLIZANTE CONTINUO: BIBLIOTECA <-> PROGRAMAS -->
         <div class="library-slides-viewport" id="librarySlidesViewport">
           <div class="library-slide catalog-slide" id="libraryCatalogSlide">
-            <!-- FILA ÚNICA AL 100%: VISTA (15%) + BÚSQUEDA (30%) + FILTROS INTEGRADOS CON PROGRAMAS (55%) -->
-            <div class="lib-unified-row">
-              <div class="view-toggle-pill" id="viewTogglePill" title="Alternar vista Tarjeta / Lista">
-                <button class="vt-btn active" id="btnViewFolio" onclick="setLibraryViewMode('folio')" aria-label="Vista Tarjeta">
-                  <svg viewBox="0 0 24 24" class="v-ico"><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="9" rx="1.5"/><rect x="3" y="15" width="7" height="6" rx="1.5"/><rect x="14" y="15" width="7" height="6" rx="1.5"/></svg>
-                  <span class="vt-label">Tarjeta</span>
-                </button>
-                <button class="vt-btn" id="btnViewList" onclick="setLibraryViewMode('list')" aria-label="Vista Lista">
-                  <svg viewBox="0 0 24 24" class="v-ico"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
-                  <span class="vt-label">Lista</span>
-                </button>
-              </div>
-
-              <div class="glass-search">
-                <svg viewBox="0 0 24 24" class="v-ico"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
-                <input type="text" id="searchInput" placeholder="Buscar..." oninput="renderLibrary()" />
-              </div>
-
-              <div class="lib-filter-bar">
-                <div class="glass-pill filter-ribbon" role="tablist" aria-label="Organizar biblioteca">
-                  <button class="ribbon-tab active" data-cls="all" onclick="selectClassification('all', 'Todo', this)">Todo</button>
-                  <button class="ribbon-tab" data-cls="favorites" onclick="selectClassification('favorites', 'Favoritos', this)">Favoritos</button>
-
-                  <div class="filter-dd-wrap">
-                    <button class="ribbon-tab filter-dd-btn" data-cls="composer" id="btnFilterComposer" onclick="toggleFilterDropdown('composer', event)">
-                      <span id="labelFilterComposer">Compositor</span>
-                      <svg viewBox="0 0 24 24" class="v-ico wedge-ico"><polyline points="6 9 12 15 18 9"/></svg>
-                    </button>
-                  </div>
-
-                  <div class="filter-dd-wrap">
-                    <button class="ribbon-tab filter-dd-btn" data-cls="period" id="btnFilterPeriod" onclick="toggleFilterDropdown('period', event)">
-                      <span id="labelFilterPeriod">Periodo</span>
-                      <svg viewBox="0 0 24 24" class="v-ico wedge-ico"><polyline points="6 9 12 15 18 9"/></svg>
-                    </button>
-                  </div>
-
-                  <div class="filter-dd-wrap">
-                    <button class="ribbon-tab filter-dd-btn" data-cls="instrumentation" id="btnFilterGroup" onclick="toggleFilterDropdown('group', event)">
-                      <span id="labelFilterGroup">Dotación</span>
-                      <svg viewBox="0 0 24 24" class="v-ico wedge-ico"><polyline points="6 9 12 15 18 9"/></svg>
-                    </button>
-                  </div>
-
-                  <button class="ribbon-tab programs-inline-btn" id="btnOpenProgramsSlide" onclick="openProgramsSlideView()">
-                    <span>Programas</span>
-                    <svg viewBox="0 0 24 24" class="v-ico"><polyline points="9 18 15 12 9 6"/></svg>
-                  </button>
-                </div>
-              </div>
-            </div>
-
             <div id="libraryCatalogContainer">
               <div class="folio-grid" id="scoreList"></div>
             </div>
@@ -741,6 +741,6 @@
     <span class="pdf-loading-text">Cargando...</span>
   </div>
 
-  <script src="app.js?v=48"></script>
+  <script src="app.js?v=49"></script>
 </body>
 </html>
