@@ -6092,7 +6092,7 @@ body.mode-library-active .top-glass-cintillo {
   left: 0;
   right: 0;
   height: 124px;
-  z-index: 30;
+  z-index: 20;
   background: color-mix(in srgb, var(--bg-canvas) 82%, transparent);
   backdrop-filter: blur(14px) saturate(135%);
   -webkit-backdrop-filter: blur(14px) saturate(135%);
@@ -6124,11 +6124,16 @@ body.mode-library-active .library-workspace {
   padding: 0 26px !important;
 }
 
-body.mode-library-active .library-stage,
+body.mode-library-active .library-stage {
+  height: 100% !important;
+  position: relative;
+  z-index: auto !important;
+}
+
 body.mode-library-active .library-slides-viewport {
   height: 100% !important;
   position: relative;
-  z-index: 10;
+  z-index: 10 !important;
 }
 
 body.mode-library-active .catalog-slide {
