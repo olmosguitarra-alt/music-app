@@ -6403,20 +6403,42 @@ textarea {
   font-family: var(--font-sans) !important;
 }
 
-/* Pentagrama ondulante estático y etéreo al viento en el fondo */
+/* Pentagrama helicoidal estático + halos de luz en esquinas (adaptado a las 5 paletas) */
 .bg-wind-staff {
   position: fixed;
   inset: 0;
   z-index: 0;
   pointer-events: none;
   overflow: hidden;
+  color: var(--text-secondary);
+  background:
+    radial-gradient(circle at 92% 8%, color-mix(in srgb, var(--accent) 20%, transparent) 0%, transparent 44%),
+    radial-gradient(circle at 8% 92%, color-mix(in srgb, var(--accent) 20%, transparent) 0%, transparent 44%);
+}
+
+body.palette-luthier .bg-wind-staff,
+body.palette-henle .bg-wind-staff,
+body.palette-velvet .bg-wind-staff {
+  color: var(--text-primary);
+  background:
+    radial-gradient(circle at 92% 8%, color-mix(in srgb, var(--accent) 24%, transparent) 0%, transparent 46%),
+    radial-gradient(circle at 8% 92%, color-mix(in srgb, var(--accent) 24%, transparent) 0%, transparent 46%);
 }
 
 .bg-wind-staff path {
   fill: none;
-  stroke: var(--text-secondary);
-  stroke-width: 0.75;
-  opacity: 0.16;
+  stroke-width: 0.78;
+  opacity: 0.72;
+}
+
+/* Transparencia muy discreta en tarjetas, listas y paneles de Programas */
+.folio-card,
+.list-detail-row,
+.programs-sidebar-panel,
+.programs-detail-panel {
+  background: color-mix(in srgb, var(--card-bg) 78%, transparent) !important;
+  backdrop-filter: blur(12px) saturate(135%);
+  -webkit-backdrop-filter: blur(12px) saturate(135%);
 }
 
 /* Buscador dinámico de obras dentro de Programas */

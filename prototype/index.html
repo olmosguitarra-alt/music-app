@@ -11,7 +11,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:wght@600;700&display=swap" />
-  <link rel="stylesheet" href="styles.css?v=57" />
+  <link rel="stylesheet" href="styles.css?v=58" />
   <!-- Motores Oficiales para Renderizar (PDF.js) y Particionar/Editar PDFs Reales (pdf-lib) -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf-lib/1.17.1/pdf-lib.min.js"></script>
@@ -22,14 +22,23 @@
   <div class="top-glass-cintillo" aria-hidden="true"></div>
   <div class="bottom-glass-cintillo" aria-hidden="true"></div>
 
-  <!-- Pentagrama ondulante estático y etéreo de fondo -->
+  <!-- Fondo estático: pentagrama helicoidal con halos de luz en esquinas opuestas -->
   <div class="bg-wind-staff" aria-hidden="true">
     <svg viewBox="0 0 1440 900" preserveAspectRatio="none" width="100%" height="100%">
-      <path d="M-60 720 C 260 660, 480 560, 760 460 C 1020 368, 1220 290, 1500 180" />
-      <path d="M-60 738 C 260 676, 480 574, 760 472 C 1020 378, 1220 302, 1500 194" />
-      <path d="M-60 756 C 260 692, 480 588, 760 484 C 1020 388, 1220 314, 1500 208" />
-      <path d="M-60 774 C 260 708, 480 602, 760 496 C 1020 398, 1220 326, 1500 222" />
-      <path d="M-60 792 C 260 724, 480 616, 760 508 C 1020 408, 1220 338, 1500 236" />
+      <defs>
+        <linearGradient id="helixFade" x1="0%" y1="100%" x2="100%" y2="0%">
+          <stop offset="0%" stop-color="currentColor" stop-opacity="0.06" />
+          <stop offset="22%" stop-color="currentColor" stop-opacity="0.34" />
+          <stop offset="50%" stop-color="currentColor" stop-opacity="0.58" />
+          <stop offset="78%" stop-color="currentColor" stop-opacity="0.34" />
+          <stop offset="100%" stop-color="currentColor" stop-opacity="0.06" />
+        </linearGradient>
+      </defs>
+      <path d="M-40 880 C 260 640, 480 465, 720 450 C 960 435, 1180 260, 1480 20" stroke="url(#helixFade)" />
+      <path d="M-40 820 C 275 610, 490 460, 720 450 C 950 440, 1165 290, 1480 80" stroke="url(#helixFade)" />
+      <path d="M-40 760 C 290 580, 500 455, 720 450 C 940 445, 1150 320, 1480 140" stroke="url(#helixFade)" />
+      <path d="M-40 700 C 305 550, 510 452, 720 450 C 930 448, 1135 350, 1480 200" stroke="url(#helixFade)" />
+      <path d="M-40 640 C 320 520, 520 448, 720 450 C 920 452, 1120 380, 1480 260" stroke="url(#helixFade)" />
     </svg>
   </div>
 
@@ -762,6 +771,6 @@
     <span class="pdf-loading-text">Cargando...</span>
   </div>
 
-  <script src="app.js?v=57"></script>
+  <script src="app.js?v=58"></script>
 </body>
 </html>
