@@ -6075,3 +6075,209 @@ body.mode-library-active .floating-import-fab-wrap {
     font-size: 17px;
   }
 }
+
+/* ==========================================================================
+   V48: PAPEL LINO DEFAULT, CINTOS FROSTED/AHUMADOS, BOTONES OPACOS, BARRA FIJA +15%
+   ========================================================================== */
+.top-glass-cintillo,
+.bottom-glass-cintillo {
+  display: none;
+  pointer-events: none;
+}
+
+body.mode-library-active .top-glass-cintillo {
+  display: block;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 126px;
+  z-index: 40;
+  background: color-mix(in srgb, var(--bg-canvas) 84%, transparent);
+  backdrop-filter: blur(14px) saturate(135%);
+  -webkit-backdrop-filter: blur(14px) saturate(135%);
+  border-bottom: 1px solid var(--glass-border);
+}
+
+body.mode-library-active .bottom-glass-cintillo {
+  display: block;
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 76px;
+  z-index: 55;
+  background: color-mix(in srgb, var(--bg-canvas) 60%, transparent);
+  backdrop-filter: blur(20px) saturate(155%);
+  -webkit-backdrop-filter: blur(20px) saturate(155%);
+  border-top: 1px solid var(--glass-border);
+}
+
+.floating-hud-top {
+  z-index: 50 !important;
+}
+
+/* Biblioteca con scroll completo bajo los cintillos superior e inferior */
+body.mode-library-active .library-workspace {
+  height: 100vh !important;
+  overflow: hidden !important;
+  padding: 0 26px !important;
+}
+
+body.mode-library-active .library-stage,
+body.mode-library-active .library-slides-viewport {
+  height: 100% !important;
+}
+
+body.mode-library-active .catalog-slide {
+  height: 100% !important;
+  padding-top: 72px !important;
+  padding-bottom: 92px !important;
+  overflow-y: auto !important;
+}
+
+body.mode-library-active .programs-slide {
+  padding-top: 76px !important;
+  padding-bottom: 92px !important;
+}
+
+/* Fila superior fija (+15% tamaño), búsqueda extendida, filtros con espaciado uniforme */
+.lib-unified-row {
+  position: sticky !important;
+  top: 0 !important;
+  z-index: 46 !important;
+  padding-bottom: 10px;
+  margin-bottom: 6px !important;
+  gap: 8px !important;
+}
+
+.lib-unified-row .view-toggle-pill {
+  flex: 0 0 auto !important;
+  width: auto !important;
+  min-width: 72px !important;
+  height: 40px !important;
+  padding: 3px !important;
+}
+
+.lib-unified-row .view-toggle-pill .vt-btn {
+  height: 34px !important;
+  padding: 0 9px !important;
+}
+
+.lib-unified-row .view-toggle-pill .v-ico {
+  width: 17px !important;
+  height: 17px !important;
+}
+
+.lib-unified-row .glass-search {
+  flex: 1 1 auto !important;
+  min-width: 120px !important;
+  height: 40px !important;
+  padding: 0 12px !important;
+}
+
+.lib-unified-row .glass-search .v-ico {
+  width: 17px !important;
+  height: 17px !important;
+}
+
+.lib-unified-row .glass-search input {
+  font-size: 14px !important;
+}
+
+.lib-unified-row .lib-filter-bar {
+  flex: 0 1 auto !important;
+  width: auto !important;
+  height: 40px !important;
+}
+
+.lib-unified-row .filter-ribbon {
+  width: auto !important;
+  height: 40px !important;
+  min-height: 40px !important;
+  justify-content: flex-start !important;
+  gap: 4px !important;
+  padding: 4px 6px !important;
+}
+
+.lib-unified-row .filter-ribbon .ribbon-tab {
+  height: 32px !important;
+  min-height: 32px !important;
+  padding: 0 10px !important;
+  font-size: 13.5px !important;
+}
+
+.programs-inline-btn {
+  position: static !important;
+  background: transparent !important;
+  backdrop-filter: none !important;
+  box-shadow: none !important;
+  margin-left: 0 !important;
+}
+
+/* Botones y menús 100% opacos (transparencia únicamente en los cintos) */
+.lib-unified-row .view-toggle-pill,
+.lib-unified-row .glass-search,
+.lib-unified-row .filter-ribbon,
+.floating-import-fab,
+#bottomNavDock .bottom-mode-capsule,
+#bachGptFab,
+#workActionsMenu,
+#sharedFilterMenu,
+#importPdfMenu.import-icons-only,
+#settingsDrawer,
+#progQuickPopover {
+  background: color-mix(in srgb, var(--card-bg) 100%, var(--bg-canvas)) !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+
+@media (max-width: 1050px) {
+  .lib-unified-row .filter-ribbon .ribbon-tab {
+    padding: 0 8px !important;
+    font-size: 12.5px !important;
+  }
+}
+
+@media (max-width: 600px) {
+  body.mode-library-active .top-glass-cintillo {
+    height: 108px;
+  }
+  body.mode-library-active .bottom-glass-cintillo {
+    height: 66px;
+  }
+  body.mode-library-active .library-workspace {
+    padding: 0 12px !important;
+  }
+  body.mode-library-active .catalog-slide {
+    padding-top: 56px !important;
+    padding-bottom: 80px !important;
+  }
+  .lib-unified-row .view-toggle-pill {
+    min-width: 60px !important;
+    height: 37px !important;
+  }
+  .lib-unified-row .view-toggle-pill .vt-btn {
+    height: 31px !important;
+    padding: 0 7px !important;
+  }
+  .lib-unified-row .glass-search {
+    min-width: 72px !important;
+    height: 37px !important;
+    padding: 0 8px !important;
+  }
+  .lib-unified-row .glass-search input {
+    font-size: 12.5px !important;
+  }
+  .lib-unified-row .lib-filter-bar,
+  .lib-unified-row .filter-ribbon {
+    height: 37px !important;
+    min-height: 37px !important;
+  }
+  .lib-unified-row .filter-ribbon .ribbon-tab {
+    height: 29px !important;
+    min-height: 29px !important;
+    padding: 0 7px !important;
+    font-size: 11.5px !important;
+  }
+}
