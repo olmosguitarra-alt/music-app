@@ -3185,8 +3185,15 @@ function removeProgramItem(idx) {
   renderSetlistDrawer();
 }
 
+function moveProgramItem(idx, delta) {
+  const targetIdx = idx + delta;
+  reorderSetlist(idx, targetIdx);
+}
+
 function renderSetlistDrawer() {
   const sel = document.getElementById("activeProgramSelect");
+  const masterListEl = document.getElementById("programsMasterList");
+  const detailTitleEl = document.getElementById("progDetailTitle");
   const itemsEl = document.getElementById("setlistItems");
   const sumEl = document.getElementById("setlistSummary");
   const launchBtn = document.getElementById("btnLaunchProgram");
@@ -3197,6 +3204,21 @@ function renderSetlistDrawer() {
     .map((p) => `<option value="${p.id}" ${p.id === programsState.activeId ? "selected" : ""}>${p.name}</option>`)
     .join("");
 
+  if (masterListEl) {
+    masterListEl.innerHTML = programsState.list
+      .map((p) => {
+        const count = (p.scoreIds || []).filter((id) => scores.some((s) => s.id === id)).length;
+        const isActive = p.id === programsState.activeId;
+        return `
+          <button class="prog-master-item ${isActive ? "active" : ""}" onclick="switchActiveProgram('${p.id}')">
+            <span class="prog-master-name">${p.name}</span>
+            <span class="prog-master-count">${count}</span>
+          </button>
+        `;
+      })
+      .join("");
+  }
+
   if (quickSel) {
     quickSel.innerHTML = scores
       .map((s) => `<option value="${s.id}">${s.clean || s.title}</option>`)
@@ -3204,11 +3226,15 @@ function renderSetlistDrawer() {
   }
 
   const prog = getActiveProgram();
+  if (detailTitleEl && prog) {
+    detailTitleEl.textContent = prog.name;
+  }
+
   const validScores = (prog ? prog.scoreIds : [])
     .map((id) => scores.find((s) => s.id === id))
     .filter(Boolean);
 
-  if (sumEl) sumEl.textContent = "Obras:";
+  if (sumEl) sumEl.textContent = `Obras (${validScores.length}):`;
   if (launchBtn) launchBtn.disabled = false;
 
   const concertFooterLeft = document.getElementById("concertFooterLeft");
@@ -3217,7 +3243,7 @@ function renderSetlistDrawer() {
   }
 
   if (validScores.length === 0) {
-    itemsEl.innerHTML = `<div class="setlist-empty">Tu programa está vacío.<br>Toca <strong>"＋"</strong> en cualquier obra para agregarla aquí.</div>`;
+    itemsEl.innerHTML = `<div class="setlist-empty">Tu programa está vacío.<br>Elige una obra arriba y pulsa <strong>"＋ Agregar"</strong>.</div>`;
     return;
   }
 
@@ -3229,11 +3255,15 @@ function renderSetlistDrawer() {
            onpointerdown="onSlPointerDown(event, ${idx})">
         <svg viewBox="0 0 24 24" class="pq-drag-ico" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="8" y1="7" x2="16" y2="7"/><line x1="8" y1="12" x2="16" y2="12"/><line x1="8" y1="17" x2="16" y2="17"/></svg>
         <span class="setlist-num">${idx + 1}</span>
-        <div class="setlist-item-info" onclick="openScoreById(${s.id}, 'study')">
+        <div class="setlist-item-info" onclick="openScoreById(${s.id}, 'study')" title="Abrir partitura">
           <strong>${s.clean || s.title}</strong>
-          <small>${s.composer.split("(")[0].trim()} • ${s.pages}</small>
+          <small>${s.composer.split("(")[0].trim()}</small>
         </div>
-        <button class="pq-remove-btn" onclick="event.stopPropagation(); removeProgramItem(${idx})" title="Quitar del programa" aria-label="Quitar">−</button>
+        <div class="setlist-item-controls" onclick="event.stopPropagation()">
+          <button class="pq-step-btn" onclick="moveProgramItem(${idx}, -1)" ${idx === 0 ? "disabled" : ""} title="Subir" aria-label="Subir">↑</button>
+          <button class="pq-step-btn" onclick="moveProgramItem(${idx}, 1)" ${idx === validScores.length - 1 ? "disabled" : ""} title="Bajar" aria-label="Bajar">↓</button>
+          <button class="pq-remove-btn" onclick="removeProgramItem(${idx})" title="Quitar del programa" aria-label="Quitar">−</button>
+        </div>
       </div>
     `
     )
