@@ -1209,16 +1209,15 @@ function buildListRowHtml(s) {
   `;
 }
 
-function openWorkActionsMenu(e, scoreId) {
-  if (e) e.stopPropagation();
-  const menu = document.getElementById("workActionsMenu");
-  if (!menu) return;
-  const id = Number(scoreId);
+let activeWorkMenuScoreId = null;
+
+function renderWorkActionsMenuItems(menu, id) {
   const aiHead = buildMonochromeBachHeadSvg();
   const addSvg = `<svg viewBox="0 0 24 24" class="v-ico"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>`;
   const cutSvg = `<svg viewBox="0 0 24 24" class="v-ico"><circle cx="6" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><line x1="20" y1="4" x2="8.12" y2="15.88"/><line x1="14.47" y1="14.48" x2="20" y2="20"/><line x1="8.12" y1="8.12" x2="12" y2="12"/></svg>`;
   const trashSvg = `<svg viewBox="0 0 24 24" class="v-ico"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>`;
 
+  menu.classList.remove("is-prog-mode");
   menu.innerHTML = `
     <button class="wa-menu-item bach-card-btn" onclick="closeWorkActionsMenu(); openAiForWork(${id})">
       ${aiHead}
@@ -1237,12 +1236,32 @@ function openWorkActionsMenu(e, scoreId) {
       <span>Eliminar</span>
     </button>
   `;
+}
+
+function returnToWorkActionsMenu(e) {
+  if (e) e.stopPropagation();
+  const menu = document.getElementById("workActionsMenu");
+  if (!menu || activeWorkMenuScoreId == null) return;
+  renderWorkActionsMenuItems(menu, activeWorkMenuScoreId);
+}
+
+function openWorkActionsMenu(e, scoreId) {
+  if (e) e.stopPropagation();
+  const menu = document.getElementById("workActionsMenu");
+  if (!menu) return;
+  const id = Number(scoreId);
+  activeWorkMenuScoreId = id;
+  renderWorkActionsMenuItems(menu, id);
+
+  const cardEl = e?.currentTarget?.closest(".folio-card");
+  const mw = cardEl ? Math.max(165, Math.round(cardEl.getBoundingClientRect().width)) : 220;
+  menu.style.width = `${mw}px`;
 
   menu.classList.remove("hidden");
   if (e && e.currentTarget) {
     const rect = e.currentTarget.getBoundingClientRect();
-    const mw = 210;
-    const left = Math.max(12, Math.min(window.innerWidth - mw - 12, rect.right - mw));
+    const rawLeft = cardEl ? cardEl.getBoundingClientRect().left : rect.right - mw;
+    const left = Math.max(12, Math.min(window.innerWidth - mw - 12, rawLeft));
     const top = Math.max(12, Math.min(window.innerHeight - 190, rect.bottom + 6));
     menu.style.left = `${left}px`;
     menu.style.top = `${top}px`;
@@ -3587,9 +3606,14 @@ function renderProgQuickListView(targetEl, fromWorkMenu = false) {
     )
     .join("");
 
+  const backBtnHtml = fromWorkMenu
+    ? `<button class="pq-back-btn" onclick="returnToWorkActionsMenu(event)" title="Regresar" aria-label="Regresar"><svg viewBox="0 0 24 24" class="v-ico"><polyline points="15 18 9 12 15 6"/></svg></button>`
+    : "";
+
   pop.innerHTML = `
     <div class="pq-head">
-      <span class="pq-title">Agregar a programa</span>
+      ${backBtnHtml}
+      <span class="pq-title ${fromWorkMenu ? "pq-title-shifted" : ""}">Agregar a programa</span>
     </div>
     <div class="pq-list">${listHtml}</div>
   `;
@@ -3741,33 +3765,38 @@ function saveProgramQuickOrder(fromWorkMenu = false) {
   if (multiSelectMode) exitMultiSelectMode();
 }
 
-// Cierre inmediato de #progQuickPopover y #workActionsMenu al tocar fuera (salvo los cintillos principales)
+// Cierre global de todos los menús desplegables al tocar fuera (excepto barras y controles principales)
 document.addEventListener("pointerdown", (e) => {
-  const workMenu = document.getElementById("workActionsMenu");
-  if (workMenu && !workMenu.classList.contains("hidden") && !e.target.closest("#workActionsMenu")) {
-    const isTopBars = e.target.closest(".floating-hud-top, .lib-subbar, .lib-filter-bar, .bottom-nav-dock");
-    closeWorkActionsMenu();
-    if (!isTopBars) {
-      e.preventDefault();
-      e.stopPropagation();
-      const suppressNextClick = (ev) => {
-        ev.preventDefault();
-        ev.stopPropagation();
-      };
-      document.addEventListener("click", suppressNextClick, { capture: true, once: true });
-      setTimeout(() => document.removeEventListener("click", suppressNextClick, true), 300);
+  const isMainControl = e.target.closest(
+    ".floating-hud-top, .lib-unified-row, .lib-filter-bar, .bottom-nav-dock, #floatingImportFab, #bachGptFab, #btnSettingsDrawer"
+  );
+
+  const floatingMenus = [
+    { id: "workActionsMenu", close: () => closeWorkActionsMenu() },
+    { id: "progQuickPopover", close: () => document.getElementById("progQuickPopover")?.classList.add("hidden") },
+    { id: "sharedFilterMenu", close: () => closeSharedFilterMenu() },
+    { id: "importPdfMenu", close: () => document.getElementById("importPdfMenu")?.classList.add("hidden") },
+    { id: "settingsDrawer", close: () => document.getElementById("settingsDrawer")?.classList.add("hidden") },
+    { id: "brushPopover", close: () => document.getElementById("brushPopover")?.classList.add("hidden") },
+    { id: "stampPopover", close: () => document.getElementById("stampPopover")?.classList.add("hidden") }
+  ];
+
+  let closedAny = false;
+  for (const m of floatingMenus) {
+    const el = document.getElementById(m.id);
+    if (el && !el.classList.contains("hidden") && !e.target.closest(`#${m.id}`)) {
+      // No cerrar si el toque fue en su propio botón disparador
+      if (m.id === "importPdfMenu" && e.target.closest("#importPopoverWrap")) continue;
+      if (m.id === "settingsDrawer" && e.target.closest("#btnSettingsDrawer")) continue;
+      if (m.id === "sharedFilterMenu" && e.target.closest(".filter-dd-btn")) continue;
+      if (m.id === "brushPopover" && e.target.closest("#btnBrushStyle")) continue;
+      if (m.id === "stampPopover" && e.target.closest("#btnStamps")) continue;
+      m.close();
+      closedAny = true;
     }
-    return;
   }
 
-  const pqPop = document.getElementById("progQuickPopover");
-  if (!pqPop || pqPop.classList.contains("hidden")) return;
-  if (e.target.closest("#progQuickPopover")) return;
-
-  const isTopBars = e.target.closest(".floating-hud-top, .lib-subbar, .lib-filter-bar, .bottom-nav-dock, #importPdfMenu, #paletteMenu");
-  pqPop.classList.add("hidden");
-
-  if (!isTopBars) {
+  if (closedAny && !isMainControl) {
     e.preventDefault();
     e.stopPropagation();
     const suppressNextClick = (ev) => {
