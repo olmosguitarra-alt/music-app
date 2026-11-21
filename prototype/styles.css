@@ -5798,6 +5798,14 @@ body.mode-library-active .floating-import-fab-wrap {
 /* Minimalismo editorial en tarjetas y filas */
 .folio-card {
   box-shadow: 0 6px 18px rgba(0, 0, 0, 0.12) !important;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.folio-card-title {
+  flex-wrap: wrap;
+  min-width: 0;
+  word-break: break-word;
 }
 
 @media (max-width: 900px) {
@@ -5807,6 +5815,10 @@ body.mode-library-active .floating-import-fab-wrap {
 }
 
 @media (max-width: 600px) {
+  html, body, .library-workspace, .library-stage, .library-slides-viewport, .catalog-slide {
+    overflow-x: hidden !important;
+    max-width: 100vw !important;
+  }
   .lib-unified-row {
     gap: 5px;
     margin-bottom: 10px;
@@ -5840,12 +5852,21 @@ body.mode-library-active .floating-import-fab-wrap {
     height: 40px;
   }
   #bottomNavDock.bottom-nav-dock {
-    left: 50% !important;
+    left: 60px !important;
     right: auto !important;
-    transform: translateX(-50%) !important;
+    transform: none !important;
+    height: 40px !important;
+    padding: 0 !important;
   }
-  #bottomNavDock .dock-mode-btn {
-    width: 32px !important;
+  #bottomNavDock .bottom-mode-capsule {
+    padding: 3px !important;
+    gap: 2px !important;
+    height: 40px !important;
+  }
+  #bottomNavDock .seg-btn {
+    width: 34px !important;
+    min-width: 34px !important;
     height: 32px !important;
+    padding: 0 !important;
   }
 }
