@@ -5630,3 +5630,222 @@ body:not(.mode-library-active) .cadenza-brand-text .hud-piece-name {
     font-size: 11px !important;
   }
 }
+
+/* ==========================================================================
+   V43: FILA ÚNICA (15% / 30% / 55%), FAB (+) INFERIOR IZQUIERDA, TÁCTIL Y MINIMALISMO
+   ========================================================================== */
+.lib-unified-row {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: nowrap;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  max-width: 100%;
+  margin-bottom: 14px;
+  box-sizing: border-box;
+}
+
+.lib-unified-row .view-toggle-pill {
+  flex: 0 0 calc(15% - 6px);
+  min-width: 0;
+  height: 34px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2px;
+  box-sizing: border-box;
+}
+
+.lib-unified-row .view-toggle-pill .vt-btn {
+  flex: 1 1 50%;
+  min-width: 0;
+  height: 28px;
+  padding: 0 6px;
+  justify-content: center;
+}
+
+.lib-unified-row .glass-search {
+  flex: 0 0 calc(30% - 6px);
+  min-width: 0;
+  height: 34px;
+  padding: 0 10px;
+  box-sizing: border-box;
+}
+
+.lib-unified-row .glass-search input {
+  width: 100%;
+  min-width: 0;
+  font-size: 12.5px;
+}
+
+.lib-unified-row .lib-filter-bar {
+  flex: 1 1 55%;
+  min-width: 0;
+  width: auto !important;
+  margin-bottom: 0 !important;
+}
+
+.lib-unified-row .filter-ribbon {
+  width: 100%;
+  height: 34px !important;
+  justify-content: space-between;
+}
+
+.programs-inline-btn {
+  display: inline-flex !important;
+  align-items: center;
+  gap: 3px;
+  font-weight: 700 !important;
+  color: var(--accent) !important;
+  margin-left: auto;
+  flex-shrink: 0;
+}
+
+.programs-inline-btn .v-ico {
+  width: 13px;
+  height: 13px;
+}
+
+/* Botón flotante redondo (+) en esquina inferior izquierda */
+.floating-import-fab-wrap {
+  position: fixed;
+  left: 20px;
+  bottom: max(18px, env(safe-area-inset-bottom));
+  z-index: 62;
+  display: none;
+}
+
+body.mode-library-active .floating-import-fab-wrap {
+  display: block;
+}
+
+.floating-import-fab {
+  width: 44px;
+  height: 44px;
+  border-radius: 999px;
+  border: 1px solid var(--glass-border);
+  background: var(--glass-bg);
+  color: var(--text-primary);
+  backdrop-filter: blur(22px) saturate(160%);
+  -webkit-backdrop-filter: blur(22px) saturate(160%);
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.22), inset 0 1px 0 rgba(255, 255, 255, 0.14);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: transform 0.16s ease, border-color 0.16s ease;
+}
+
+.floating-import-fab:hover {
+  transform: translateY(-2px);
+  border-color: var(--accent);
+}
+
+.floating-import-fab .v-ico {
+  width: 20px;
+  height: 20px;
+}
+
+#importPdfMenu.import-icons-only {
+  position: absolute;
+  bottom: 52px;
+  top: auto;
+  left: 0;
+  min-width: auto;
+  width: auto;
+  padding: 5px;
+  border-radius: 999px;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  background: var(--card-bg);
+  border: 1px solid var(--glass-border);
+  backdrop-filter: blur(24px) saturate(160%);
+  -webkit-backdrop-filter: blur(24px) saturate(160%);
+  box-shadow: 0 14px 32px rgba(0, 0, 0, 0.28);
+}
+
+#importPdfMenu.import-icons-only.hidden {
+  display: none;
+}
+
+#importPdfMenu.import-icons-only .import-opt-btn {
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  border-radius: 999px;
+  justify-content: center;
+}
+
+/* Tarjetas más limpias y botones táctiles más cómodos */
+.folio-card-foot {
+  justify-content: flex-end !important;
+  padding-top: 2px;
+}
+
+.folio-quick-btns .mini-action-btn,
+.list-col-actions .mini-action-btn {
+  min-width: 36px !important;
+  min-height: 36px !important;
+  padding: 6px !important;
+  border-radius: 999px !important;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Minimalismo editorial en tarjetas y filas */
+.folio-card {
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.12) !important;
+}
+
+@media (max-width: 900px) {
+  .lib-unified-row .view-toggle-pill .vt-label {
+    display: none;
+  }
+}
+
+@media (max-width: 600px) {
+  .lib-unified-row {
+    gap: 5px;
+    margin-bottom: 10px;
+  }
+  .lib-unified-row .view-toggle-pill {
+    flex: 0 0 calc(15% - 4px);
+    height: 32px;
+  }
+  .lib-unified-row .glass-search {
+    flex: 0 0 calc(30% - 4px);
+    height: 32px;
+    padding: 0 7px;
+  }
+  .lib-unified-row .glass-search .v-ico {
+    width: 13px;
+    height: 13px;
+  }
+  .lib-unified-row .glass-search input {
+    font-size: 11px;
+  }
+  .lib-unified-row .lib-filter-bar,
+  .lib-unified-row .filter-ribbon {
+    height: 32px !important;
+  }
+  .floating-import-fab-wrap {
+    left: 10px;
+    bottom: max(12px, env(safe-area-inset-bottom));
+  }
+  .floating-import-fab {
+    width: 40px;
+    height: 40px;
+  }
+  #bottomNavDock.bottom-nav-dock {
+    left: 50% !important;
+    right: auto !important;
+    transform: translateX(-50%) !important;
+  }
+  #bottomNavDock .dock-mode-btn {
+    width: 32px !important;
+    height: 32px !important;
+  }
+}

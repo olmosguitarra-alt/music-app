@@ -1128,7 +1128,6 @@ function buildFolioCardHtml(s) {
         </div>
         <div class="folio-preview-foot">
           <span>${s.tuning}</span>
-          <span>${s.pages}</span>
         </div>
       `;
 
@@ -1162,7 +1161,6 @@ function buildFolioCardHtml(s) {
       </div>
 
       <div class="folio-card-foot" onclick="event.stopPropagation()">
-        <span class="period-tag">${s.period} • ${s.pages}</span>
         <div class="folio-quick-btns">
           <button class="mini-action-btn no-box-btn fav-card-btn ${isFavoriteScore(s.id) ? "is-fav" : ""}" onclick="toggleFavoriteScore(${s.id})" title="Marcar como favorita" aria-label="Favorito"><svg viewBox="0 0 24 24" class="heart-ico"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg></button>
           <button class="mini-action-btn no-box-btn work-more-btn" onclick="openWorkActionsMenu(event, ${s.id})" title="Más opciones" aria-label="Más opciones">${dotsSvg}</button>
@@ -1218,7 +1216,6 @@ function openWorkActionsMenu(e, scoreId) {
   const id = Number(scoreId);
   const aiHead = buildMonochromeBachHeadSvg();
   const addSvg = `<svg viewBox="0 0 24 24" class="v-ico"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>`;
-  const starSvg = `<svg viewBox="0 0 24 24" class="v-ico"><path d="M12 2L14.6 9.4L22 12L14.6 14.6L12 22L9.4 14.6L2 12L9.4 9.4Z"/></svg>`;
   const cutSvg = `<svg viewBox="0 0 24 24" class="v-ico"><circle cx="6" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><line x1="20" y1="4" x2="8.12" y2="15.88"/><line x1="14.47" y1="14.48" x2="20" y2="20"/><line x1="8.12" y1="8.12" x2="12" y2="12"/></svg>`;
   const trashSvg = `<svg viewBox="0 0 24 24" class="v-ico"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>`;
 
@@ -1230,10 +1227,6 @@ function openWorkActionsMenu(e, scoreId) {
     <button class="wa-menu-item add-prog-btn" onclick="openProgFromWorkMenu(event, ${id})">
       ${addSvg}
       <span>Agregar a programa</span>
-    </button>
-    <button class="wa-menu-item" onclick="closeWorkActionsMenu(); normalizeSingleScoreWithAI(${id})">
-      ${starSvg}
-      <span>Normalizar nombre</span>
     </button>
     <button class="wa-menu-item" onclick="closeWorkActionsMenu(); openPdfModalById(${id})">
       ${cutSvg}
@@ -1250,7 +1243,7 @@ function openWorkActionsMenu(e, scoreId) {
     const rect = e.currentTarget.getBoundingClientRect();
     const mw = 210;
     const left = Math.max(12, Math.min(window.innerWidth - mw - 12, rect.right - mw));
-    const top = Math.max(12, Math.min(window.innerHeight - 235, rect.bottom + 6));
+    const top = Math.max(12, Math.min(window.innerHeight - 190, rect.bottom + 6));
     menu.style.left = `${left}px`;
     menu.style.top = `${top}px`;
   }

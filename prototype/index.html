@@ -8,7 +8,7 @@
   <meta http-equiv="Expires" content="0" />
   <title>Cadenza — Estudio y Lectura Musical</title>
   <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='16' fill='%236b172b'/%3E%3Cpath d='M4 34c16-10 34 8 56-4M4 38c16-10 34 8 56-4M4 42c16-10 34 8 56-4' stroke='%23f7efe7' stroke-opacity='.45' stroke-width='1.5' fill='none'/%3E%3Ctext x='18' y='45' font-family='Georgia,serif' font-size='38' fill='%23fcf8f4'%3EC%3C/text%3E%3C/svg%3E" />
-  <link rel="stylesheet" href="styles.css?v=42" />
+  <link rel="stylesheet" href="styles.css?v=43" />
   <!-- Motores Oficiales para Renderizar (PDF.js) y Particionar/Editar PDFs Reales (pdf-lib) -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf-lib/1.17.1/pdf-lib.min.js"></script>
@@ -55,81 +55,63 @@
     <div class="library-workspace">
       <div class="library-stage">
 
-        <!-- NIVEL 2: BARRA DE COMANDO COMPACTA (SUBTÍTULO) -->
-        <div class="lib-command-bar lib-subbar">
-          <div class="import-popover-wrap" id="importPopoverWrap">
-            <button class="btn-import-pdf" id="btnImportPdfTrigger" onclick="toggleImportMenu(event)" title="Importar PDF o carpeta">
-              <svg viewBox="0 0 24 24" class="v-ico"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
-              <span>Importar</span>
-            </button>
-
-            <div class="import-floating-menu hidden" id="importPdfMenu" onclick="event.stopPropagation()">
-              <button class="import-opt-btn" onclick="triggerSinglePdfImport()">
-                <svg viewBox="0 0 24 24" class="v-ico"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
-                <span>PDF</span>
-              </button>
-              <button class="import-opt-btn" onclick="triggerFolderPdfImport()">
-                <svg viewBox="0 0 24 24" class="v-ico"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
-                <span>Carpeta</span>
-              </button>
-            </div>
-          </div>
-
-          <!-- Alternar Vista Tarjeta vs Lista junto a Importar PDF -->
-          <div class="view-toggle-pill" id="viewTogglePill" title="Alternar vista Tarjeta / Lista">
-            <button class="vt-btn active" id="btnViewFolio" onclick="setLibraryViewMode('folio')" aria-label="Vista Tarjeta">
-              <svg viewBox="0 0 24 24" class="v-ico"><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="9" rx="1.5"/><rect x="3" y="15" width="7" height="6" rx="1.5"/><rect x="14" y="15" width="7" height="6" rx="1.5"/></svg>
-              <span class="vt-label">Tarjeta</span>
-            </button>
-            <button class="vt-btn" id="btnViewList" onclick="setLibraryViewMode('list')" aria-label="Vista Lista">
-              <svg viewBox="0 0 24 24" class="v-ico"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
-              <span class="vt-label">Lista</span>
-            </button>
-          </div>
-
-          <div class="glass-search">
-            <svg viewBox="0 0 24 24" class="v-ico"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
-            <input type="text" id="searchInput" placeholder="Buscar obra, compositor, BWV o programa..." oninput="renderLibrary()" />
-          </div>
-        </div>
-
         <div class="pilot-status-banner hidden" id="pilotStatusBanner"></div>
 
         <!-- CONTENEDOR DESLIZANTE CONTINUO: BIBLIOTECA <-> PROGRAMAS -->
         <div class="library-slides-viewport" id="librarySlidesViewport">
           <div class="library-slide catalog-slide" id="libraryCatalogSlide">
-            <!-- NIVEL 3: FILTROS CON DESPLEGABLES + BOTÓN PROGRAMAS A LA DERECHA (SE DESLIZAN CON LA LISTA) -->
-            <div class="lib-filter-bar">
-              <div class="glass-pill filter-ribbon" role="tablist" aria-label="Organizar biblioteca">
-                <button class="ribbon-tab active" data-cls="all" onclick="selectClassification('all', 'Todo', this)">Todo</button>
-                <button class="ribbon-tab" data-cls="favorites" onclick="selectClassification('favorites', 'Favoritos', this)">Favoritos</button>
+            <!-- FILA ÚNICA AL 100%: VISTA (15%) + BÚSQUEDA (30%) + FILTROS INTEGRADOS CON PROGRAMAS (55%) -->
+            <div class="lib-unified-row">
+              <div class="view-toggle-pill" id="viewTogglePill" title="Alternar vista Tarjeta / Lista">
+                <button class="vt-btn active" id="btnViewFolio" onclick="setLibraryViewMode('folio')" aria-label="Vista Tarjeta">
+                  <svg viewBox="0 0 24 24" class="v-ico"><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="9" rx="1.5"/><rect x="3" y="15" width="7" height="6" rx="1.5"/><rect x="14" y="15" width="7" height="6" rx="1.5"/></svg>
+                  <span class="vt-label">Tarjeta</span>
+                </button>
+                <button class="vt-btn" id="btnViewList" onclick="setLibraryViewMode('list')" aria-label="Vista Lista">
+                  <svg viewBox="0 0 24 24" class="v-ico"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
+                  <span class="vt-label">Lista</span>
+                </button>
+              </div>
 
-                <div class="filter-dd-wrap">
-                  <button class="ribbon-tab filter-dd-btn" data-cls="composer" id="btnFilterComposer" onclick="toggleFilterDropdown('composer', event)">
-                    <span id="labelFilterComposer">Compositor</span>
-                    <svg viewBox="0 0 24 24" class="v-ico wedge-ico"><polyline points="6 9 12 15 18 9"/></svg>
-                  </button>
-                </div>
+              <div class="glass-search">
+                <svg viewBox="0 0 24 24" class="v-ico"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+                <input type="text" id="searchInput" placeholder="Buscar..." oninput="renderLibrary()" />
+              </div>
 
-                <div class="filter-dd-wrap">
-                  <button class="ribbon-tab filter-dd-btn" data-cls="period" id="btnFilterPeriod" onclick="toggleFilterDropdown('period', event)">
-                    <span id="labelFilterPeriod">Periodo</span>
-                    <svg viewBox="0 0 24 24" class="v-ico wedge-ico"><polyline points="6 9 12 15 18 9"/></svg>
-                  </button>
-                </div>
+              <div class="lib-filter-bar">
+                <div class="glass-pill filter-ribbon" role="tablist" aria-label="Organizar biblioteca">
+                  <button class="ribbon-tab active" data-cls="all" onclick="selectClassification('all', 'Todo', this)">Todo</button>
+                  <button class="ribbon-tab" data-cls="favorites" onclick="selectClassification('favorites', 'Favoritos', this)">Favoritos</button>
 
-                <div class="filter-dd-wrap">
-                  <button class="ribbon-tab filter-dd-btn" data-cls="instrumentation" id="btnFilterGroup" onclick="toggleFilterDropdown('group', event)">
-                    <span id="labelFilterGroup">Dotación</span>
-                    <svg viewBox="0 0 24 24" class="v-ico wedge-ico"><polyline points="6 9 12 15 18 9"/></svg>
+                  <div class="filter-dd-wrap">
+                    <button class="ribbon-tab filter-dd-btn" data-cls="composer" id="btnFilterComposer" onclick="toggleFilterDropdown('composer', event)">
+                      <span id="labelFilterComposer">Compositor</span>
+                      <svg viewBox="0 0 24 24" class="v-ico wedge-ico"><polyline points="6 9 12 15 18 9"/></svg>
+                    </button>
+                  </div>
+
+                  <div class="filter-dd-wrap">
+                    <button class="ribbon-tab filter-dd-btn" data-cls="period" id="btnFilterPeriod" onclick="toggleFilterDropdown('period', event)">
+                      <span id="labelFilterPeriod">Periodo</span>
+                      <svg viewBox="0 0 24 24" class="v-ico wedge-ico"><polyline points="6 9 12 15 18 9"/></svg>
+                    </button>
+                  </div>
+
+                  <div class="filter-dd-wrap">
+                    <button class="ribbon-tab filter-dd-btn" data-cls="instrumentation" id="btnFilterGroup" onclick="toggleFilterDropdown('group', event)">
+                      <span id="labelFilterGroup">Dotación</span>
+                      <svg viewBox="0 0 24 24" class="v-ico wedge-ico"><polyline points="6 9 12 15 18 9"/></svg>
+                    </button>
+                  </div>
+
+                  <span class="ribbon-sep"></span>
+
+                  <button class="ribbon-tab programs-inline-btn" id="btnOpenProgramsSlide" onclick="openProgramsSlideView()">
+                    <span>Programas</span>
+                    <svg viewBox="0 0 24 24" class="v-ico"><polyline points="9 18 15 12 9 6"/></svg>
                   </button>
                 </div>
               </div>
-
-              <button class="glass-pill programs-pill-btn" id="btnOpenProgramsSlide" onclick="openProgramsSlideView()">
-                <span>Programas</span>
-                <svg viewBox="0 0 24 24" class="v-ico"><polyline points="9 18 15 12 9 6"/></svg>
-              </button>
             </div>
 
             <div id="libraryCatalogContainer">
@@ -563,7 +545,7 @@
           </div>
           <span class="bach-status-sub" id="bachCurrentWorkLabel">Teoría, historia y guía de la app</span>
         </div>
-        <button class="bach-voice-toggle" id="bachVoiceToggleBtn" onclick="toggleBachVoiceOutput()" title="Activar o silenciar voz de BachGPT">
+        <button class="bach-voice-toggle hidden" id="bachVoiceToggleBtn" onclick="toggleBachVoiceOutput()" title="Activar o silenciar voz de BachGPT">
           🔇 Muda
         </button>
         <button class="btn-circle-ghost" onclick="toggleBachGptChat(false)" aria-label="Cerrar BachGPT">✕</button>
@@ -599,7 +581,7 @@
 
       <!-- Barra de entrada -->
       <div class="bach-chat-input-bar">
-        <button class="bach-mic-btn" id="bachMicBtn" onclick="toggleBachSpeechRecognition()" title="Hablar por voz con BachGPT" aria-label="Micrófono">
+        <button class="bach-mic-btn hidden" id="bachMicBtn" onclick="toggleBachSpeechRecognition()" title="Hablar por voz con BachGPT" aria-label="Micrófono">
           🎙️
         </button>
         <input type="text" id="bachUserInput" placeholder="Pregunta a BachGPT..." onkeydown="if(event.key==='Enter') sendUserMessageToBach()" />
@@ -644,15 +626,29 @@
               onclick="switchMode('editor')"
               onpointerdown="startModeLongPress(this)" onpointerup="endModeLongPress()" onpointerleave="endModeLongPress()" onpointercancel="endModeLongPress()"
               title="Editor" aria-label="Editor">
-        <!-- Clave de sol estilizada con engrane integrado -->
+        <!-- Pentagrama con lápiz diagonal -->
         <svg viewBox="0 0 24 24" class="v-ico">
-          <path d="M12.5 21V5.2a2.6 2.6 0 0 1 4.2-2c1.2 1 .9 3-.8 4.2-2.6 1.8-5.4 3.6-5.4 6.6"/>
-          <circle cx="12.5" cy="15.5" r="2.6"/>
-          <path d="M12.5 11.4v1.5M12.5 18.1v1.5M8.4 15.5h1.5M15.1 15.5h1.5M9.6 12.6l1.1 1.1M14.3 17.3l1.1 1.1M15.4 12.6l-1.1 1.1M10.7 17.3l-1.1 1.1"/>
+          <path d="M3 8h9M3 12h6M3 16h13M3 20h18"/>
+          <path d="M13.5 14.5L19.5 4.5l2.5 1.5-6 10-3 1.5z"/>
         </svg>
       </button>
     </nav>
     <div class="mode-longpress-tip hidden" id="modeLongPressTip"></div>
+  </div>
+
+  <!-- BOTÓN FLOTANTE REDONDO (+) EN ESQUINA INFERIOR IZQUIERDA (SOLO ICONOS PDF / CARPETA) -->
+  <div class="import-popover-wrap floating-import-fab-wrap" id="importPopoverWrap">
+    <div class="import-floating-menu import-icons-only hidden" id="importPdfMenu" onclick="event.stopPropagation()">
+      <button class="import-opt-btn" onclick="triggerSinglePdfImport()" title="Importar PDF" aria-label="Importar PDF">
+        <svg viewBox="0 0 24 24" class="v-ico"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+      </button>
+      <button class="import-opt-btn" onclick="triggerFolderPdfImport()" title="Importar carpeta" aria-label="Importar carpeta">
+        <svg viewBox="0 0 24 24" class="v-ico"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
+      </button>
+    </div>
+    <button class="floating-import-fab" id="floatingImportFab" onclick="toggleImportMenu(event)" title="Agregar PDF o carpeta" aria-label="Agregar archivos">
+      <svg viewBox="0 0 24 24" class="v-ico"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+    </button>
   </div>
 
   <!-- PÍLDORA BACHGPT INDEPENDIENTE EN ESQUINA INFERIOR DERECHA (MISMA ALTURA QUE MODOS) -->
@@ -729,6 +725,6 @@
     <span class="pdf-loading-text">Cargando...</span>
   </div>
 
-  <script src="app.js?v=42"></script>
+  <script src="app.js?v=43"></script>
 </body>
 </html>
