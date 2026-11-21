@@ -5471,6 +5471,14 @@ body:not(.mode-library-active) .cadenza-brand-text .hud-piece-name {
   scrollbar-width: none;
 }
 
+.catalog-slide {
+  scrollbar-width: none;
+}
+
+.catalog-slide::-webkit-scrollbar {
+  display: none;
+}
+
 .lib-filter-bar .programs-pill-btn {
   flex: 0 0 auto !important;
   height: 34px !important;
@@ -5526,9 +5534,11 @@ body:not(.mode-library-active) .cadenza-brand-text .hud-piece-name {
   #mode-editor .staffpad-dock,
   #mode-concert .floating-bottom-bar {
     top: max(10px, env(safe-area-inset-top)) !important;
-    left: calc(50% + 34px) !important;
-    transform: translateX(-50%) !important;
-    max-width: calc(100vw - 168px) !important;
+    left: 136px !important;
+    right: 52px !important;
+    transform: none !important;
+    width: auto !important;
+    max-width: none !important;
     height: 34px !important;
     min-height: 34px !important;
     padding: 2px 6px !important;
