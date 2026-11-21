@@ -3291,7 +3291,7 @@ function renderSetlistDrawer() {
   }
 
   if (validScores.length === 0) {
-    itemsEl.innerHTML = `<div class="setlist-empty">Tu programa está vacío.<br>Elige una obra arriba y pulsa <strong>"＋ Agregar"</strong>.</div>`;
+    itemsEl.innerHTML = "";
     return;
   }
 

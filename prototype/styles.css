@@ -6636,3 +6636,148 @@ body.palette-velvet .bg-wind-staff {
   width: 17px;
   height: 17px;
 }
+
+/* ==========================================================================
+   V59: PULIDO EDITORIAL COMPLETO DE PROGRAMAS + ELIMINAR LÍNEA DIVISORIA
+   ========================================================================== */
+body.mode-library-active .programs-slide {
+  padding-top: 70px !important;
+}
+
+.programs-slide-top-nav {
+  margin-bottom: 14px !important;
+}
+
+.programs-sidebar-panel .btn-new-prog {
+  height: 32px;
+  padding: 0 12px;
+  border-radius: 999px;
+  border: 1px solid var(--glass-border);
+  background: color-mix(in srgb, var(--card-bg) 100%, var(--bg-canvas));
+  color: var(--text-primary);
+  font-size: 12.5px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.programs-sidebar-panel .btn-new-prog:hover {
+  border-color: var(--accent);
+}
+
+.prog-master-item.active {
+  border-color: var(--glass-border);
+  border-left: 3px solid var(--accent);
+  background: color-mix(in srgb, var(--card-bg) 100%, var(--bg-canvas));
+}
+
+.prog-master-item.active .prog-master-name {
+  font-family: var(--font-display);
+}
+
+.prog-detail-title {
+  font-size: 22px !important;
+}
+
+.prog-detail-actions .no-box-btn {
+  width: 36px;
+  height: 36px;
+  min-width: 36px;
+  min-height: 36px;
+  border: none !important;
+  background: transparent !important;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-secondary);
+  cursor: pointer;
+}
+
+.prog-detail-actions .no-box-btn:hover {
+  background: var(--glass-bg) !important;
+  color: var(--text-primary);
+}
+
+/* Eliminar línea divisoria arriba de la lista de obras y fijar altura exacta del buscador */
+.setlist-summary-row {
+  border-bottom: none !important;
+  padding-bottom: 0 !important;
+  margin-bottom: 12px !important;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.prog-score-search-wrap {
+  flex: 0 1 320px !important;
+  height: 38px !important;
+  max-width: 320px !important;
+}
+
+.prog-score-search-box {
+  height: 38px !important;
+}
+
+.prog-score-suggestions {
+  top: calc(100% + 6px) !important;
+  z-index: 120 !important;
+}
+
+/* Filas de obras dentro de Programas unificadas con Vista Lista */
+.setlist-items {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.setlist-item {
+  background: color-mix(in srgb, var(--card-bg) 72%, transparent) !important;
+  border: 1px solid var(--glass-border) !important;
+  border-radius: 14px !important;
+  padding: 10px 12px !important;
+}
+
+.setlist-item-info strong {
+  font-size: 14.5px;
+}
+
+.setlist-item-info small {
+  font-size: 12px;
+}
+
+.setlist-item-controls {
+  gap: 6px !important;
+}
+
+.setlist-foot {
+  border-top: none !important;
+  padding-top: 12px !important;
+  display: flex;
+  justify-content: flex-end;
+}
+
+#btnLaunchProgram.btn-launch-concert {
+  background: var(--accent) !important;
+  color: var(--accent-ink) !important;
+  border: none !important;
+  border-radius: 999px !important;
+  padding: 10px 22px !important;
+  font-size: 13.5px !important;
+  font-weight: 600 !important;
+  box-shadow: none !important;
+}
+
+@media (max-width: 600px) {
+  body.mode-library-active .programs-slide {
+    padding-top: 56px !important;
+  }
+  .setlist-summary-row {
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  .prog-score-search-wrap {
+    flex: 1 1 100% !important;
+    max-width: 100% !important;
+  }
+}
