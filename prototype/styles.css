@@ -6272,12 +6272,15 @@ body.programs-slide-open .lib-unified-row {
   body.mode-library-active .catalog-slide {
     padding-top: 120px !important;
   }
+  .lib-unified-row .glass-search {
+    min-width: 96px !important;
+  }
   .lib-unified-row .filter-ribbon {
     gap: 2px !important;
   }
   .lib-unified-row .filter-ribbon .ribbon-tab {
-    padding: 0 7px !important;
-    font-size: 12px !important;
+    padding: 0 5px !important;
+    font-size: 11px !important;
   }
 }
 
@@ -6328,8 +6331,6 @@ body.programs-slide-open .lib-unified-row {
     font-size: 11.5px !important;
   }
   .lib-unified-row .programs-inline-btn {
-    position: sticky !important;
-    right: 0 !important;
-    background: color-mix(in srgb, var(--card-bg) 100%, var(--bg-canvas)) !important;
+    position: static !important;
   }
 }
