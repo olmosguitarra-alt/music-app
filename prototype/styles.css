@@ -6099,10 +6099,6 @@ body.mode-library-active .top-glass-cintillo {
   border-bottom: 1px solid var(--glass-border);
 }
 
-body.mode-library-active.programs-slide-open .top-glass-cintillo {
-  height: 64px;
-}
-
 body.mode-library-active .bottom-glass-cintillo {
   display: block;
   position: fixed;
@@ -6370,4 +6366,163 @@ body.programs-slide-open .lib-unified-row {
   .lib-unified-row .programs-inline-btn {
     position: static !important;
   }
+}
+
+/* ==========================================================================
+   V55: SUITE TIPOGRÁFICA (PLAYFAIR + INTER), PENTAGRAMA ESTÁTICO Y BUSCADOR PROGRAMAS
+   ========================================================================== */
+:root {
+  --font-display: "Playfair Display", Georgia, serif;
+  --font-sans: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+
+body,
+button,
+input,
+select,
+textarea {
+  font-family: var(--font-sans);
+}
+
+.cadenza-wordmark,
+.folio-card-title,
+.list-work-title,
+.prog-detail-title,
+.setlist-item-info strong,
+.settings-title,
+.lib-group-header h4 {
+  font-family: var(--font-display) !important;
+}
+
+.folio-card-sub,
+.list-work-subtitle,
+.prog-master-item,
+.ribbon-tab,
+.wa-menu-item,
+.filter-dd-opt {
+  font-family: var(--font-sans) !important;
+}
+
+/* Pentagrama ondulante estático y etéreo al viento en el fondo */
+.bg-wind-staff {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  overflow: hidden;
+}
+
+.bg-wind-staff path {
+  fill: none;
+  stroke: var(--text-secondary);
+  stroke-width: 0.75;
+  opacity: 0.16;
+}
+
+/* Buscador dinámico de obras dentro de Programas */
+.prog-score-search-wrap {
+  position: relative;
+  flex: 1 1 240px;
+  max-width: 340px;
+}
+
+.prog-score-search-box {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 36px;
+  padding: 0 12px;
+  border-radius: 999px;
+  border: 1px solid var(--glass-border);
+  background: color-mix(in srgb, var(--card-bg) 100%, var(--bg-canvas));
+}
+
+.prog-score-search-box .v-ico {
+  width: 15px;
+  height: 15px;
+  color: var(--text-secondary);
+  flex-shrink: 0;
+}
+
+.prog-score-search-box input {
+  width: 100%;
+  border: none;
+  outline: none;
+  background: transparent;
+  color: var(--text-primary);
+  font-size: 13px;
+}
+
+.prog-score-suggestions {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  right: 0;
+  max-height: 240px;
+  overflow-y: auto;
+  padding: 6px;
+  border-radius: 16px;
+  border: 1px solid var(--glass-border);
+  background: color-mix(in srgb, var(--card-bg) 100%, var(--bg-canvas));
+  box-shadow: 0 16px 36px rgba(0, 0, 0, 0.22);
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  z-index: 90;
+}
+
+.prog-score-suggestions.hidden {
+  display: none;
+}
+
+.prog-sug-item {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 8px 10px;
+  border: none;
+  border-radius: 10px;
+  background: transparent;
+  color: var(--text-primary);
+  text-align: left;
+  cursor: pointer;
+}
+
+.prog-sug-item:hover {
+  background: var(--glass-bg);
+}
+
+.prog-sug-text {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.prog-sug-text strong {
+  font-size: 13px;
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.prog-sug-text small {
+  font-size: 11px;
+  color: var(--text-secondary);
+}
+
+.prog-sug-badge {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--accent);
+  flex-shrink: 0;
+}
+
+.prog-sug-empty {
+  padding: 10px;
+  font-size: 12px;
+  color: var(--text-secondary);
+  text-align: center;
 }

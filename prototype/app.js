@@ -3187,6 +3187,52 @@ function removeProgramItem(idx) {
   renderSetlistDrawer();
 }
 
+function filterProgramAddSuggestions() {
+  const input = document.getElementById("progScoreSearchInput");
+  const box = document.getElementById("progScoreSuggestions");
+  if (!input || !box) return;
+
+  const q = (input.value || "").trim().toLowerCase();
+  const prog = getActiveProgram();
+  const existingIds = new Set(prog ? prog.scoreIds : []);
+
+  const matches = scores.filter((s) => {
+    const t = (s.clean || s.title || "").toLowerCase();
+    const c = (s.composer || "").toLowerCase();
+    return !q || t.includes(q) || c.includes(q);
+  });
+
+  if (matches.length === 0) {
+    box.innerHTML = `<div class="prog-sug-empty">Sin coincidencias en tu biblioteca</div>`;
+    box.classList.remove("hidden");
+    return;
+  }
+
+  box.innerHTML = matches
+    .map((s) => {
+      const already = existingIds.has(s.id);
+      return `
+        <button class="prog-sug-item ${already ? "is-added" : ""}" onclick="selectProgramAddSuggestion(${s.id})">
+          <div class="prog-sug-text">
+            <strong>${s.clean || s.title}</strong>
+            <small>${(s.composer || "").split("(")[0].trim()}</small>
+          </div>
+          <span class="prog-sug-badge">${already ? "En programa" : "＋"}</span>
+        </button>
+      `;
+    })
+    .join("");
+  box.classList.remove("hidden");
+}
+
+function selectProgramAddSuggestion(scoreId) {
+  addScoreToActiveProgram(scoreId);
+  const input = document.getElementById("progScoreSearchInput");
+  const box = document.getElementById("progScoreSuggestions");
+  if (input) input.value = "";
+  if (box) box.classList.add("hidden");
+}
+
 function moveProgramItem(idx, delta) {
   const targetIdx = idx + delta;
   reorderSetlist(idx, targetIdx);
@@ -3807,6 +3853,7 @@ document.addEventListener("pointerdown", (e) => {
     { id: "workActionsMenu", close: () => closeWorkActionsMenu() },
     { id: "progQuickPopover", close: () => document.getElementById("progQuickPopover")?.classList.add("hidden") },
     { id: "sharedFilterMenu", close: () => closeSharedFilterMenu() },
+    { id: "progScoreSuggestions", close: () => document.getElementById("progScoreSuggestions")?.classList.add("hidden") },
     { id: "importPdfMenu", close: () => document.getElementById("importPdfMenu")?.classList.add("hidden") },
     { id: "settingsDrawer", close: () => document.getElementById("settingsDrawer")?.classList.add("hidden") },
     { id: "brushPopover", close: () => document.getElementById("brushPopover")?.classList.add("hidden") },
@@ -3821,6 +3868,7 @@ document.addEventListener("pointerdown", (e) => {
       if (m.id === "importPdfMenu" && e.target.closest("#importPopoverWrap")) continue;
       if (m.id === "settingsDrawer" && e.target.closest("#btnSettingsDrawer")) continue;
       if (m.id === "sharedFilterMenu" && e.target.closest(".filter-dd-btn")) continue;
+      if (m.id === "progScoreSuggestions" && e.target.closest("#progScoreSearchWrap")) continue;
       if (m.id === "brushPopover" && e.target.closest("#btnBrushStyle")) continue;
       if (m.id === "stampPopover" && e.target.closest("#btnStamps")) continue;
       m.close();
