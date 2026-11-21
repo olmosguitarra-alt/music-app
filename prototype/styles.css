@@ -6526,3 +6526,79 @@ textarea {
   color: var(--text-secondary);
   text-align: center;
 }
+
+/* ==========================================================================
+   V56: PROPORCIONES IDÉNTICAS A TABLET NXTPAPER 14 EN CELULAR (<= 600px)
+   ========================================================================== */
+@media (max-width: 600px) {
+  body.mode-library-active .bottom-glass-cintillo {
+    height: 66px !important;
+  }
+  body.mode-library-active .floating-import-fab-wrap,
+  body.mode-library-active #bottomNavDock.bottom-nav-dock,
+  body.mode-library-active #bachGptFab.bachgpt-fab {
+    bottom: max(14px, env(safe-area-inset-bottom)) !important;
+  }
+  .floating-import-fab {
+    width: 38px !important;
+    height: 38px !important;
+  }
+  #bottomNavDock.bottom-nav-dock {
+    left: 50% !important;
+    right: auto !important;
+    transform: translateX(-50%) !important;
+    height: 38px !important;
+  }
+  #bottomNavDock .bottom-mode-capsule {
+    height: 38px !important;
+    padding: 3px !important;
+    gap: 2px !important;
+  }
+  #bottomNavDock .seg-btn {
+    width: 30px !important;
+    min-width: 30px !important;
+    height: 30px !important;
+  }
+  #bottomNavDock .seg-btn .v-ico {
+    width: 16px !important;
+    height: 16px !important;
+  }
+  #bachGptFab.bachgpt-fab {
+    height: 38px !important;
+    padding: 0 9px 0 5px !important;
+    gap: 5px !important;
+  }
+  #bachGptFab .bach-8bit-icon {
+    width: 22px !important;
+    height: 22px !important;
+  }
+  #bachGptFab .bach-fab-label {
+    font-size: 10.5px !important;
+  }
+  .folio-card {
+    border-radius: 16px !important;
+    padding: 10px !important;
+    gap: 8px !important;
+  }
+  .folio-preview-sheet {
+    height: 106px !important;
+  }
+  .folio-card-title {
+    font-size: 13px !important;
+  }
+  .folio-card-sub {
+    font-size: 11px !important;
+  }
+  .prog-score-search-wrap {
+    max-width: 100% !important;
+  }
+  .setlist-item {
+    padding: 8px 10px !important;
+    gap: 8px !important;
+  }
+  .pq-step-btn,
+  .pq-remove-btn {
+    width: 28px !important;
+    height: 28px !important;
+  }
+}
