@@ -6093,7 +6093,7 @@ body.mode-library-active .top-glass-cintillo {
   right: 0;
   height: 124px;
   z-index: 20;
-  background: color-mix(in srgb, var(--bg-canvas) 82%, transparent);
+  background: color-mix(in srgb, var(--bg-canvas) 67%, transparent);
   backdrop-filter: blur(14px) saturate(135%);
   -webkit-backdrop-filter: blur(14px) saturate(135%);
   border-bottom: 1px solid var(--glass-border);
@@ -6107,7 +6107,7 @@ body.mode-library-active .bottom-glass-cintillo {
   right: 0;
   height: 76px;
   z-index: 55;
-  background: color-mix(in srgb, var(--bg-canvas) 60%, transparent);
+  background: color-mix(in srgb, var(--bg-canvas) 45%, transparent);
   backdrop-filter: blur(20px) saturate(155%);
   -webkit-backdrop-filter: blur(20px) saturate(155%);
   border-top: 1px solid var(--glass-border);
