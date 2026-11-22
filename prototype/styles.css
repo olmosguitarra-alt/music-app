@@ -6909,3 +6909,133 @@ body.is-reordering-drag .pq-work-item {
   user-select: none !important;
   -webkit-user-select: none !important;
 }
+
+/* ==========================================================================
+   V63: FILTROS SIN BORDES EN COLUMNA DE PROGRAMAS DISPONIBLES
+   ========================================================================== */
+.programs-sidebar-panel .btn-new-prog.no-box-btn {
+  border: none !important;
+  background: transparent !important;
+  padding: 6px 10px !important;
+  border-radius: 999px;
+  color: var(--accent) !important;
+  font-weight: 700;
+}
+
+.programs-sidebar-panel .btn-new-prog.no-box-btn:hover {
+  background: var(--glass-bg) !important;
+}
+
+.prog-sidebar-search {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 34px;
+  padding: 0 10px;
+  border-radius: 999px;
+  border: none;
+  background: color-mix(in srgb, var(--bg-canvas) 45%, transparent);
+}
+
+.prog-sidebar-search .v-ico {
+  width: 14px;
+  height: 14px;
+  color: var(--text-secondary);
+  flex-shrink: 0;
+}
+
+.prog-sidebar-search input {
+  width: 100%;
+  border: none;
+  outline: none;
+  background: transparent;
+  color: var(--text-primary);
+  font-size: 12.5px;
+}
+
+.prog-sidebar-filters {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.prog-filter-btn.no-box-btn {
+  border: none !important;
+  background: transparent !important;
+  padding: 5px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: color 0.15s ease, background 0.15s ease;
+}
+
+.prog-filter-btn.no-box-btn:hover {
+  color: var(--text-primary);
+  background: var(--glass-bg) !important;
+}
+
+.prog-filter-btn.no-box-btn.active {
+  color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 12%, transparent) !important;
+  font-weight: 700;
+}
+
+.prog-sort-btn.no-box-btn {
+  margin-left: auto;
+  font-size: 11.5px;
+}
+
+.prog-master-item {
+  border: none !important;
+}
+
+.prog-master-item.active {
+  border: none !important;
+  border-left: 3px solid var(--accent) !important;
+}
+
+.prog-master-right {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.prog-pin-btn.no-box-btn {
+  border: none !important;
+  background: transparent !important;
+  width: 26px;
+  height: 26px;
+  padding: 0;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-secondary);
+  opacity: 0.45;
+  cursor: pointer;
+  transition: opacity 0.15s ease, color 0.15s ease, transform 0.15s ease;
+}
+
+.prog-pin-btn.no-box-btn:hover {
+  opacity: 0.9;
+}
+
+.prog-pin-btn.no-box-btn .v-ico {
+  width: 14px;
+  height: 14px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+}
+
+.prog-pin-btn.no-box-btn.is-pinned {
+  opacity: 1;
+  color: var(--accent);
+}
+
+.prog-pin-btn.no-box-btn.is-pinned .v-ico {
+  fill: currentColor;
+}

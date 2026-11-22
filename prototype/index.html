@@ -11,7 +11,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:wght@600;700&display=swap" />
-  <link rel="stylesheet" href="styles.css?v=62" />
+  <link rel="stylesheet" href="styles.css?v=63" />
   <!-- Motores Oficiales para Renderizar (PDF.js) y Particionar/Editar PDFs Reales (pdf-lib) -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf-lib/1.17.1/pdf-lib.min.js"></script>
@@ -156,13 +156,28 @@
               <aside class="programs-sidebar-panel">
                 <div class="programs-sidebar-head">
                   <span class="setlist-eyebrow">Programas</span>
-                  <button class="btn-new-prog" onclick="toggleNewProgramInput(true)" title="Crear nuevo programa">＋ Nuevo</button>
+                  <button class="btn-new-prog no-box-btn" onclick="toggleNewProgramInput(true)" title="Crear nuevo programa">＋ Nuevo</button>
                 </div>
                 <div class="new-prog-inline hidden" id="newProgInline">
                   <input type="text" id="newProgNameInput" placeholder="Nombre del programa..." onkeydown="if(event.key==='Enter') confirmNewProgram()" />
                   <button class="btn-new-prog-ok" onclick="confirmNewProgram()">Crear</button>
                   <button class="btn-bare-x" onclick="toggleNewProgramInput(false)" aria-label="Cancelar">✕</button>
                 </div>
+
+                <!-- Buscador compacto y filtros sin bordes -->
+                <div class="prog-sidebar-search">
+                  <svg viewBox="0 0 24 24" class="v-ico"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+                  <input type="text" id="progSidebarSearchInput" placeholder="Buscar programa..." oninput="renderSetlistDrawer()" autocomplete="off" />
+                </div>
+
+                <div class="prog-sidebar-filters" role="tablist" aria-label="Filtrar programas">
+                  <button class="prog-filter-btn no-box-btn active" data-pfilter="all" onclick="setProgramSidebarFilter('all')">Todos</button>
+                  <button class="prog-filter-btn no-box-btn" data-pfilter="pinned" onclick="setProgramSidebarFilter('pinned')">Fijados</button>
+                  <button class="prog-filter-btn prog-sort-btn no-box-btn" id="btnProgSortToggle" onclick="toggleProgramSidebarSort()" title="Cambiar orden">
+                    <span id="progSortLabel">Recientes</span>
+                  </button>
+                </div>
+
                 <div class="programs-master-list" id="programsMasterList"></div>
               </aside>
 
@@ -771,6 +786,6 @@
     <span class="pdf-loading-text">Cargando...</span>
   </div>
 
-  <script src="app.js?v=62"></script>
+  <script src="app.js?v=63"></script>
 </body>
 </html>

@@ -3105,7 +3105,9 @@ function confirmNewProgram() {
   const newProg = {
     id: `prog-${Date.now()}`,
     name,
-    scoreIds: []
+    scoreIds: [],
+    pinned: false,
+    updatedAt: Date.now()
   };
   programsState.list.push(newProg);
   programsState.activeId = newProg.id;
@@ -3120,6 +3122,7 @@ function renameActiveProgramPrompt() {
   const next = window.prompt("Nuevo nombre para el programa:", prog.name);
   if (!next || !next.trim()) return;
   prog.name = next.trim();
+  prog.updatedAt = Date.now();
   saveProgramsState();
   renderSetlistDrawer();
 }
@@ -3151,6 +3154,8 @@ function quickAddSelectedScoreToProgram() {
 function switchActiveProgram(progId) {
   programsState.activeId = progId;
   activeProgramScoreIndex = 0;
+  const p = programsState.list.find((item) => item.id === progId);
+  if (p) p.updatedAt = Date.now();
   saveProgramsState();
   renderSetlistDrawer();
 }
@@ -3161,6 +3166,7 @@ function addScoreToActiveProgram(scoreId) {
   const numId = Number(scoreId);
   if (!prog.scoreIds.includes(numId)) {
     prog.scoreIds.push(numId);
+    prog.updatedAt = Date.now();
     saveProgramsState();
     renderSetlistDrawer();
   }
@@ -3238,6 +3244,33 @@ function moveProgramItem(idx, delta) {
   reorderSetlist(idx, targetIdx);
 }
 
+let progSidebarFilter = "all";
+let progSidebarSort = "recent";
+
+function setProgramSidebarFilter(filterKey) {
+  progSidebarFilter = filterKey;
+  document.querySelectorAll(".prog-filter-btn[data-pfilter]").forEach((btn) => {
+    btn.classList.toggle("active", btn.dataset.pfilter === filterKey);
+  });
+  renderSetlistDrawer();
+}
+
+function toggleProgramSidebarSort() {
+  progSidebarSort = progSidebarSort === "recent" ? "az" : "recent";
+  const lbl = document.getElementById("progSortLabel");
+  if (lbl) lbl.textContent = progSidebarSort === "recent" ? "Recientes" : "A–Z";
+  renderSetlistDrawer();
+}
+
+function togglePinProgram(e, progId) {
+  if (e) e.stopPropagation();
+  const prog = programsState.list.find((p) => p.id === progId);
+  if (!prog) return;
+  prog.pinned = !prog.pinned;
+  saveProgramsState();
+  renderSetlistDrawer();
+}
+
 function renderSetlistDrawer() {
   const sel = document.getElementById("activeProgramSelect");
   const masterListEl = document.getElementById("programsMasterList");
@@ -3253,15 +3286,45 @@ function renderSetlistDrawer() {
     .join("");
 
   if (masterListEl) {
-    masterListEl.innerHTML = programsState.list
+    const qProg = (document.getElementById("progSidebarSearchInput")?.value || "").trim().toLowerCase();
+    const starSvg = `<svg viewBox="0 0 24 24" class="v-ico"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>`;
+
+    const filteredProgs = programsState.list
+      .filter((p) => {
+        if (progSidebarFilter === "pinned" && !p.pinned) return false;
+        if (!qProg) return true;
+        if ((p.name || "").toLowerCase().includes(qProg)) return true;
+        return (p.scoreIds || []).some((sid) => {
+          const sc = scores.find((item) => item.id === sid);
+          if (!sc) return false;
+          return (
+            (sc.clean || sc.title || "").toLowerCase().includes(qProg) ||
+            (sc.composer || "").toLowerCase().includes(qProg)
+          );
+        });
+      })
+      .sort((a, b) => {
+        if (progSidebarSort === "az") {
+          return (a.name || "").localeCompare(b.name || "", "es");
+        }
+        if (!!a.pinned !== !!b.pinned) return a.pinned ? -1 : 1;
+        return (b.updatedAt || 0) - (a.updatedAt || 0);
+      });
+
+    masterListEl.innerHTML = filteredProgs
       .map((p) => {
         const count = (p.scoreIds || []).filter((id) => scores.some((s) => s.id === id)).length;
         const isActive = p.id === programsState.activeId;
         return `
-          <button class="prog-master-item ${isActive ? "active" : ""}" onclick="switchActiveProgram('${p.id}')">
+          <div class="prog-master-item ${isActive ? "active" : ""}" onclick="switchActiveProgram('${p.id}')">
             <span class="prog-master-name">${p.name}</span>
-            <span class="prog-master-count">${count}</span>
-          </button>
+            <div class="prog-master-right">
+              <button class="prog-pin-btn no-box-btn ${p.pinned ? "is-pinned" : ""}" onclick="togglePinProgram(event, '${p.id}')" title="${p.pinned ? "Desfijar programa" : "Fijar programa"}" aria-label="Fijar programa">
+                ${starSvg}
+              </button>
+              <span class="prog-master-count">${count}</span>
+            </div>
+          </div>
         `;
       })
       .join("");
