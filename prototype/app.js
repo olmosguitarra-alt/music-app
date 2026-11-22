@@ -3359,34 +3359,80 @@ function onSlDragEnd(e) {
   slDragIndex = null;
 }
 
-function onSlPointerDown(e, idx) {
+function startFloatingReorderDrag(e, { itemSelector, idxAttr, initialIdx, onReorder }) {
   if (e.target.closest("button")) return;
-  e.preventDefault();
   const itemEl = e.currentTarget;
-  let currentIdx = idx;
-  itemEl.classList.add("dragging");
+  const startX = e.clientX;
+  const startY = e.clientY;
+  const rect = itemEl.getBoundingClientRect();
+  const offsetX = startX - rect.left;
+  const offsetY = startY - rect.top;
+
+  let currentIdx = initialIdx;
+  let dragStarted = false;
+  let ghost = null;
+
+  const beginGhost = () => {
+    if (dragStarted) return;
+    dragStarted = true;
+    ghost = itemEl.cloneNode(true);
+    ghost.classList.add("floating-drag-ghost");
+    ghost.style.left = `${rect.left}px`;
+    ghost.style.top = `${rect.top}px`;
+    ghost.style.width = `${rect.width}px`;
+    ghost.style.height = `${rect.height}px`;
+    document.body.appendChild(ghost);
+    itemEl.classList.add("dragging", "is-drag-slot");
+  };
+
+  const holdTimer = setTimeout(beginGhost, 180);
 
   const onMove = (ev) => {
-    const elUnder = document.elementFromPoint(ev.clientX, ev.clientY)?.closest(".setlist-item");
+    if (!dragStarted) {
+      if (Math.hypot(ev.clientX - startX, ev.clientY - startY) < 6) return;
+      clearTimeout(holdTimer);
+      beginGhost();
+    }
+    ev.preventDefault();
+    if (ghost) {
+      ghost.style.left = `${ev.clientX - offsetX}px`;
+      ghost.style.top = `${ev.clientY - offsetY}px`;
+    }
+    const elUnder = document.elementFromPoint(ev.clientX, ev.clientY)?.closest(itemSelector);
     if (elUnder) {
-      const targetIdx = Number(elUnder.dataset.slIdx);
+      const targetIdx = Number(elUnder.dataset[idxAttr]);
       if (!Number.isNaN(targetIdx) && targetIdx !== currentIdx) {
-        reorderSetlist(currentIdx, targetIdx);
+        onReorder(currentIdx, targetIdx);
         currentIdx = targetIdx;
+        document.querySelectorAll(`${itemSelector}[data-${idxAttr.replace(/[A-Z]/g, (m) => "-" + m.toLowerCase())}="${currentIdx}"]`)
+          .forEach((el) => el.classList.add("dragging", "is-drag-slot"));
       }
     }
   };
 
   const onUp = () => {
+    clearTimeout(holdTimer);
     window.removeEventListener("pointermove", onMove);
     window.removeEventListener("pointerup", onUp);
     window.removeEventListener("pointercancel", onUp);
-    document.querySelectorAll(".setlist-item.dragging").forEach((el) => el.classList.remove("dragging"));
+    if (ghost && ghost.parentNode) ghost.parentNode.removeChild(ghost);
+    ghost = null;
+    document.querySelectorAll(`${itemSelector}.dragging, ${itemSelector}.is-drag-slot`)
+      .forEach((el) => el.classList.remove("dragging", "is-drag-slot"));
   };
 
-  window.addEventListener("pointermove", onMove);
+  window.addEventListener("pointermove", onMove, { passive: false });
   window.addEventListener("pointerup", onUp);
   window.addEventListener("pointercancel", onUp);
+}
+
+function onSlPointerDown(e, idx) {
+  startFloatingReorderDrag(e, {
+    itemSelector: ".setlist-item",
+    idxAttr: "slIdx",
+    initialIdx: idx,
+    onReorder: (from, to) => reorderSetlist(from, to)
+  });
 }
 
 function saveSetlistDrawerChanges() {
@@ -3792,43 +3838,14 @@ function onPqDragEnd(e) {
   pqDragIndex = null;
 }
 
-// Soporte unificado (ratón, dedo y lápiz) para deslizar obras entre niveles
+// Soporte unificado (ratón, dedo y lápiz) para deslizar obras entre niveles con botón flotante 60% transparente
 function onPqPointerDown(e, idx, fromWorkMenu = false) {
-  if (e.target.closest("button")) return;
-  e.preventDefault();
-  const itemEl = e.currentTarget;
-  const startY = e.clientY;
-  let currentIdx = idx;
-  itemEl.classList.add("dragging");
-
-  const onMove = (ev) => {
-    const elUnder = document.elementFromPoint(ev.clientX, ev.clientY)?.closest(".pq-work-item");
-    if (elUnder) {
-      const targetIdx = Number(elUnder.dataset.pqIdx);
-      if (!Number.isNaN(targetIdx) && targetIdx !== currentIdx) {
-        reorderPqDraft(currentIdx, targetIdx, fromWorkMenu);
-        currentIdx = targetIdx;
-      }
-    } else if (Math.abs(ev.clientY - startY) > 28) {
-      const dir = ev.clientY > startY ? 1 : -1;
-      const next = Math.max(0, Math.min(pqDraftIds.length - 1, currentIdx + dir));
-      if (next !== currentIdx) {
-        reorderPqDraft(currentIdx, next, fromWorkMenu);
-        currentIdx = next;
-      }
-    }
-  };
-
-  const onUp = () => {
-    window.removeEventListener("pointermove", onMove);
-    window.removeEventListener("pointerup", onUp);
-    window.removeEventListener("pointercancel", onUp);
-    document.querySelectorAll(".pq-work-item.dragging").forEach((el) => el.classList.remove("dragging"));
-  };
-
-  window.addEventListener("pointermove", onMove);
-  window.addEventListener("pointerup", onUp);
-  window.addEventListener("pointercancel", onUp);
+  startFloatingReorderDrag(e, {
+    itemSelector: ".pq-work-item",
+    idxAttr: "pqIdx",
+    initialIdx: idx,
+    onReorder: (from, to) => reorderPqDraft(from, to, fromWorkMenu)
+  });
 }
 
 function saveProgramQuickOrder(fromWorkMenu = false) {

@@ -6782,3 +6782,114 @@ body.mode-library-active .programs-slide {
     max-width: 100% !important;
   }
 }
+
+/* ==========================================================================
+   V61: PROGRAMAS FIJO (SOLO SCROLL EN OBRAS), TRANSPARENCIA POPOVERS Y DRAG GHOST
+   ========================================================================== */
+body.mode-library-active .programs-slide {
+  height: 100% !important;
+  overflow: hidden !important;
+  display: flex !important;
+  flex-direction: column !important;
+  padding-top: 70px !important;
+  padding-bottom: 84px !important;
+  box-sizing: border-box !important;
+}
+
+.programs-slide-top-nav {
+  flex: 0 0 auto !important;
+  width: 100%;
+  margin: 0 auto 12px !important;
+}
+
+.programs-two-pane {
+  flex: 1 1 auto !important;
+  min-height: 0 !important;
+  width: 100%;
+  overflow: hidden !important;
+}
+
+.programs-sidebar-panel {
+  height: 100%;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.programs-master-list {
+  flex: 1 1 auto;
+  min-height: 0;
+  max-height: none !important;
+  overflow-y: auto;
+}
+
+.programs-detail-panel {
+  height: 100%;
+  min-height: 0;
+  overflow: hidden;
+  display: flex !important;
+  flex-direction: column !important;
+}
+
+.programs-detail-panel .setlist-head,
+.programs-detail-panel .setlist-summary-row,
+.programs-detail-panel .setlist-foot {
+  flex: 0 0 auto !important;
+}
+
+#setlistItems.setlist-items {
+  flex: 1 1 auto !important;
+  min-height: 0 !important;
+  max-height: none !important;
+  overflow-y: auto !important;
+  padding-right: 2px;
+}
+
+@media (max-width: 760px) {
+  .programs-sidebar-panel {
+    height: auto !important;
+    flex: 0 0 auto !important;
+  }
+  .programs-detail-panel {
+    flex: 1 1 auto !important;
+    height: auto !important;
+    min-height: 0 !important;
+  }
+}
+
+@media (max-width: 600px) {
+  body.mode-library-active .programs-slide {
+    padding-top: 56px !important;
+    padding-bottom: 74px !important;
+  }
+}
+
+/* Misma transparencia de tarjetas en menús flotantes de Programas */
+#workActionsMenu.is-prog-mode,
+#progQuickPopover {
+  background: color-mix(in srgb, var(--card-bg) 78%, transparent) !important;
+  backdrop-filter: blur(12px) saturate(135%) !important;
+  -webkit-backdrop-filter: blur(12px) saturate(135%) !important;
+}
+
+/* Fantasma flotante al arrastrar (60% transparencia + difuminado) */
+.floating-drag-ghost {
+  position: fixed !important;
+  z-index: 9999 !important;
+  pointer-events: none !important;
+  opacity: 0.40 !important;
+  filter: blur(0.6px);
+  backdrop-filter: blur(12px) saturate(140%);
+  -webkit-backdrop-filter: blur(12px) saturate(140%);
+  box-shadow: 0 14px 32px rgba(0, 0, 0, 0.24) !important;
+  transform: scale(1.02) !important;
+  transition: none !important;
+  margin: 0 !important;
+}
+
+.is-drag-slot {
+  opacity: 0.28 !important;
+}
+
+.pq-drag-ico {
+  touch-action: none;
+}
