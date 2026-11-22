@@ -955,6 +955,7 @@ function toggleSettingsDrawer(forceState) {
 }
 
 function openProgramsSlideView() {
+  refreshProgramRecentSnapshot();
   renderSetlistDrawer();
   document.getElementById("librarySlidesViewport")?.classList.add("is-programs-active");
   document.body.classList.add("programs-slide-open");
@@ -3112,6 +3113,7 @@ function confirmNewProgram() {
   programsState.list.push(newProg);
   programsState.activeId = newProg.id;
   saveProgramsState();
+  refreshProgramRecentSnapshot();
   toggleNewProgramInput(false);
   renderSetlistDrawer();
 }
@@ -3246,12 +3248,23 @@ function moveProgramItem(idx, delta) {
 
 let progSidebarFilter = "all";
 let progSidebarSort = "recent";
+let progRecentOrderSnapshot = [];
+
+function refreshProgramRecentSnapshot() {
+  progRecentOrderSnapshot = [...programsState.list]
+    .sort((a, b) => {
+      if (!!a.pinned !== !!b.pinned) return a.pinned ? -1 : 1;
+      return (b.updatedAt || 0) - (a.updatedAt || 0);
+    })
+    .map((p) => p.id);
+}
 
 function setProgramSidebarFilter(filterKey) {
   progSidebarFilter = filterKey;
   document.querySelectorAll(".prog-filter-btn[data-pfilter]").forEach((btn) => {
     btn.classList.toggle("active", btn.dataset.pfilter === filterKey);
   });
+  refreshProgramRecentSnapshot();
   renderSetlistDrawer();
 }
 
@@ -3259,6 +3272,7 @@ function toggleProgramSidebarSort() {
   progSidebarSort = progSidebarSort === "recent" ? "az" : "recent";
   const lbl = document.getElementById("progSortLabel");
   if (lbl) lbl.textContent = progSidebarSort === "recent" ? "Recientes" : "A–Z";
+  if (progSidebarSort === "recent") refreshProgramRecentSnapshot();
   renderSetlistDrawer();
 }
 
@@ -3268,6 +3282,7 @@ function togglePinProgram(e, progId) {
   if (!prog) return;
   prog.pinned = !prog.pinned;
   saveProgramsState();
+  refreshProgramRecentSnapshot();
   renderSetlistDrawer();
 }
 
@@ -3307,6 +3322,11 @@ function renderSetlistDrawer() {
         if (progSidebarSort === "az") {
           return (a.name || "").localeCompare(b.name || "", "es");
         }
+        const idxA = progRecentOrderSnapshot.indexOf(a.id);
+        const idxB = progRecentOrderSnapshot.indexOf(b.id);
+        if (idxA !== -1 && idxB !== -1) return idxA - idxB;
+        if (idxA !== -1) return -1;
+        if (idxB !== -1) return 1;
         if (!!a.pinned !== !!b.pinned) return a.pinned ? -1 : 1;
         return (b.updatedAt || 0) - (a.updatedAt || 0);
       });
