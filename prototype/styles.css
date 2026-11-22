@@ -7299,3 +7299,22 @@ body .lib-unified-row .filter-ribbon .ribbon-tab {
   color: var(--accent) !important;
   font-weight: 700;
 }
+
+/* V66b — teléfono: sin solape buscador/vista y cintillo legible */
+@media (max-width: 600px) {
+  body .lib-unified-row .glass-search {
+    left: 128px !important;
+    right: 130px !important;
+  }
+  body .lib-unified-row .filter-ribbon .ribbon-tab .wedge-ico,
+  body .lib-unified-row .filter-ribbon .programs-inline-btn .v-ico {
+    display: none !important;
+  }
+  body .lib-unified-row .filter-ribbon .ribbon-tab {
+    font-size: 11px !important;
+    padding: 0 2px !important;
+    gap: 0 !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+  }
+}
