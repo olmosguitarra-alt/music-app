@@ -7399,3 +7399,683 @@ body .lib-unified-row .filter-ribbon .ribbon-tab {
     height: 12px !important;
   }
 }
+
+/* ==========================================================================
+   V71 — Rediseño de proporciones en Programas (prioridad a lista de obras)
+         y Nuevo Editor Visual de Estructura de PDF
+   ========================================================================== */
+
+/* 1. PROGRAMAS: Proporciones compactas para maximizar la lista de obras */
+body.mode-library-active .programs-slide {
+  padding-top: 62px !important;
+  padding-bottom: 78px !important;
+}
+
+.programs-slide-top-nav {
+  margin: 0 auto 6px !important;
+}
+
+.prog-slide-back-btn {
+  width: 34px !important;
+  height: 34px !important;
+}
+
+.programs-two-pane {
+  gap: 12px !important;
+}
+
+.programs-sidebar-panel {
+  flex: 0 0 28% !important;
+  min-width: 215px !important;
+  max-width: 295px !important;
+  padding: 12px 14px !important;
+  gap: 6px !important;
+}
+
+.programs-sidebar-head .setlist-eyebrow {
+  font-size: 11px !important;
+}
+
+.programs-sidebar-panel .btn-new-prog.no-box-btn {
+  width: 26px !important;
+  height: 26px !important;
+  min-width: 26px !important;
+  font-size: 19px !important;
+}
+
+.prog-sidebar-search {
+  height: 26px !important;
+}
+
+.prog-sidebar-search .v-ico {
+  width: 13px !important;
+  height: 13px !important;
+}
+
+.prog-sidebar-search input {
+  font-size: 12px !important;
+}
+
+.prog-sidebar-filters {
+  padding-top: 0 !important;
+  min-height: 24px !important;
+}
+
+.prog-filter-btn.no-box-btn {
+  padding: 2px 7px !important;
+  font-size: 11px !important;
+}
+
+.prog-sort-btn.no-box-btn {
+  padding: 2px 5px !important;
+  font-size: 10.5px !important;
+}
+
+.prog-master-item {
+  padding: 7px 10px !important;
+  font-size: 12.5px !important;
+  border-radius: 10px !important;
+}
+
+.prog-pin-btn.no-box-btn {
+  width: 22px !important;
+  height: 22px !important;
+}
+
+.programs-detail-panel {
+  flex: 1 1 72% !important;
+  padding: 12px 16px !important;
+  gap: 6px !important;
+}
+
+.programs-detail-panel .setlist-head {
+  margin-bottom: 0 !important;
+  padding-bottom: 0 !important;
+}
+
+.prog-detail-title {
+  font-size: 17px !important;
+}
+
+.prog-detail-actions .no-box-btn {
+  width: 30px !important;
+  height: 30px !important;
+  min-width: 30px !important;
+  min-height: 30px !important;
+}
+
+.setlist-summary-row {
+  margin-bottom: 6px !important;
+  gap: 8px !important;
+  flex-wrap: nowrap !important;
+}
+
+.setlist-summary-row .setlist-summary {
+  font-size: 11.5px !important;
+  white-space: nowrap !important;
+  flex-shrink: 0 !important;
+}
+
+.prog-score-search-wrap {
+  flex: 0 1 280px !important;
+  height: 30px !important;
+  max-width: 280px !important;
+}
+
+.prog-score-search-box {
+  height: 30px !important;
+  padding: 0 10px !important;
+}
+
+.prog-score-search-box input {
+  font-size: 12px !important;
+}
+
+#setlistItems.setlist-items {
+  gap: 6px !important;
+}
+
+.setlist-item {
+  padding: 7px 10px !important;
+  border-radius: 11px !important;
+}
+
+.setlist-item-info strong {
+  font-size: 13.5px !important;
+}
+
+.setlist-item-info small {
+  font-size: 11.5px !important;
+}
+
+.pq-step-btn {
+  width: 28px !important;
+  height: 28px !important;
+  font-size: 13px !important;
+}
+
+.setlist-foot {
+  padding-top: 6px !important;
+}
+
+#btnLaunchProgram.btn-launch-concert {
+  padding: 7px 18px !important;
+  font-size: 12.5px !important;
+  height: 34px !important;
+}
+
+/* Vista Móvil / Teléfono de Programas: Cabecera ultracompacta y lista de obras amplia */
+@media (max-width: 760px) {
+  body.mode-library-active .programs-slide {
+    padding-top: 50px !important;
+    padding-bottom: 66px !important;
+  }
+  .programs-slide-top-nav {
+    margin: 0 auto 4px !important;
+  }
+  .prog-slide-back-btn {
+    width: 30px !important;
+    height: 30px !important;
+  }
+  .programs-two-pane {
+    gap: 6px !important;
+  }
+  .programs-sidebar-panel {
+    flex: 0 0 auto !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+    padding: 6px 10px !important;
+    gap: 3px !important;
+  }
+  .programs-sidebar-head {
+    min-height: 22px !important;
+  }
+  .programs-sidebar-head .setlist-eyebrow {
+    font-size: 10px !important;
+  }
+  .programs-sidebar-panel .btn-new-prog.no-box-btn {
+    width: 22px !important;
+    height: 22px !important;
+    min-width: 22px !important;
+    font-size: 17px !important;
+  }
+  .prog-sidebar-search {
+    height: 22px !important;
+  }
+  .prog-sidebar-search input {
+    font-size: 11.5px !important;
+  }
+  .prog-sidebar-filters {
+    min-height: 20px !important;
+  }
+  .prog-filter-btn.no-box-btn {
+    padding: 1px 6px !important;
+    font-size: 10.5px !important;
+  }
+  .prog-sort-btn.no-box-btn {
+    padding: 1px 4px !important;
+    font-size: 10px !important;
+  }
+  .programs-master-list {
+    gap: 4px !important;
+    padding-bottom: 1px !important;
+  }
+  .prog-master-item {
+    padding: 3px 8px !important;
+    font-size: 11.5px !important;
+    height: 25px !important;
+    border-radius: 8px !important;
+  }
+  .prog-pin-btn.no-box-btn {
+    width: 18px !important;
+    height: 18px !important;
+  }
+  .programs-detail-panel {
+    flex: 1 1 auto !important;
+    padding: 8px 10px !important;
+    gap: 4px !important;
+  }
+  .prog-detail-title {
+    font-size: 14.5px !important;
+  }
+  .prog-detail-actions .no-box-btn {
+    width: 26px !important;
+    height: 26px !important;
+    min-width: 26px !important;
+    min-height: 26px !important;
+  }
+  .setlist-summary-row {
+    flex-wrap: nowrap !important;
+    margin-bottom: 4px !important;
+    gap: 6px !important;
+  }
+  .setlist-summary-row .setlist-summary {
+    font-size: 11px !important;
+  }
+  .prog-score-search-wrap {
+    flex: 1 1 auto !important;
+    max-width: none !important;
+    height: 26px !important;
+  }
+  .prog-score-search-box {
+    height: 26px !important;
+    padding: 0 8px !important;
+  }
+  .prog-score-search-box input {
+    font-size: 11.5px !important;
+  }
+  #setlistItems.setlist-items {
+    gap: 4px !important;
+  }
+  .setlist-item {
+    padding: 5px 8px !important;
+    border-radius: 9px !important;
+  }
+  .setlist-item-info strong {
+    font-size: 12.5px !important;
+  }
+  .setlist-item-info small {
+    font-size: 10.5px !important;
+  }
+  .pq-step-btn {
+    width: 24px !important;
+    height: 24px !important;
+    font-size: 12px !important;
+  }
+  .setlist-foot {
+    padding-top: 4px !important;
+  }
+  #btnLaunchProgram.btn-launch-concert {
+    height: 28px !important;
+    padding: 3px 14px !important;
+    font-size: 11.5px !important;
+  }
+}
+
+/* 2. NUEVO EDITOR VISUAL DE ESTRUCTURA PDF (#pdfModal) */
+.linearity-inspector-modal.pdf-struct-editor {
+  width: min(1100px, 95vw) !important;
+  max-width: 1100px !important;
+  height: min(86vh, 800px) !important;
+  max-height: 88vh !important;
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 10px !important;
+  padding: 16px 18px !important;
+  overflow: hidden !important;
+}
+
+.pdf-editor-head {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding-bottom: 6px;
+  border-bottom: 0.5px solid var(--glass-border);
+}
+
+.pdf-editor-title-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.pdf-page-count-pill {
+  font-size: 11.5px;
+  font-weight: 700;
+  padding: 2px 9px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--accent) 16%, transparent);
+  color: var(--accent);
+}
+
+.pdf-editor-head-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.btn-save-pdf-top {
+  padding: 7px 14px !important;
+  font-size: 12.5px !important;
+  border-radius: 999px !important;
+}
+
+.pdf-struct-toolbar {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+  padding: 6px 8px;
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--bg-canvas) 65%, var(--card-bg));
+  border: 0.5px solid var(--glass-border);
+}
+
+.pdf-tool-btn {
+  height: 32px;
+  padding: 0 11px;
+  border-radius: 9px;
+  border: 0.5px solid var(--glass-border);
+  background: var(--card-bg);
+  color: var(--text-primary);
+  font-size: 12px;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: border-color 0.15s ease, background 0.15s ease, transform 0.12s ease;
+}
+
+.pdf-tool-btn:hover {
+  border-color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 12%, var(--card-bg));
+}
+
+.pdf-tool-btn.danger {
+  margin-left: auto;
+  color: #d9534f;
+}
+
+.pdf-tool-btn.danger:hover {
+  border-color: #d9534f;
+  background: rgba(217, 83, 79, 0.12);
+}
+
+.pdf-merge-inline-bar {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  padding: 8px 12px;
+  border-radius: 11px;
+  background: color-mix(in srgb, var(--accent) 12%, var(--card-bg));
+  border: 1px solid var(--accent);
+  font-size: 12px;
+}
+
+.pdf-merge-inline-bar select {
+  flex: 1 1 200px;
+  height: 30px;
+  padding: 0 8px;
+  border-radius: 8px;
+  border: 0.5px solid var(--glass-border);
+  background: var(--bg-canvas);
+  color: var(--text-primary);
+  font-size: 12px;
+}
+
+.pdf-mini-action {
+  height: 28px;
+  padding: 0 10px;
+  border-radius: 8px;
+  border: 0.5px solid var(--glass-border);
+  background: var(--card-bg);
+  color: var(--text-primary);
+  font-size: 11.5px;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.pdf-mini-action.accent {
+  background: var(--accent);
+  color: var(--accent-ink);
+  border-color: var(--accent);
+}
+
+.pdf-editor-workspace {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: grid;
+  grid-template-columns: 1fr 260px;
+  gap: 14px;
+  overflow: hidden;
+}
+
+.pdf-pages-canvas-pane {
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  overflow: hidden;
+}
+
+.pdf-sel-info {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.pdf-sel-link {
+  border: none;
+  background: transparent;
+  color: var(--accent);
+  font-size: 11.5px;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 2px 4px;
+  text-decoration: underline;
+}
+
+#workshopPagesStrip.pdf-visual-grid {
+  flex: 1 1 auto !important;
+  min-height: 0 !important;
+  max-height: none !important;
+  overflow-y: auto !important;
+  display: grid !important;
+  grid-template-columns: repeat(auto-fill, minmax(136px, 1fr)) !important;
+  align-content: start;
+  gap: 10px !important;
+  padding: 6px !important;
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--bg-canvas) 55%, transparent);
+  border: 0.5px solid var(--glass-border);
+}
+
+.pdf-visual-grid .folio-page-thumb {
+  height: 158px !important;
+  padding: 8px !important;
+  border-radius: 12px !important;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  align-items: stretch;
+  position: relative;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  transition: transform 0.14s ease, border-color 0.14s ease, box-shadow 0.14s ease;
+}
+
+.pdf-visual-grid .folio-page-thumb:hover {
+  transform: translateY(-2px);
+}
+
+.pdf-visual-grid .folio-page-thumb.active {
+  border-color: var(--accent) !important;
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent) 35%, transparent);
+}
+
+.pdf-thumb-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 4px;
+}
+
+.pdf-thumb-num {
+  font-size: 11.5px !important;
+  font-weight: 700 !important;
+}
+
+.pdf-thumb-rot-badge {
+  font-size: 9.5px;
+  font-weight: 700;
+  padding: 1px 5px;
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.12);
+}
+
+.pdf-thumb-chk {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  border: 1.5px solid rgba(0, 0, 0, 0.28);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  font-weight: 800;
+  color: #fff;
+}
+
+.pdf-thumb-chk.checked {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--accent-ink);
+}
+
+.pdf-thumb-sheet-wrap {
+  flex: 1 1 auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 4px 0;
+  transition: transform 0.2s ease;
+}
+
+.blank-sheet-preview {
+  width: 100%;
+  height: 44px;
+  border: 1px dashed rgba(0, 0, 0, 0.25);
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+  opacity: 0.65;
+}
+
+.pdf-thumb-sub {
+  text-align: center;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-size: 10px !important;
+  margin-bottom: 3px;
+}
+
+.pdf-thumb-quick-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 2px;
+  padding-top: 4px;
+  border-top: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+.ptq-btn {
+  flex: 1 1 0;
+  height: 22px;
+  border: none;
+  border-radius: 5px;
+  background: rgba(0, 0, 0, 0.06);
+  color: inherit;
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.ptq-btn:hover:not(:disabled) {
+  background: var(--accent);
+  color: var(--accent-ink);
+}
+
+.ptq-btn.danger:hover:not(:disabled) {
+  background: #d9534f;
+  color: #fff;
+}
+
+.ptq-btn:disabled {
+  opacity: 0.28;
+  cursor: default;
+}
+
+.pdf-add-card-tile {
+  background: transparent !important;
+  border: 1.5px dashed var(--glass-border) !important;
+  color: var(--text-secondary) !important;
+  justify-content: center !important;
+  align-items: center !important;
+  text-align: center;
+  gap: 4px;
+  box-shadow: none !important;
+}
+
+.pdf-add-card-tile:hover {
+  border-color: var(--accent) !important;
+  color: var(--accent) !important;
+}
+
+.pdf-add-tile-plus {
+  font-size: 24px !important;
+  line-height: 1;
+}
+
+.pdf-meta-side-pane {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 12px;
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--bg-canvas) 55%, transparent);
+  border: 0.5px solid var(--glass-border);
+  overflow-y: auto;
+}
+
+.pdf-meta-side-title {
+  font-size: 11.5px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--text-secondary);
+}
+
+.pdf-meta-side-pane .workshop-meta-grid {
+  grid-template-columns: 1fr !important;
+  gap: 8px !important;
+}
+
+.pdf-meta-side-pane .linearity-action-bar {
+  grid-template-columns: 1fr !important;
+  margin-top: auto;
+}
+
+@media (max-width: 760px) {
+  .linearity-inspector-modal.pdf-struct-editor {
+    width: 96vw !important;
+    height: 90vh !important;
+    padding: 12px !important;
+    gap: 8px !important;
+  }
+  .pdf-editor-workspace {
+    grid-template-columns: 1fr !important;
+    overflow-y: auto !important;
+  }
+  .pdf-pages-canvas-pane {
+    min-height: 260px;
+  }
+  .pdf-meta-side-pane .workshop-meta-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+  }
+}

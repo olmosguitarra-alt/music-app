@@ -11,7 +11,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:wght@600;700&display=swap" />
-  <link rel="stylesheet" href="styles.css?v=70" />
+  <link rel="stylesheet" href="styles.css?v=71" />
   <!-- Motores Oficiales para Renderizar (PDF.js) y Particionar/Editar PDFs Reales (pdf-lib) -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf-lib/1.17.1/pdf-lib.min.js"></script>
@@ -233,62 +233,110 @@
     <!-- TALLER DE PDF REAL (Particionar, Quitar/Agregar Páginas, Renombrar)-->
     <!-- ================================================================= -->
     <div class="modal-backdrop hidden" id="pdfModal" onclick="closePdfModal(event)">
-      <div class="linearity-inspector-modal workshop-wide" onclick="event.stopPropagation()">
-        <div class="insp-head">
-          <div>
-            <span class="insp-eyebrow">✂ EDITAR PDF &amp; METADATOS</span>
-            <h3 id="modalScoreTitle">Sonata BWV 1034</h3>
+      <div class="linearity-inspector-modal workshop-wide pdf-struct-editor" onclick="event.stopPropagation()">
+        <div class="insp-head pdf-editor-head">
+          <div class="pdf-editor-title-wrap">
+            <span class="insp-eyebrow">✂ EDITOR DE ESTRUCTURA PDF &amp; METADATOS</span>
+            <div class="pdf-editor-title-row">
+              <h3 id="modalScoreTitle">Sonata BWV 1034</h3>
+              <span class="pdf-page-count-pill" id="pdfModalPageCountBadge">4 págs.</span>
+            </div>
           </div>
-          <button class="btn-circle-ghost" onclick="closePdfModal()" aria-label="Cerrar taller">✕</button>
-        </div>
-
-        <div class="workshop-meta-grid">
-          <div class="wm-field">
-            <label for="wmTitleInput">Título de la Obra</label>
-            <input type="text" id="wmTitleInput" />
-          </div>
-          <div class="wm-field">
-            <label for="wmComposerInput">Compositor</label>
-            <input type="text" id="wmComposerInput" />
-          </div>
-          <div class="wm-field">
-            <label for="wmPeriodInput">Periodo Histórico</label>
-            <input type="text" id="wmPeriodInput" list="wmPeriodList" autocomplete="off" placeholder="Elige o escribe uno nuevo" />
-            <datalist id="wmPeriodList"></datalist>
-          </div>
-          <div class="wm-field">
-            <label for="wmGroupInput">Dotación Instrumental</label>
-            <input type="text" id="wmGroupInput" list="wmGroupList" autocomplete="off" placeholder="Elige o escribe una nueva" />
-            <datalist id="wmGroupList"></datalist>
+          <div class="pdf-editor-head-actions">
+            <button class="lin-btn accent btn-save-pdf-top" onclick="saveWorkshopMetadata()">
+              <span>✓ Guardar y Cerrar</span>
+            </button>
+            <button class="btn-circle-ghost" onclick="closePdfModal()" aria-label="Cerrar taller">✕</button>
           </div>
         </div>
 
-        <div class="workshop-pages-header">
-          <span>Selecciona páginas tocándolas (o define un rango para extraer):</span>
-          <div class="range-extract-controls">
-            <label for="splitStartPage">Desde pág.</label>
-            <input type="number" id="splitStartPage" min="1" value="1" class="range-num-input" />
-            <label for="splitEndPage">hasta</label>
-            <input type="number" id="splitEndPage" min="1" value="2" class="range-num-input" />
+        <!-- BARRA DE HERRAMIENTAS DE ESTRUCTURA PDF -->
+        <div class="pdf-struct-toolbar" role="toolbar" aria-label="Herramientas de estructura de PDF">
+          <button class="pdf-tool-btn" onclick="addBlankPdfPage()" title="Insertar página en blanco después de la seleccionada">
+            <span>📄＋ Página en blanco</span>
+          </button>
+          <button class="pdf-tool-btn" onclick="document.getElementById('appendPdfFileInput').click()" title="Agregar páginas desde otro archivo PDF">
+            <span>📥 Agregar página PDF</span>
+          </button>
+          <button class="pdf-tool-btn" onclick="duplicateSelectedPdfPages()" title="Duplicar páginas seleccionadas">
+            <span>⧉ Duplicar página</span>
+          </button>
+          <button class="pdf-tool-btn" onclick="rotateSelectedPdfPages()" title="Girar 90° las páginas seleccionadas">
+            <span>↻ Rotar 90°</span>
+          </button>
+          <button class="pdf-tool-btn" onclick="splitPdfInTwoFiles()" title="Dividir el documento en 2 archivos PDF independientes">
+            <span>✂ Dividir en 2 PDFs</span>
+          </button>
+          <button class="pdf-tool-btn" onclick="toggleMergePdfPanel()" title="Mezclar con otra partitura de tu biblioteca o archivo PDF">
+            <span>🔗 Mezclar 2 PDFs</span>
+          </button>
+          <button class="pdf-tool-btn danger" onclick="deleteSelectedPdfPages()" title="Quitar o eliminar las páginas seleccionadas">
+            <span>🗑️ Quitar página</span>
+          </button>
+        </div>
+
+        <!-- PANEL DESPLEGABLE PARA MEZCLAR DOS PDFs DISTINTOS -->
+        <div class="pdf-merge-inline-bar hidden" id="pdfMergeInlineBar">
+          <span class="pdf-merge-label">🔗 Mezclar este PDF con:</span>
+          <select id="mergeLibraryScoreSelect" aria-label="Seleccionar obra de la biblioteca para mezclar"></select>
+          <button class="pdf-mini-action accent" onclick="mergeWithLibraryScore()">Unir obra seleccionada</button>
+          <button class="pdf-mini-action" onclick="document.getElementById('appendPdfFileInput').click()">Subir otro archivo PDF...</button>
+          <button class="btn-bare-x" onclick="toggleMergePdfPanel(false)" aria-label="Cerrar mezcla">✕</button>
+        </div>
+
+        <div class="pdf-editor-workspace">
+          <!-- LIENZO VISUAL DE MINIATURAS DE PÁGINAS -->
+          <div class="pdf-pages-canvas-pane">
+            <div class="workshop-pages-header">
+              <div class="pdf-sel-info">
+                <span id="pdfSelectionStatus">1 página seleccionada</span>
+                <button class="pdf-sel-link" type="button" onclick="selectAllWorkshopPages()">Todas</button>
+                <button class="pdf-sel-link" type="button" onclick="clearWorkshopPageSelection()">Ninguna</button>
+              </div>
+              <div class="range-extract-controls">
+                <label for="splitStartPage">Desde pág.</label>
+                <input type="number" id="splitStartPage" min="1" value="1" class="range-num-input" />
+                <label for="splitEndPage">hasta</label>
+                <input type="number" id="splitEndPage" min="1" value="2" class="range-num-input" />
+                <button class="pdf-mini-action" type="button" onclick="splitRealPdfRange()">✂ Extraer rango</button>
+              </div>
+            </div>
+
+            <div class="folio-strip real-pages-strip pdf-visual-grid" id="workshopPagesStrip"></div>
           </div>
+
+          <!-- PANEL LATERAL DE METADATOS Y CLASIFICACIÓN -->
+          <aside class="pdf-meta-side-pane">
+            <div class="pdf-meta-side-title">Datos y clasificación</div>
+            <div class="workshop-meta-grid">
+              <div class="wm-field">
+                <label for="wmTitleInput">Título de la Obra</label>
+                <input type="text" id="wmTitleInput" />
+              </div>
+              <div class="wm-field">
+                <label for="wmComposerInput">Compositor</label>
+                <input type="text" id="wmComposerInput" />
+              </div>
+              <div class="wm-field">
+                <label for="wmPeriodInput">Periodo Histórico</label>
+                <input type="text" id="wmPeriodInput" list="wmPeriodList" autocomplete="off" placeholder="Elige o escribe uno nuevo" />
+                <datalist id="wmPeriodList"></datalist>
+              </div>
+              <div class="wm-field">
+                <label for="wmGroupInput">Dotación Instrumental</label>
+                <input type="text" id="wmGroupInput" list="wmGroupList" autocomplete="off" placeholder="Elige o escribe una nueva" />
+                <datalist id="wmGroupList"></datalist>
+              </div>
+            </div>
+
+            <div class="linearity-action-bar">
+              <button class="lin-btn accent" onclick="saveWorkshopMetadata()">
+                <span>✓ Guardar Nombre y Clasificación</span>
+              </button>
+            </div>
+          </aside>
         </div>
 
-        <div class="folio-strip real-pages-strip" id="workshopPagesStrip"></div>
-
-        <div class="linearity-action-bar">
-          <button class="lin-btn accent" onclick="saveWorkshopMetadata()">
-            <span>✓ Guardar Nombre y Clasificación</span>
-          </button>
-          <button class="lin-btn" onclick="splitRealPdfRange()">
-            <span>✂ Particionar Rango como Nueva Obra</span>
-          </button>
-          <button class="lin-btn" onclick="deleteSelectedPdfPages()">
-            <span>🗑️ Quitar Páginas</span>
-          </button>
-          <button class="lin-btn" onclick="document.getElementById('appendPdfFileInput').click()">
-            <span>＋ Agregar Páginas de otro PDF</span>
-          </button>
-        </div>
         <div class="insp-feedback" id="pdfToast"></div>
       </div>
     </div>
@@ -781,6 +829,6 @@
     <span class="pdf-loading-text">Cargando...</span>
   </div>
 
-  <script src="app.js?v=70"></script>
+  <script src="app.js?v=71"></script>
 </body>
 </html>
