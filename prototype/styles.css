@@ -7359,3 +7359,43 @@ body .lib-unified-row .filter-ribbon .ribbon-tab {
     right: 130px !important;
   }
 }
+
+/* V70 — celular: cintillo de filtros con deslizamiento horizontal, sin encimar pestañas */
+@media (max-width: 600px) {
+  body .lib-unified-row .filter-ribbon {
+    justify-content: flex-start !important;
+    overflow-x: auto !important;
+    overflow-y: hidden !important;
+    gap: 4px !important;
+    padding: 4px 6px !important;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+    scroll-snap-type: x proximity;
+  }
+  body .lib-unified-row .filter-ribbon::-webkit-scrollbar {
+    display: none;
+  }
+  body .lib-unified-row .filter-ribbon > .ribbon-tab,
+  body .lib-unified-row .filter-ribbon > .filter-dd-wrap {
+    flex: 0 0 auto !important;
+    min-width: auto !important;
+    scroll-snap-align: start;
+  }
+  body .lib-unified-row .filter-ribbon .filter-dd-wrap .ribbon-tab {
+    width: auto !important;
+  }
+  body .lib-unified-row .filter-ribbon .ribbon-tab {
+    font-size: 13px !important;
+    padding: 0 12px !important;
+    gap: 4px !important;
+    white-space: nowrap !important;
+    overflow: visible !important;
+    text-overflow: clip !important;
+  }
+  body .lib-unified-row .filter-ribbon .ribbon-tab .wedge-ico,
+  body .lib-unified-row .filter-ribbon .programs-inline-btn .v-ico {
+    display: inline-block !important;
+    width: 12px !important;
+    height: 12px !important;
+  }
+}
