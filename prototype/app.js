@@ -467,6 +467,7 @@ async function openScoreById(scoreId, targetMode = "study") {
   if (!found) return;
   activeScore = found;
   pageNum = 1;
+  markScoreRecent(found.id);
 
   document.getElementById("hudPieceTitle").textContent = `${found.composer.split("(")[0].trim()} — ${found.clean || found.title}`;
 
@@ -594,6 +595,14 @@ async function openPdfModalById(scoreId) {
   document.getElementById("wmComposerInput").value = s.composer;
   document.getElementById("wmPeriodInput").value = s.period;
   document.getElementById("wmGroupInput").value = s.group;
+  const fillDl = (dlId, defaults, key) => {
+    const dl = document.getElementById(dlId);
+    if (!dl) return;
+    const vals = [...new Set([...defaults, ...scores.map((x) => (x[key] || "").trim()).filter(Boolean)])];
+    dl.innerHTML = vals.map((v) => `<option value="${v.replace(/"/g, "&quot;")}"></option>`).join("");
+  };
+  fillDl("wmPeriodList", ["Renacimiento", "Barroco", "Clasicismo", "Romanticismo", "Siglo XX"], "period");
+  fillDl("wmGroupList", ["Guitarra Sola", "Dúo / Cámara", "Guitarra y Orquesta", "Otro Instrumento"], "group");
   document.getElementById("pdfToast").textContent = "";
 
   const total = s.pageCount || 4;
@@ -645,8 +654,8 @@ async function saveWorkshopMetadata() {
   s.title = document.getElementById("wmTitleInput").value.trim() || s.title;
   s.clean = s.title;
   s.composer = document.getElementById("wmComposerInput").value.trim() || s.composer;
-  s.period = document.getElementById("wmPeriodInput").value;
-  s.group = document.getElementById("wmGroupInput").value;
+  s.period = document.getElementById("wmPeriodInput").value.trim() || s.period;
+  s.group = document.getElementById("wmGroupInput").value.trim() || s.group;
   s.raw = false;
 
   if (s.isRealPdf) await saveRealPdfToDb(s);
@@ -977,6 +986,26 @@ function exitAiModeToCatalog() {
 }
 
 const FAVORITES_STORAGE_KEY = "atrilFavoritesV16";
+const RECENTS_STORAGE_KEY = "atrilRecentsV1";
+let recentScoreTimes = {};
+
+function loadRecentsState() {
+  try {
+    const raw = localStorage.getItem(RECENTS_STORAGE_KEY);
+    if (raw) {
+      const obj = JSON.parse(raw);
+      if (obj && typeof obj === "object") recentScoreTimes = obj;
+    }
+  } catch (_) {}
+}
+
+function markScoreRecent(scoreId) {
+  recentScoreTimes[Number(scoreId)] = Date.now();
+  try {
+    localStorage.setItem(RECENTS_STORAGE_KEY, JSON.stringify(recentScoreTimes));
+  } catch (_) {}
+}
+loadRecentsState();
 let favoriteScoreIds = new Set([1]);
 
 function loadFavoritesState() {
@@ -1013,6 +1042,7 @@ function renderLibrary() {
 
   const filtered = scores.filter((s) => {
     if (currentClassification === "favorites" && !isFavoriteScore(s.id)) return false;
+    if (currentClassification === "recent" && !recentScoreTimes[s.id]) return false;
     if (currentClassification === "composer" && selectedComposerFilter !== "all") {
       if (!s.composer.toLowerCase().includes(selectedComposerFilter.toLowerCase())) return false;
     }
@@ -1032,11 +1062,15 @@ function renderLibrary() {
     );
   });
 
+  if (currentClassification === "recent") {
+    filtered.sort((a, b) => (recentScoreTimes[b.id] || 0) - (recentScoreTimes[a.id] || 0));
+  }
+
   if (filtered.length === 0) {
     container.innerHTML = `
       <div class="empty-pilot-box">
         <h4>No hay archivos en esta vista</h4>
-        <p>${currentClassification === "favorites" ? "Toca el corazón en cualquier obra para verla en Favoritos." : 'Toca el botón <strong>"Importar"</strong> arriba para cargar partituras reales desde tu tablet.'}</p>
+        <p>${currentClassification === "favorites" ? "Toca el corazón en cualquier obra para verla en Favoritos." : currentClassification === "recent" ? "Las obras que abras aparecerán aquí." : 'Toca el botón <strong>"Importar"</strong> arriba para cargar partituras reales desde tu tablet.'}</p>
       </div>
     `;
     return;
@@ -1050,6 +1084,7 @@ function renderLibrary() {
     else if (currentClassification === "instrumentation") key = `Dotación: ${s.group}`;
     else if (currentClassification === "programs") key = `Programa: ${s.program}`;
     else if (currentClassification === "favorites") key = "Obras Favoritas";
+    else if (currentClassification === "recent") key = "Abiertas recientemente";
 
     if (!groups[key]) groups[key] = [];
     groups[key].push(s);
@@ -1224,15 +1259,15 @@ function renderWorkActionsMenuItems(menu, id) {
   menu.innerHTML = `
     <button class="wa-menu-item bach-card-btn" onclick="closeWorkActionsMenu(); openAiForWork(${id})">
       ${aiHead}
-      <span>Consultar a BachGPT</span>
+      <span>BachGPT</span>
     </button>
     <button class="wa-menu-item add-prog-btn" onclick="openProgFromWorkMenu(event, ${id})">
       ${addSvg}
-      <span>Agregar a programa</span>
+      <span>Programa</span>
     </button>
     <button class="wa-menu-item" onclick="closeWorkActionsMenu(); openPdfModalById(${id})">
       ${cutSvg}
-      <span>Taller PDF</span>
+      <span>Editar PDF</span>
     </button>
     <button class="wa-menu-item wa-danger" onclick="closeWorkActionsMenu(); deleteScoreFromLibrary(${id})">
       ${trashSvg}
@@ -3852,7 +3887,7 @@ function renderProgQuickListView(targetEl, fromWorkMenu = false) {
   pop.innerHTML = `
     <div class="pq-head">
       ${backBtnHtml}
-      <span class="pq-title ${fromWorkMenu ? "pq-title-shifted" : ""}">Agregar a programa</span>
+      <span class="pq-title ${fromWorkMenu ? "pq-title-shifted" : ""}">Programa</span>
     </div>
     <div class="pq-list">${listHtml}</div>
   `;

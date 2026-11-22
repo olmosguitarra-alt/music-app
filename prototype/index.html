@@ -11,7 +11,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:wght@600;700&display=swap" />
-  <link rel="stylesheet" href="styles.css?v=67" />
+  <link rel="stylesheet" href="styles.css?v=68" />
   <!-- Motores Oficiales para Renderizar (PDF.js) y Particionar/Editar PDFs Reales (pdf-lib) -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf-lib/1.17.1/pdf-lib.min.js"></script>
@@ -105,6 +105,7 @@
           <div class="lib-filter-bar">
             <div class="glass-pill filter-ribbon" role="tablist" aria-label="Organizar biblioteca">
               <button class="ribbon-tab active" data-cls="all" onclick="selectClassification('all', 'Todo', this)">Todo</button>
+              <button class="ribbon-tab" data-cls="recent" onclick="selectClassification('recent', 'Recientes', this)">Recientes</button>
               <button class="ribbon-tab" data-cls="favorites" onclick="selectClassification('favorites', 'Favoritos', this)">Favoritos</button>
 
               <div class="filter-dd-wrap">
@@ -156,7 +157,7 @@
               <aside class="programs-sidebar-panel">
                 <div class="programs-sidebar-head">
                   <span class="setlist-eyebrow">Programas</span>
-                  <button class="btn-new-prog no-box-btn" onclick="toggleNewProgramInput(true)" title="Crear nuevo programa">＋ Nuevo</button>
+                  <button class="btn-new-prog no-box-btn" onclick="toggleNewProgramInput(true)" title="Crear nuevo programa" aria-label="Nuevo programa">＋</button>
                 </div>
                 <div class="new-prog-inline hidden" id="newProgInline">
                   <input type="text" id="newProgNameInput" placeholder="Nombre del programa..." onkeydown="if(event.key==='Enter') confirmNewProgram()" />
@@ -235,7 +236,7 @@
       <div class="linearity-inspector-modal workshop-wide" onclick="event.stopPropagation()">
         <div class="insp-head">
           <div>
-            <span class="insp-eyebrow">✂ TALLER DE PARTITURA PDF &amp; METADATOS</span>
+            <span class="insp-eyebrow">✂ EDITAR PDF &amp; METADATOS</span>
             <h3 id="modalScoreTitle">Sonata BWV 1034</h3>
           </div>
           <button class="btn-circle-ghost" onclick="closePdfModal()" aria-label="Cerrar taller">✕</button>
@@ -252,22 +253,13 @@
           </div>
           <div class="wm-field">
             <label for="wmPeriodInput">Periodo Histórico</label>
-            <select id="wmPeriodInput">
-              <option value="Renacimiento">Renacimiento</option>
-              <option value="Barroco">Barroco</option>
-              <option value="Clasicismo">Clasicismo</option>
-              <option value="Romanticismo">Romanticismo</option>
-              <option value="Siglo XX">Siglo XX / Contemporáneo</option>
-            </select>
+            <input type="text" id="wmPeriodInput" list="wmPeriodList" autocomplete="off" placeholder="Elige o escribe uno nuevo" />
+            <datalist id="wmPeriodList"></datalist>
           </div>
           <div class="wm-field">
             <label for="wmGroupInput">Dotación Instrumental</label>
-            <select id="wmGroupInput">
-              <option value="Guitarra Sola">Guitarra Sola</option>
-              <option value="Dúo / Cámara">Dúo / Cámara</option>
-              <option value="Guitarra y Orquesta">Guitarra y Orquesta</option>
-              <option value="Otro Instrumento">Otro Instrumento</option>
-            </select>
+            <input type="text" id="wmGroupInput" list="wmGroupList" autocomplete="off" placeholder="Elige o escribe una nueva" />
+            <datalist id="wmGroupList"></datalist>
           </div>
         </div>
 
@@ -789,6 +781,6 @@
     <span class="pdf-loading-text">Cargando...</span>
   </div>
 
-  <script src="app.js?v=67"></script>
+  <script src="app.js?v=68"></script>
 </body>
 </html>
