@@ -3333,7 +3333,6 @@ function renderSetlistDrawer() {
 
     masterListEl.innerHTML = filteredProgs
       .map((p) => {
-        const count = (p.scoreIds || []).filter((id) => scores.some((s) => s.id === id)).length;
         const isActive = p.id === programsState.activeId;
         return `
           <div class="prog-master-item ${isActive ? "active" : ""}" onclick="switchActiveProgram('${p.id}')">
@@ -3342,7 +3341,6 @@ function renderSetlistDrawer() {
               <button class="prog-pin-btn no-box-btn ${p.pinned ? "is-pinned" : ""}" onclick="togglePinProgram(event, '${p.id}')" title="${p.pinned ? "Desfijar programa" : "Fijar programa"}" aria-label="Fijar programa">
                 ${starSvg}
               </button>
-              <span class="prog-master-count">${count}</span>
             </div>
           </div>
         `;
@@ -3980,7 +3978,7 @@ function saveProgramQuickOrder(fromWorkMenu = false) {
 // Cierre global de todos los menús desplegables al tocar fuera (excepto barras y controles principales)
 document.addEventListener("pointerdown", (e) => {
   const isMainControl = e.target.closest(
-    ".floating-hud-top, .lib-unified-row, .lib-filter-bar, .bottom-nav-dock, #floatingImportFab, #bachGptFab, #btnSettingsDrawer"
+    ".floating-hud-top, .lib-unified-row, .lib-filter-bar, .bottom-nav-dock, #floatingImportFab, #bachGptFab, #btnSettingsDrawer, .work-more-btn"
   );
 
   const floatingMenus = [
@@ -3999,6 +3997,7 @@ document.addEventListener("pointerdown", (e) => {
     const el = document.getElementById(m.id);
     if (el && !el.classList.contains("hidden") && !e.target.closest(`#${m.id}`)) {
       // No cerrar si el toque fue en su propio botón disparador
+      if (m.id === "workActionsMenu" && e.target.closest(".work-more-btn")) continue;
       if (m.id === "importPdfMenu" && e.target.closest("#importPopoverWrap")) continue;
       if (m.id === "settingsDrawer" && e.target.closest("#btnSettingsDrawer")) continue;
       if (m.id === "sharedFilterMenu" && e.target.closest(".filter-dd-btn")) continue;
