@@ -7039,3 +7039,65 @@ body.is-reordering-drag .pq-work-item {
 .prog-pin-btn.no-box-btn.is-pinned .v-ico {
   fill: currentColor;
 }
+
+/* ==========================================================================
+   V64: CABECERA LATERAL PROGRAMAS MÁS LIGERA Y SEPARACIÓN FILTRO vs ORDEN
+   ========================================================================== */
+.programs-sidebar-panel {
+  gap: 8px !important;
+}
+
+.prog-sidebar-search {
+  height: 30px !important;
+  padding: 0 2px !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  border-bottom: 1px solid var(--glass-border) !important;
+}
+
+.prog-sidebar-search input {
+  font-size: 12.5px !important;
+}
+
+.prog-sidebar-filters {
+  justify-content: space-between;
+  padding-top: 2px;
+}
+
+.prog-filter-group {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.prog-filter-btn.no-box-btn {
+  padding: 4px 9px !important;
+  font-size: 12px !important;
+}
+
+.prog-sort-btn.no-box-btn {
+  margin-left: auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 6px !important;
+  border: none !important;
+  background: transparent !important;
+  color: var(--text-secondary);
+  font-size: 11px !important;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  cursor: pointer;
+  opacity: 0.85;
+  transition: opacity 0.15s ease, color 0.15s ease;
+}
+
+.prog-sort-btn.no-box-btn:hover {
+  opacity: 1;
+  color: var(--text-primary);
+}
+
+.prog-sort-btn.no-box-btn .v-ico {
+  width: 13px;
+  height: 13px;
+}
