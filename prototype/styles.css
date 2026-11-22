@@ -7344,3 +7344,18 @@ body .lib-unified-row .filter-ribbon .ribbon-tab {
   line-height: 1;
   font-weight: 500;
 }
+
+/* V69 — buscador sin solape con logo ni iconos de vista en pantallas medianas */
+@media (max-width: 760px) {
+  body .lib-unified-row .glass-search {
+    left: 180px !important;
+    right: 160px !important;
+  }
+}
+
+@media (max-width: 600px) {
+  body .lib-unified-row .glass-search {
+    left: 128px !important;
+    right: 130px !important;
+  }
+}

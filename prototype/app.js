@@ -661,6 +661,7 @@ async function saveWorkshopMetadata() {
   if (s.isRealPdf) await saveRealPdfToDb(s);
   renderLibrary();
   triggerPdfToast("✓ Nombre, compositor, periodo y dotación actualizados.");
+  setTimeout(() => closePdfModal(), 450);
 }
 
 async function splitRealPdfRange() {
