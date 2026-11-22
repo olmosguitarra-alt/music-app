@@ -3362,6 +3362,7 @@ function onSlDragEnd(e) {
 function startFloatingReorderDrag(e, { itemSelector, idxAttr, initialIdx, onReorder }) {
   if (e.target.closest("button")) return;
   const itemEl = e.currentTarget;
+  const isHandle = Boolean(e.target.closest(".pq-drag-ico"));
   const startX = e.clientX;
   const startY = e.clientY;
   const rect = itemEl.getBoundingClientRect();
@@ -3370,11 +3371,16 @@ function startFloatingReorderDrag(e, { itemSelector, idxAttr, initialIdx, onReor
 
   let currentIdx = initialIdx;
   let dragStarted = false;
+  let gestureCancelled = false;
   let ghost = null;
 
   const beginGhost = () => {
-    if (dragStarted) return;
+    if (dragStarted || gestureCancelled) return;
     dragStarted = true;
+    document.body.classList.add("is-reordering-drag");
+    if (navigator.vibrate) {
+      try { navigator.vibrate(12); } catch (_) {}
+    }
     ghost = itemEl.cloneNode(true);
     ghost.classList.add("floating-drag-ghost");
     ghost.style.left = `${rect.left}px`;
@@ -3385,14 +3391,28 @@ function startFloatingReorderDrag(e, { itemSelector, idxAttr, initialIdx, onReor
     itemEl.classList.add("dragging", "is-drag-slot");
   };
 
-  const holdTimer = setTimeout(beginGhost, 180);
+  // Si toca el icono ≡ inicia al arrastrar; si toca el cuerpo de la fila, requiere mantener presionado 280ms sin deslizar (para no chocar con el scroll)
+  const holdTimer = isHandle ? null : setTimeout(beginGhost, 280);
 
   const onMove = (ev) => {
+    if (gestureCancelled) return;
+    const dist = Math.hypot(ev.clientX - startX, ev.clientY - startY);
+
     if (!dragStarted) {
-      if (Math.hypot(ev.clientX - startX, ev.clientY - startY) < 6) return;
-      clearTimeout(holdTimer);
-      beginGhost();
+      if (isHandle) {
+        if (dist < 4) return;
+        beginGhost();
+      } else {
+        // Si desliza antes de cumplir los 280ms, es gesto de scroll del menú: cancelar arrastre
+        if (dist > 8) {
+          gestureCancelled = true;
+          clearTimeout(holdTimer);
+          cleanup();
+        }
+        return;
+      }
     }
+
     ev.preventDefault();
     if (ghost) {
       ghost.style.left = `${ev.clientX - offsetX}px`;
@@ -3410,15 +3430,29 @@ function startFloatingReorderDrag(e, { itemSelector, idxAttr, initialIdx, onReor
     }
   };
 
-  const onUp = () => {
+  const cleanup = () => {
     clearTimeout(holdTimer);
     window.removeEventListener("pointermove", onMove);
     window.removeEventListener("pointerup", onUp);
     window.removeEventListener("pointercancel", onUp);
+    document.body.classList.remove("is-reordering-drag");
     if (ghost && ghost.parentNode) ghost.parentNode.removeChild(ghost);
     ghost = null;
     document.querySelectorAll(`${itemSelector}.dragging, ${itemSelector}.is-drag-slot`)
       .forEach((el) => el.classList.remove("dragging", "is-drag-slot"));
+  };
+
+  const onUp = () => {
+    const wasDragging = dragStarted;
+    cleanup();
+    if (wasDragging) {
+      const suppressClick = (ev) => {
+        ev.preventDefault();
+        ev.stopPropagation();
+      };
+      document.addEventListener("click", suppressClick, { capture: true, once: true });
+      setTimeout(() => document.removeEventListener("click", suppressClick, true), 250);
+    }
   };
 
   window.addEventListener("pointermove", onMove, { passive: false });

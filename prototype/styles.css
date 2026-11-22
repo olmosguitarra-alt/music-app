@@ -6892,4 +6892,20 @@ body.mode-library-active .programs-slide {
 
 .pq-drag-ico {
   touch-action: none;
+  cursor: grab;
+}
+
+.setlist-item,
+.pq-work-item {
+  touch-action: pan-y;
+}
+
+body.is-reordering-drag,
+body.is-reordering-drag .setlist-items,
+body.is-reordering-drag .pq-list,
+body.is-reordering-drag .setlist-item,
+body.is-reordering-drag .pq-work-item {
+  touch-action: none !important;
+  user-select: none !important;
+  -webkit-user-select: none !important;
 }
