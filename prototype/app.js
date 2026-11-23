@@ -608,6 +608,91 @@ function invalidateScorePageThumbnails(s) {
 }
 
 let pdfThumbRenderToken = 0;
+let pdfWorkshopUndoStack = [];
+
+function updatePdfUndoButtonState() {
+  const btn = document.getElementById("btnPdfUndo");
+  if (!btn) return;
+  btn.disabled = pdfWorkshopUndoStack.length === 0;
+  if (pdfWorkshopUndoStack.length > 0) {
+    const last = pdfWorkshopUndoStack[pdfWorkshopUndoStack.length - 1];
+    btn.title = `Deshacer: ${last.label} (Ctrl+Z)`;
+  } else {
+    btn.title = "Deshacer última acción (Ctrl+Z)";
+  }
+}
+
+function capturePdfWorkshopSnapshot(s, label, extra = {}) {
+  if (!s) return null;
+  const items = ensureScorePageItems(s);
+  return {
+    scoreId: s.id,
+    label: label || "Acción",
+    pageItems: items.map((it) => ({ ...it })),
+    pageCount: s.pageCount,
+    pages: s.pages,
+    pdfBytes: s.pdfBytes ? s.pdfBytes.slice(0) : null,
+    thumbDataUrl: s.thumbDataUrl || null,
+    selectedPages: [...selectedWorkshopPages],
+    createdScoreId: extra.createdScoreId || null
+  };
+}
+
+function pushPdfWorkshopUndoState(s, label, extra = {}) {
+  const snap = capturePdfWorkshopSnapshot(s, label, extra);
+  if (!snap) return;
+  pdfWorkshopUndoStack.push(snap);
+  if (pdfWorkshopUndoStack.length > 25) pdfWorkshopUndoStack.shift();
+  updatePdfUndoButtonState();
+}
+
+async function undoLastPdfWorkshopAction() {
+  if (pdfWorkshopUndoStack.length === 0) return;
+  const snap = pdfWorkshopUndoStack.pop();
+  updatePdfUndoButtonState();
+
+  const s = scores.find((item) => item.id === snap.scoreId);
+  if (!s) return;
+
+  if (snap.createdScoreId) {
+    const cIdx = scores.findIndex((item) => item.id === snap.createdScoreId);
+    if (cIdx !== -1) {
+      const removed = scores[cIdx];
+      scores.splice(cIdx, 1);
+      if (removed.isRealPdf && typeof deleteRealPdfFromDb === "function") {
+        try {
+          await deleteRealPdfFromDb(removed.id);
+        } catch (_) {}
+      }
+    }
+  }
+
+  s.pageItems = snap.pageItems.map((it) => ({ ...it }));
+  s.pageCount = snap.pageCount;
+  s.pages = snap.pages;
+  if (snap.pdfBytes) s.pdfBytes = snap.pdfBytes.slice(0);
+  if (snap.thumbDataUrl) s.thumbDataUrl = snap.thumbDataUrl;
+  invalidateScorePageThumbnails(s);
+
+  if (s.isRealPdf) {
+    await saveRealPdfToDb(s);
+  }
+  selectedWorkshopPages = new Set(snap.selectedPages.length ? snap.selectedPages : [1]);
+  renderWorkshopPageStrip(s);
+  renderLibrary();
+  triggerPdfToast(`Deshecho: ${snap.label}.`);
+}
+
+document.addEventListener("keydown", (e) => {
+  const modal = document.getElementById("pdfModal");
+  if (!modal || modal.classList.contains("hidden")) return;
+  if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "z" && !e.shiftKey) {
+    const tag = (document.activeElement?.tagName || "").toLowerCase();
+    if (tag === "input" || tag === "textarea" || tag === "select") return;
+    e.preventDefault();
+    undoLastPdfWorkshopAction();
+  }
+});
 
 async function hydrateWorkshopPdfPageThumbnails(scoreObj) {
   if (!scoreObj || !scoreObj.isRealPdf || !scoreObj.pdfBytes || !window.pdfjsLib) return;
@@ -701,6 +786,8 @@ async function openPdfModalById(scoreId) {
   document.getElementById("splitEndPage").max = total;
 
   selectedWorkshopPages = new Set([1]);
+  pdfWorkshopUndoStack = [];
+  updatePdfUndoButtonState();
   renderWorkshopPageStrip(s);
   document.getElementById("pdfModal").classList.remove("hidden");
 }
@@ -789,7 +876,10 @@ function renderWorkshopPageStrip(scoreObj) {
       `;
 
     html += `
-      <div class="folio-page-thumb ${isSel ? "active" : ""} ${isBlank ? "is-blank-page" : ""}" onclick="toggleWorkshopPageSelection(${p}, this)">
+      <div class="folio-page-thumb ${isSel ? "active" : ""} ${isBlank ? "is-blank-page" : ""}"
+           data-pdf-thumb-idx="${p - 1}"
+           onpointerdown="onPdfThumbPointerDown(event, ${p - 1})"
+           onclick="toggleWorkshopPageSelection(${p}, this)">
         <div class="pdf-thumb-top">
           <span class="pdf-thumb-num">Pág. ${p}</span>
           ${rotTag}
@@ -850,6 +940,7 @@ function clearWorkshopPageSelection() {
 async function addBlankPdfPage(afterPageOverride) {
   const s = scores.find((item) => item.id === activeWorkshopScoreId);
   if (!s) return;
+  pushPdfWorkshopUndoState(s, "Página en blanco");
   const items = ensureScorePageItems(s);
   const sortedSel = Array.from(selectedWorkshopPages).sort((a, b) => a - b);
   const insertAfter =
@@ -903,6 +994,7 @@ async function duplicateSelectedPdfPages() {
   }
   const sorted = Array.from(selectedWorkshopPages).sort((a, b) => a - b);
   const lastSel = sorted[sorted.length - 1];
+  pushPdfWorkshopUndoState(s, "Duplicar página");
 
   if (s.isRealPdf && s.pdfBytes && window.PDFLib) {
     try {
@@ -945,6 +1037,7 @@ async function rotateSelectedPdfPages(singlePageOverride) {
     triggerPdfToast("⚠️ Selecciona una página para rotar 90°.");
     return;
   }
+  pushPdfWorkshopUndoState(s, "Rotar página");
 
   targets.forEach((pNum) => {
     const it = items[pNum - 1];
@@ -986,6 +1079,7 @@ async function moveSingleWorkshopPage(e, pNum, dir) {
   const fromIdx = pNum - 1;
   const toIdx = fromIdx + dir;
   if (toIdx < 0 || toIdx >= items.length) return;
+  pushPdfWorkshopUndoState(s, "Mover página");
 
   const [moved] = items.splice(fromIdx, 1);
   items.splice(toIdx, 0, moved);
@@ -1010,6 +1104,185 @@ async function moveSingleWorkshopPage(e, pNum, dir) {
   selectedWorkshopPages = new Set([toIdx + 1]);
   renderWorkshopPageStrip(s);
   triggerPdfToast(`↔ Página movida a la posición ${toIdx + 1}.`);
+}
+
+function onPdfThumbPointerDown(e, initialIdx) {
+  if (e.target.closest("button")) return;
+  if (e.button && e.button !== 0) return;
+  const s = scores.find((item) => item.id === activeWorkshopScoreId);
+  if (!s) return;
+  const items = ensureScorePageItems(s);
+  if (items.length < 2) return;
+
+  const itemEl = e.currentTarget;
+  const isMouse = e.pointerType === "mouse";
+  const startX = e.clientX;
+  const startY = e.clientY;
+  const rect = itemEl.getBoundingClientRect();
+  const offsetX = startX - rect.left;
+  const offsetY = startY - rect.top;
+
+  let currentIdx = initialIdx;
+  let dragStarted = false;
+  let gestureCancelled = false;
+  let ghost = null;
+  let autoScrollRaf = null;
+  let lastPointerY = startY;
+  const preDragSnapshot = capturePdfWorkshopSnapshot(s, "Reordenar páginas");
+  const indexPermutation = items.map((_, i) => i);
+
+  const applyActiveSlotStyle = () => {
+    document
+      .querySelectorAll(`#workshopPagesStrip .folio-page-thumb[data-pdf-thumb-idx="${currentIdx}"]`)
+      .forEach((el) => el.classList.add("dragging", "is-drag-slot"));
+  };
+
+  const beginGhost = () => {
+    if (dragStarted || gestureCancelled) return;
+    dragStarted = true;
+    document.body.classList.add("is-reordering-drag");
+    if (navigator.vibrate) {
+      try {
+        navigator.vibrate(14);
+      } catch (_) {}
+    }
+    ghost = itemEl.cloneNode(true);
+    ghost.classList.add("floating-drag-ghost", "pdf-page-drag-ghost");
+    ghost.style.left = `${rect.left}px`;
+    ghost.style.top = `${rect.top}px`;
+    ghost.style.width = `${rect.width}px`;
+    ghost.style.height = `${rect.height}px`;
+    document.body.appendChild(ghost);
+    applyActiveSlotStyle();
+  };
+
+  // En pantalla táctil requiere mantener presionado 240ms sin deslizar para no interferir con el scroll vertical de la cuadrícula
+  const holdTimer = setTimeout(beginGhost, 240);
+
+  const stepAutoScroll = () => {
+    if (!dragStarted || gestureCancelled) return;
+    const strip = document.getElementById("workshopPagesStrip");
+    if (strip) {
+      const sr = strip.getBoundingClientRect();
+      const edgeZone = 38;
+      if (lastPointerY < sr.top + edgeZone && strip.scrollTop > 0) {
+        strip.scrollTop -= 6;
+      } else if (
+        lastPointerY > sr.bottom - edgeZone &&
+        strip.scrollTop < strip.scrollHeight - strip.clientHeight
+      ) {
+        strip.scrollTop += 6;
+      }
+    }
+    autoScrollRaf = requestAnimationFrame(stepAutoScroll);
+  };
+
+  const onMove = (ev) => {
+    if (gestureCancelled) return;
+    lastPointerY = ev.clientY;
+    const dist = Math.hypot(ev.clientX - startX, ev.clientY - startY);
+
+    if (!dragStarted) {
+      if (isMouse) {
+        if (dist < 7) return;
+        clearTimeout(holdTimer);
+        beginGhost();
+        autoScrollRaf = requestAnimationFrame(stepAutoScroll);
+      } else {
+        // Si desliza el dedo antes de los 240ms, es scroll vertical para ver más páginas
+        if (dist > 9) {
+          gestureCancelled = true;
+          clearTimeout(holdTimer);
+          cleanup();
+        }
+        return;
+      }
+    }
+
+    ev.preventDefault();
+    if (!autoScrollRaf) {
+      autoScrollRaf = requestAnimationFrame(stepAutoScroll);
+    }
+    if (ghost) {
+      ghost.style.left = `${ev.clientX - offsetX}px`;
+      ghost.style.top = `${ev.clientY - offsetY}px`;
+    }
+
+    const elUnder = document
+      .elementFromPoint(ev.clientX, ev.clientY)
+      ?.closest(".folio-page-thumb[data-pdf-thumb-idx]");
+    if (elUnder) {
+      const targetIdx = Number(elUnder.dataset.pdfThumbIdx);
+      if (!Number.isNaN(targetIdx) && targetIdx !== currentIdx) {
+        const [movedItem] = items.splice(currentIdx, 1);
+        items.splice(targetIdx, 0, movedItem);
+        const [movedOrigIdx] = indexPermutation.splice(currentIdx, 1);
+        indexPermutation.splice(targetIdx, 0, movedOrigIdx);
+        currentIdx = targetIdx;
+        selectedWorkshopPages = new Set([currentIdx + 1]);
+        renderWorkshopPageStrip(s);
+        applyActiveSlotStyle();
+      }
+    }
+  };
+
+  const cleanup = () => {
+    clearTimeout(holdTimer);
+    if (autoScrollRaf) {
+      cancelAnimationFrame(autoScrollRaf);
+      autoScrollRaf = null;
+    }
+    window.removeEventListener("pointermove", onMove);
+    window.removeEventListener("pointerup", onUp);
+    window.removeEventListener("pointercancel", onUp);
+    document.body.classList.remove("is-reordering-drag");
+    if (ghost && ghost.parentNode) ghost.parentNode.removeChild(ghost);
+    ghost = null;
+    document
+      .querySelectorAll("#workshopPagesStrip .folio-page-thumb.dragging, #workshopPagesStrip .folio-page-thumb.is-drag-slot")
+      .forEach((el) => el.classList.remove("dragging", "is-drag-slot"));
+  };
+
+  const onUp = async () => {
+    const wasDragging = dragStarted;
+    const finalIdx = currentIdx;
+    cleanup();
+    if (wasDragging) {
+      const suppressClick = (ev) => {
+        ev.preventDefault();
+        ev.stopPropagation();
+      };
+      document.addEventListener("click", suppressClick, { capture: true, once: true });
+      setTimeout(() => document.removeEventListener("click", suppressClick, true), 250);
+
+      if (finalIdx !== initialIdx) {
+        if (preDragSnapshot) {
+          pdfWorkshopUndoStack.push(preDragSnapshot);
+          if (pdfWorkshopUndoStack.length > 25) pdfWorkshopUndoStack.shift();
+          updatePdfUndoButtonState();
+        }
+        invalidateScorePageThumbnails(s);
+        if (s.isRealPdf && s.pdfBytes && window.PDFLib) {
+          try {
+            const srcDoc = await window.PDFLib.PDFDocument.load(s.pdfBytes);
+            const newDoc = await window.PDFLib.PDFDocument.create();
+            const copied = await newDoc.copyPages(srcDoc, indexPermutation);
+            copied.forEach((cp) => newDoc.addPage(cp));
+            s.pdfBytes = await newDoc.save();
+            await saveRealPdfToDb(s);
+          } catch (err) {
+            console.warn(err);
+          }
+        }
+        renderWorkshopPageStrip(s);
+        triggerPdfToast(`Página movida de la posición ${initialIdx + 1} a la ${finalIdx + 1}.`);
+      }
+    }
+  };
+
+  window.addEventListener("pointermove", onMove, { passive: false });
+  window.addEventListener("pointerup", onUp);
+  window.addEventListener("pointercancel", onUp);
 }
 
 function deleteSingleWorkshopPage(e, pNum) {
@@ -1044,6 +1317,9 @@ async function splitPdfInTwoFiles() {
     return;
   }
 
+  const newPart2Id = Date.now();
+  pushPdfWorkshopUndoState(s, "Dividir PDF", { createdScoreId: newPart2Id });
+
   const sortedSel = Array.from(selectedWorkshopPages).sort((a, b) => a - b);
   let cutAfter = sortedSel.length > 0 ? sortedSel[0] : Math.floor(total / 2);
   if (cutAfter >= total) cutAfter = total - 1;
@@ -1071,7 +1347,7 @@ async function splitPdfInTwoFiles() {
 
       const part2Score = {
         ...s,
-        id: Date.now(),
+        id: newPart2Id,
         title: `${baseName} (Parte 2: Págs. ${cutAfter + 1}–${total})`,
         clean: `${baseName} (Parte 2: Págs. ${cutAfter + 1}–${total})`,
         pages: `${part2Count} págs.`,
@@ -1104,7 +1380,7 @@ async function splitPdfInTwoFiles() {
   const part2Items = items.slice(cutAfter);
   const demoPart2 = {
     ...s,
-    id: Date.now(),
+    id: newPart2Id,
     title: `${baseName} (Parte 2: Págs. ${cutAfter + 1}–${total})`,
     clean: `${baseName} (Parte 2: Págs. ${cutAfter + 1}–${total})`,
     pages: `${part2Count} págs.`,
@@ -1144,6 +1420,7 @@ async function mergeWithLibraryScore() {
   if (!s || !sel || !sel.value) return;
   const other = scores.find((item) => item.id === Number(sel.value));
   if (!other) return;
+  pushPdfWorkshopUndoState(s, "Mezclar PDF");
 
   const mainItems = ensureScorePageItems(s);
   const otherItems = ensureScorePageItems(other).map((it, idx) => ({
@@ -1178,6 +1455,8 @@ async function splitRealPdfRange() {
   const s = scores.find((item) => item.id === activeWorkshopScoreId);
   if (!s) return;
   const items = ensureScorePageItems(s);
+  const newExtractId = Date.now();
+  pushPdfWorkshopUndoState(s, "Extraer rango", { createdScoreId: newExtractId });
 
   const startP = Math.max(1, Number(document.getElementById("splitStartPage").value) || 1);
   const endP = Math.min(items.length, Math.max(startP, Number(document.getElementById("splitEndPage").value) || startP));
@@ -1199,7 +1478,7 @@ async function splitRealPdfRange() {
       const newTitle = `${s.clean || s.title} (Extracto Págs. ${startP}–${endP})`;
       const splitScore = {
         ...s,
-        id: Date.now(),
+        id: newExtractId,
         title: newTitle,
         clean: newTitle,
         pages: `${indices.length} págs.`,
@@ -1223,7 +1502,7 @@ async function splitRealPdfRange() {
   const newCount = endP - startP + 1;
   const demoSplit = {
     ...s,
-    id: Date.now(),
+    id: newExtractId,
     title: `${s.clean || s.title} (Págs. ${startP}–${endP})`,
     clean: `${s.clean || s.title} (Págs. ${startP}–${endP})`,
     pages: `${newCount} págs.`,
@@ -1246,6 +1525,7 @@ async function deleteSelectedPdfPages() {
     triggerPdfToast("⚠️ No puedes eliminar todas las páginas del PDF.");
     return;
   }
+  pushPdfWorkshopUndoState(s, "Quitar página");
 
   if (s.isRealPdf && s.pdfBytes && window.PDFLib) {
     try {
@@ -1283,6 +1563,7 @@ async function handleAppendPdfPages(files) {
   if (!files || files.length === 0) return;
   const s = scores.find((item) => item.id === activeWorkshopScoreId);
   if (!s) return;
+  pushPdfWorkshopUndoState(s, "Agregar página");
   const items = ensureScorePageItems(s);
 
   const extraBuffer = await files[0].arrayBuffer();
