@@ -11,7 +11,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:wght@600;700&display=swap" />
-  <link rel="stylesheet" href="styles.css?v=84" />
+  <link rel="stylesheet" href="styles.css?v=85" />
   <!-- Motores Oficiales para Renderizar (PDF.js) y Particionar/Editar PDFs Reales (pdf-lib) -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf-lib/1.17.1/pdf-lib.min.js"></script>
@@ -240,8 +240,9 @@
       <div class="linearity-inspector-modal workshop-wide pdf-struct-editor pdf-lightbox-editor" onclick="event.stopPropagation()">
         <!-- A. Barra Superior (Header del Editor) -->
         <header class="pdf-lightbox-header">
-          <button type="button" class="pdf-hdr-btn pdf-hdr-exit" onclick="requestClosePdfModal()">
-            <span>← Salir</span>
+          <button type="button" class="pdf-hdr-btn pdf-hdr-exit no-box-btn" onclick="requestClosePdfModal()">
+            <svg viewBox="0 0 24 24" class="v-ico" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+            <span>Salir</span>
           </button>
 
           <div class="pdf-hdr-title-wrap">
@@ -251,7 +252,8 @@
 
           <div class="pdf-hdr-right">
             <button type="button" class="pdf-hdr-btn pdf-hdr-save" id="btnSavePdfChanges" onclick="commitAndSavePdfChanges()">
-              <span>💾 Guardar</span>
+              <svg viewBox="0 0 24 24" class="v-ico" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+              <span>Guardar</span>
             </button>
           </div>
 
@@ -291,7 +293,8 @@
           <!-- Botón flotante sutil "Deshacer" y Toast de notificaciones -->
           <div class="pdf-floating-feedback-wrap">
             <button type="button" class="pdf-floating-undo-pill hidden" id="btnPdfUndo" onclick="undoLastPdfWorkshopAction()">
-              <span>↩ Deshacer</span>
+              <svg viewBox="0 0 24 24" class="v-ico" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round"><path d="M9 14 4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 5.5 5.5v0a5.5 5.5 0 0 1-5.5 5.5H11"/></svg>
+              <span>Deshacer</span>
             </button>
             <div class="insp-feedback pdf-floating-toast" id="pdfToast"></div>
           </div>
@@ -299,27 +302,33 @@
 
         <!-- C. Barra de Acciones Inferior (Modo Normal) -->
         <footer class="pdf-lightbox-footer" id="pdfNormalFooter" role="toolbar" aria-label="Acciones de composición PDF">
-          <button type="button" class="pdf-bottom-action-btn" onclick="addBlankPdfPage()">
-            <span>📄 + Hoja</span>
+          <button type="button" class="pdf-bottom-action-btn no-box-btn" onclick="addBlankPdfPage()">
+            <svg viewBox="0 0 24 24" class="v-ico" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><line x1="9" y1="15" x2="15" y2="15"/></svg>
+            <span>+ Hoja</span>
           </button>
-          <button type="button" class="pdf-bottom-action-btn" onclick="document.getElementById('appendPdfFileInput').click()">
-            <span>📁 + PDF</span>
+          <button type="button" class="pdf-bottom-action-btn no-box-btn" onclick="document.getElementById('appendPdfFileInput').click()">
+            <svg viewBox="0 0 24 24" class="v-ico" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/><line x1="12" y1="11" x2="12" y2="17"/><line x1="9" y1="14" x2="15" y2="14"/></svg>
+            <span>+ PDF</span>
           </button>
-          <button type="button" class="pdf-bottom-action-btn" id="btnEnterExtractMode" onclick="togglePdfExtractMode(true)">
-            <span>✂️ Extraer</span>
+          <button type="button" class="pdf-bottom-action-btn no-box-btn" id="btnEnterExtractMode" onclick="togglePdfExtractMode(true)">
+            <svg viewBox="0 0 24 24" class="v-ico" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round"><circle cx="6" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><line x1="20" y1="4" x2="8.12" y2="15.88"/><line x1="14.47" y1="14.48" x2="20" y2="20"/><line x1="8.12" y1="8.12" x2="12" y2="12"/></svg>
+            <span>Extraer</span>
           </button>
-          <button type="button" class="pdf-bottom-action-btn" id="btnRevertPdfChanges" onclick="revertPdfWorkshopToInitial()">
-            <span>🔄 Revertir</span>
+          <button type="button" class="pdf-bottom-action-btn no-box-btn" id="btnRevertPdfChanges" onclick="revertPdfWorkshopToInitial()">
+            <svg viewBox="0 0 24 24" class="v-ico" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg>
+            <span>Revertir</span>
           </button>
         </footer>
 
-        <!-- D. Barra de Acciones Inferior (Modo "✂️ Extraer") -->
+        <!-- D. Barra de Acciones Inferior (Modo "Extraer") -->
         <footer class="pdf-lightbox-footer pdf-extract-footer hidden" id="pdfExtractFooter" role="toolbar" aria-label="Extraer páginas a nuevo PDF">
-          <button type="button" class="pdf-bottom-action-btn pdf-extract-cancel" onclick="togglePdfExtractMode(false)">
-            <span>✕ Cancelar</span>
+          <button type="button" class="pdf-bottom-action-btn pdf-extract-cancel no-box-btn" onclick="togglePdfExtractMode(false)">
+            <svg viewBox="0 0 24 24" class="v-ico" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            <span>Cancelar</span>
           </button>
           <button type="button" class="pdf-bottom-action-btn pdf-extract-confirm accent" id="btnCreateExtractedPdf" onclick="openExtractNewPdfModal()" disabled>
-            <span id="lblCreateExtractedPdf">📤 Crear PDF (0)</span>
+            <svg viewBox="0 0 24 24" class="v-ico" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><path d="M12 18v-6"/><path d="m9 15 3-3 3 3"/></svg>
+            <span id="lblCreateExtractedPdf">Crear PDF (0)</span>
           </button>
         </footer>
 
@@ -841,6 +850,6 @@
     <span class="pdf-loading-text">Cargando...</span>
   </div>
 
-  <script src="app.js?v=83"></script>
+  <script src="app.js?v=85"></script>
 </body>
 </html>

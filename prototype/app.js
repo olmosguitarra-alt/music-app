@@ -798,7 +798,7 @@ function updatePdfWorkshopHeaderCounts() {
   const createLbl = document.getElementById("lblCreateExtractedPdf");
   const selCount = selectedWorkshopPages.size;
   if (createLbl) {
-    createLbl.textContent = `📤 Crear PDF (${selCount})`;
+    createLbl.textContent = `Crear PDF (${selCount})`;
   }
   if (createBtn) {
     createBtn.disabled = selCount === 0;
@@ -806,8 +806,9 @@ function updatePdfWorkshopHeaderCounts() {
 }
 
 async function openPdfModalById(scoreId) {
-  const s = scores.find((item) => item.id === Number(scoreId));
+  const s = scores.find((item) => Number(item.id) === Number(scoreId));
   if (!s) return;
+  closeWorkActionsMenu();
   activeWorkshopScoreId = s.id;
   const baseItems = ensureScorePageItems(s);
 
@@ -828,13 +829,6 @@ async function openPdfModalById(scoreId) {
   };
 
   pdfWorkingDoc = null;
-  if (pdfWorkshopDraft.isRealPdf && pdfWorkshopDraft.pdfBytes && window.PDFLib) {
-    try {
-      pdfWorkingDoc = await window.PDFLib.PDFDocument.load(pdfWorkshopDraft.pdfBytes);
-    } catch (err) {
-      console.warn("No se pudo cargar instancia PDFLib.PDFDocument inicial:", err);
-    }
-  }
 
   document.getElementById("modalScoreTitle").textContent = formatPdfEditorFilenameTitle(pdfWorkshopDraft.title);
   const wmTitle = document.getElementById("wmTitleInput");
@@ -876,7 +870,18 @@ async function openPdfModalById(scoreId) {
   syncExtractModeBarsUI();
   updatePdfUndoButtonState();
   renderWorkshopPageStrip();
+
+  // Abrimos el modal al instante (sin bloquear la respuesta táctil en celular)
   document.getElementById("pdfModal").classList.remove("hidden");
+
+  // Cargamos la instancia PDFLib.PDFDocument en segundo plano
+  if (pdfWorkshopDraft.isRealPdf && pdfWorkshopDraft.pdfBytes && window.PDFLib) {
+    try {
+      pdfWorkingDoc = await window.PDFLib.PDFDocument.load(pdfWorkshopDraft.pdfBytes);
+    } catch (err) {
+      console.warn("No se pudo cargar instancia PDFLib.PDFDocument inicial:", err);
+    }
+  }
 }
 
 function togglePdfMetaPopover(e) {
@@ -924,7 +929,9 @@ function renderWorkshopPageStrip() {
   const total = items.length;
   let html = "";
 
-  const chkIco = `<svg viewBox="0 0 24 24" class="v-ico" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>`;
+  const chkIco = `<svg viewBox="0 0 24 24" class="v-ico" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>`;
+  const dupIco = `<svg viewBox="0 0 24 24" class="v-ico" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>`;
+  const delIco = `<svg viewBox="0 0 24 24" class="v-ico" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>`;
 
   const cleanTitle = draft.title || "Partitura";
   const cleanComp = (draft.composer || "").split("(")[0].trim();
@@ -1003,8 +1010,8 @@ function renderWorkshopPageStrip() {
       `
       : `
         <div class="pdf-card-floating-actions" onclick="event.stopPropagation()">
-          <button type="button" class="pdf-float-icon-btn dup" onclick="duplicateSingleWorkshopPage(event, ${p})" title="Duplicar página" aria-label="Duplicar página ${p}">❐</button>
-          <button type="button" class="pdf-float-icon-btn del" onclick="deleteSingleWorkshopPage(event, ${p})" title="Eliminar página" aria-label="Eliminar página ${p}">✕</button>
+          <button type="button" class="pdf-float-icon-btn dup" onclick="duplicateSingleWorkshopPage(event, ${p})" title="Duplicar página" aria-label="Duplicar página ${p}">${dupIco}</button>
+          <button type="button" class="pdf-float-icon-btn del" onclick="deleteSingleWorkshopPage(event, ${p})" title="Eliminar página" aria-label="Eliminar página ${p}">${delIco}</button>
         </div>
       `;
 
@@ -2251,6 +2258,20 @@ function buildListRowHtml(s) {
 
 let activeWorkMenuScoreId = null;
 
+let lastMobilePdfOpenTs = 0;
+
+function triggerOpenPdfEditorFromMenu(e, id) {
+  if (e) {
+    e.preventDefault();
+    e.stopPropagation();
+  }
+  const now = Date.now();
+  if (now - lastMobilePdfOpenTs < 350) return;
+  lastMobilePdfOpenTs = now;
+  closeWorkActionsMenu();
+  openPdfModalById(id);
+}
+
 function renderWorkActionsMenuItems(menu, id) {
   const aiHead = buildMonochromeBachHeadSvg();
   const addSvg = `<svg viewBox="0 0 24 24" class="v-ico"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>`;
@@ -2259,19 +2280,19 @@ function renderWorkActionsMenuItems(menu, id) {
 
   menu.classList.remove("is-prog-mode");
   menu.innerHTML = `
-    <button class="wa-menu-item bach-card-btn" onclick="closeWorkActionsMenu(); openAiForWork(${id})">
+    <button type="button" class="wa-menu-item bach-card-btn" onclick="closeWorkActionsMenu(); openAiForWork(${id})">
       ${aiHead}
       <span>BachGPT</span>
     </button>
-    <button class="wa-menu-item add-prog-btn" onclick="openProgFromWorkMenu(event, ${id})">
+    <button type="button" class="wa-menu-item add-prog-btn" onclick="openProgFromWorkMenu(event, ${id})">
       ${addSvg}
       <span>Programa</span>
     </button>
-    <button class="wa-menu-item" onclick="closeWorkActionsMenu(); openPdfModalById(${id})">
+    <button type="button" class="wa-menu-item wa-edit-pdf-btn" onpointerup="triggerOpenPdfEditorFromMenu(event, ${id})" onclick="triggerOpenPdfEditorFromMenu(event, ${id})">
       ${cutSvg}
       <span>Editar PDF</span>
     </button>
-    <button class="wa-menu-item wa-danger" onclick="closeWorkActionsMenu(); deleteScoreFromLibrary(${id})">
+    <button type="button" class="wa-menu-item wa-danger" onclick="closeWorkActionsMenu(); deleteScoreFromLibrary(${id})">
       ${trashSvg}
       <span>Eliminar</span>
     </button>
@@ -2300,9 +2321,14 @@ function openWorkActionsMenu(e, scoreId) {
   menu.classList.remove("hidden");
   if (e && e.currentTarget) {
     const rect = e.currentTarget.getBoundingClientRect();
+    const menuH = Math.max(176, menu.offsetHeight || 176);
+    const bottomSafeEdge = window.innerHeight - 76; // Evita quedar encima del cintillo inferior en celular
     const rawLeft = cardEl ? cardEl.getBoundingClientRect().left : rect.right - mw;
     const left = Math.max(12, Math.min(window.innerWidth - mw - 12, rawLeft));
-    const top = Math.max(12, Math.min(window.innerHeight - 190, rect.bottom + 6));
+    let top = rect.bottom + 6;
+    if (top + menuH > bottomSafeEdge) {
+      top = Math.max(12, rect.top - menuH - 6);
+    }
     menu.style.left = `${left}px`;
     menu.style.top = `${top}px`;
   }
