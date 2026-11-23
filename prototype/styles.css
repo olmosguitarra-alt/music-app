@@ -9045,3 +9045,28 @@ body.mode-library-active #bachGptFab.bachgpt-fab,
   will-change: transform;
   pointer-events: none !important;
 }
+
+/* V81 — Botón Deshacer con icono limpio (32x32) y separador fijo en la barra de acciones */
+.pdf-struct-editor .pdf-struct-toolbar .pdf-undo-btn.no-box-btn {
+  flex: 0 0 32px !important;
+  width: 32px !important;
+  min-width: 32px !important;
+  height: 32px !important;
+  padding: 0 !important;
+  justify-content: center !important;
+}
+
+.pdf-struct-editor .pdf-struct-toolbar .pdf-undo-btn.no-box-btn .v-ico {
+  width: 17px !important;
+  height: 17px !important;
+}
+
+.pdf-struct-editor .pdf-struct-toolbar .pdf-toolbar-sep {
+  flex: 0 0 1px !important;
+  width: 1px !important;
+  min-width: 1px !important;
+  height: 18px !important;
+  background: var(--glass-border) !important;
+  margin: 0 4px !important;
+  display: inline-block !important;
+}

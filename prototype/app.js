@@ -1139,6 +1139,23 @@ function onPdfThumbPointerDown(e, initialIdx) {
     ...strip.querySelectorAll(".folio-page-thumb[data-pdf-thumb-idx]")
   ];
 
+  // Coordenadas puras de celda en el Grid (inmunes a transformaciones CSS FLIP en vuelo)
+  const getUntransformedCardRect = (card) => {
+    const sr = strip.getBoundingClientRect();
+    const left = sr.left + card.offsetLeft - strip.scrollLeft;
+    const top = sr.top + card.offsetTop - strip.scrollTop;
+    const width = card.offsetWidth;
+    const height = card.offsetHeight;
+    return {
+      left,
+      top,
+      right: left + width,
+      bottom: top + height,
+      width,
+      height
+    };
+  };
+
   const syncDomIndicesAndLabels = () => {
     const cards = getPageCards();
     cards.forEach((card, idx) => {
@@ -1196,7 +1213,7 @@ function onPdfThumbPointerDown(e, initialIdx) {
   const performFlipSwap = (targetIdx) => {
     const cards = getPageCards();
     const firstRects = new Map();
-    cards.forEach((c) => firstRects.set(c, c.getBoundingClientRect()));
+    cards.forEach((c) => firstRects.set(c, getUntransformedCardRect(c)));
 
     const targetCard = cards[targetIdx];
     if (!targetCard || targetCard === itemEl) return;
@@ -1214,12 +1231,12 @@ function onPdfThumbPointerDown(e, initialIdx) {
     currentIdx = targetIdx;
     syncDomIndicesAndLabels();
 
-    // Animación FLIP suave en las tarjetas vecinas sin destruir el DOM
+    // Animación FLIP suave en las tarjetas vecinas usando coordenadas de layout puras
     getPageCards().forEach((c) => {
       if (c === itemEl) return;
       const first = firstRects.get(c);
       if (!first) return;
-      const last = c.getBoundingClientRect();
+      const last = getUntransformedCardRect(c);
       const dx = first.left - last.left;
       const dy = first.top - last.top;
       if (Math.abs(dx) > 1 || Math.abs(dy) > 1) {
@@ -1262,17 +1279,17 @@ function onPdfThumbPointerDown(e, initialIdx) {
     }
     updateGhostPosition(ev.clientX, ev.clientY);
 
-    // Detección geométrica directa por cajas de cada página (sin depender de elementFromPoint)
+    // Detección geométrica directa por celdas puras del Grid (inmune a animaciones FLIP en vuelo)
     const cards = getPageCards();
     let hitIdx = -1;
     for (let i = 0; i < cards.length; i++) {
       if (i === currentIdx) continue;
-      const r = cards[i].getBoundingClientRect();
+      const r = getUntransformedCardRect(cards[i]);
       if (
-        ev.clientX >= r.left + r.width * 0.12 &&
-        ev.clientX <= r.right - r.width * 0.12 &&
-        ev.clientY >= r.top + r.height * 0.12 &&
-        ev.clientY <= r.bottom - r.height * 0.12
+        ev.clientX >= r.left + r.width * 0.10 &&
+        ev.clientX <= r.right - r.width * 0.10 &&
+        ev.clientY >= r.top + r.height * 0.10 &&
+        ev.clientY <= r.bottom - r.height * 0.10
       ) {
         hitIdx = i;
         break;
