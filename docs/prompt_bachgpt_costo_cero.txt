@@ -1,0 +1,48 @@
+# OBJETIVO PRINCIPAL: Arquitectura Sostenible Costo $0.00 para BachGPT en Cadenza
+
+Estamos desarrollando Cadenza (una estación de trabajo musical y atril digital inteligente para tablets y web).
+Necesitamos reestructurar el componente BachGPT (el asistente musical flotante en 8 bits) bajo una premisa innegociable:
+
+> REGLA DE ORO DE SOSTENIBILIDAD:
+> Cero riesgo financiero. La app NO debe consumir tokens ni créditos de API a costa del desarrollador bajo ninguna circunstancia. Ni el desarrollador ni el usuario final deben incurrir en costos involuntarios. El asistente debe ser útil, funcional y disponible sin servidores de pago.
+
+---
+
+## 1. Tareas Inmediatas de Seguridad (Hardening)
+1. Eliminar claves de API quemadas en el código (Hardcoded Keys):
+   - Retirar completamente cualquier fragmento de llave de API en `app.js` (como `_gkParts` en líneas ~2274).
+   - El almacenamiento de claves solo debe ocurrir mediante `localStorage` de forma explícita si el usuario voluntariamente ingresa la suya en una ventana de Ajustes.
+2. Síntesis de Voz Nativa y Gratuita (Cero llamadas de pago a Cloud TTS):
+   - Asegurar que la síntesis de voz de BachGPT utilice de forma primaria la API nativa del navegador (`window.speechSynthesis`).
+   - Configurar los parámetros de pitch (grave), rate y acento germánico/español usando las voces locales del sistema operativo (Android, Windows, iPadOS) sin consumir APIs externas.
+
+---
+
+## 2. Arquitectura de Dos Capas para BachGPT
+
+Implementar un flujo de decisión claro para procesar los mensajes:
+
+### CAPA 1: Cerebro Local Offline (Por Defecto - Costo $0.00)
+Debe resolver el 80% del uso cotidiano del músico en el atril sin tocar internet:
+- Comandos de Navegación y Control de Cadenza:
+  Detectar intenciones como: "ir a biblioteca", "modo concierto", "modo estudio", "página siguiente / anterior", "activar metrónomo", "pantalla completa", y ejecutar las funciones correspondientes de la interfaz.
+- Contexto de la Partitura Activa:
+  Al abrir BachGPT sobre una obra, leer el objeto local `aiData` de la partitura (historia, tempo, referencias de YouTube, IMSLP, tonalidad) y responder con esa información pre-cargada.
+- Manual de Usuario Integrado:
+  Preguntas frecuentes sobre cómo usar herramientas de dibujo, recortar páginas, sellos de digitación o importar PDFs.
+
+### CAPA 2: Modo Inteligencia Avanzada (BYOK - Bring Your Own Key)
+Para preguntas complejas de teoría abierta o análisis musical no catalogado:
+- Si no hay clave de API configurada en `localStorage`: BachGPT responde amablemente con su personalidad barroca indicando que para consultas teóricas abiertas puede conectar su clave gratuita de Google AI Studio en el menú de Ajustes, sin costo.
+- Si el usuario configuró su clave personal: La app realiza el `fetch` directo a Gemini API usando su propia clave gratuita, nunca una clave central del desarrollador.
+
+---
+
+## 3. Experiencia de Usuario (UI/UX)
+- Mantener intacta la ventana flotante en Pixel Art de 8 bits con la animación de boca al hablar (`setBach8BitTalkingAnimation`).
+- Añadir un icono de engrane discreto en la cabecera de la ventana de BachGPT que abra un modal de configuración para:
+  1. Activar / Desactivar voz nativa.
+  2. Ajustar velocidad / tono de voz.
+  3. Campo seguro para ingresar la clave personal de Gemini (con botón para probarla y enlace a Google AI Studio para obtenerla gratis).
+
+Por favor, revisa `prototype/app.js` e implementa esta arquitectura limpia, modular y segura.

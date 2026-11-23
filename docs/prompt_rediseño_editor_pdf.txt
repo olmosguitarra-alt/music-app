@@ -1,0 +1,66 @@
+# PROMPT DE IMPLEMENTACIÓN: REDISEÑO DEL MOTOR Y UI DEL EDITOR DE PDF (CADENZA)
+
+Actúa como Ingeniero Senior Frontend y Diseñador UX especializado en aplicaciones táctiles (tablets Android / HTML5). 
+
+Tu objetivo es rediseñar y construir el módulo del **Editor de Composición de PDF** de Cadenza (`prototype/index.html`, `prototype/styles.css`, `prototype/app.js`), utilizando `pdf-lib` (ya cargado en el proyecto) y `pdf.js` para renderizar miniaturas.
+
+---
+
+### 1. FILOSOFÍA DE DISEÑO Y UX (TABLET-FIRST)
+- **Concepto "Mesa de Trabajo" (Lightbox Grid):** El músico debe sentir que organiza hojas físicas de papel sobre una mesa grande.
+- **Micro-copy Minimalista (Cero tecnicismos):** Solo un icono + una palabra corta (`← Salir`, `💾 Guardar`, `📄 + Hoja`, `📁 + PDF`, `✂️ Extraer`, `🔄 Revertir`). Cero explicaciones redundantes o textos largos en pantalla.
+- **Acciones Directas en Miniatura:** Iconos flotantes sutiles en cada página (`✕` para eliminar, `❐` para duplicar) y reordenamiento táctil / Drag & Drop.
+- **Flujo No Destructivo:** Las operaciones se reflejan visualmente al instante en la cuadrícula y en memoria (`pdf-lib`), pero el PDF original no se sobreescribe hasta pulsar `💾 Guardar`.
+
+---
+
+### 2. COMPONENTES Y VISTA VISUAL
+
+#### A. Barra Superior (Header del Editor)
+- Izquierda: `[ ← Salir ]` (Descarta cambios con aviso breve si hubo modificaciones).
+- Centro: Título con nombre del archivo actual (`"Nocturno Op. 9 No. 2.pdf"`).
+- Derecha: `[ 💾 Guardar ]` (Aplica y reconstruye el PDF final).
+
+#### B. Cuadrícula de Páginas (Lightbox / Mesa de Trabajo)
+- Grid responsive adaptado a pantallas táctiles (miniaturas legibles de 150px a 220px de ancho).
+- Cada tarjeta representa una página con:
+  - Miniatura nítida renderizada vía `pdf.js`.
+  - Número de página visible al pie (`Pág 1`, `Pág 2`, etc.).
+  - Botón `✕` en esquina superior para borrar la página (con botón flotante sutil "Deshacer").
+  - Botón `❐` (Duplicar) para crear una copia exacta adyacente (ideal para repeticiones Da Capo).
+  - Capacidad de reordenar páginas (Drag & Drop con soporte touch/mouse).
+
+#### C. Barra de Acciones Inferior (Modo Normal)
+Barra limpia con 4 botones minimalistas:
+1. `[ 📄 + Hoja ]`: Inserta una página en blanco (para notas/anotaciones) en la posición actual o al final.
+2. `[ 📁 + PDF ]`: Abre selector de archivos para anexar otro PDF completo al final del actual.
+3. `[ ✂️ Extraer ]`: Activa el modo selección para separar páginas y crear un nuevo documento.
+4. `[ 🔄 Revertir ]`: Restaura el documento al estado en que se abrió.
+
+#### D. Modo "✂️ Extraer" (Selección Múltiple y Creación de Nuevo PDF)
+Al pulsar `✂️ Extraer`:
+1. La barra inferior cambia a:
+   - `[ ✕ Cancelar ]`
+   - `[ 📤 Crear PDF (N) ]` (donde *N* es el número de páginas seleccionadas, deshabilitado si N=0).
+2. Las miniaturas muestran un checkbox circular táctil `[ ✓ ]` y borde iluminado al ser seleccionadas.
+3. Al pulsar `[ 📤 Crear PDF (N) ]`, se abre un modal minimalista:
+   - Título: `Nuevo archivo`
+   - Input: `[ Nombre del PDF... ]` (con nombre sugerido automático, ej: `Partitura - Extracto.pdf`).
+   - Checkbox opcional: `[ ] Borrar del actual` (unchecked = copiar / checked = cortar y mover).
+   - Botones: `[ Cancelar ]` y `[ Guardar ]`.
+4. Al guardar:
+   - Genera el nuevo PDF mediante `pdf-lib` y lo añade a la biblioteca local de Cadenza (`localStorage` / almacenamiento de partituras).
+   - Notificación sutil tipo toast: *"Documento creado con éxito"*.
+
+---
+
+### 3. REQUISITOS TÉCNICOS (ARQUITECTURA CON PDF-LIB)
+- Trabajar sobre `f:\code proyects\deploy\music-app\prototype\`.
+- Usar la instancia global de `PDFLib.PDFDocument`:
+  - `copyPages()` para duplicar y extraer páginas hacia un nuevo documento.
+  - `removePage()` para las eliminaciones.
+  - Insertar páginas en blanco con `addPage()` respetando las dimensiones estándar (A4 o dimensiones de la página adyacente).
+  - `save()` para serializar el resultado en `Uint8Array` y recargar el visor de partituras.
+- Mantener el código modular, limpio, sin dependencias externas pesadas y optimizado para fluidez táctil en tabletas.
+
+Por favor, revisa el estado actual del visor/editor en `prototype/` e implementa este flujo completo.

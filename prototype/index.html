@@ -11,7 +11,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:wght@600;700&display=swap" />
-  <link rel="stylesheet" href="styles.css?v=83" />
+  <link rel="stylesheet" href="styles.css?v=84" />
   <!-- Motores Oficiales para Renderizar (PDF.js) y Particionar/Editar PDFs Reales (pdf-lib) -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf-lib/1.17.1/pdf-lib.min.js"></script>
@@ -234,98 +234,33 @@
     </div>
 
     <!-- ================================================================= -->
-    <!-- TALLER DE PDF REAL (Particionar, Quitar/Agregar Páginas, Renombrar)-->
+    <!-- EDITOR DE COMPOSICIÓN DE PDF (Mesa de Trabajo / Lightbox Grid)    -->
     <!-- ================================================================= -->
-    <div class="modal-backdrop hidden" id="pdfModal" onclick="closePdfModal(event)">
-      <div class="linearity-inspector-modal workshop-wide pdf-struct-editor" onclick="event.stopPropagation()">
-        <div class="insp-head pdf-editor-head">
-          <div class="pdf-editor-title-wrap">
-            <span class="insp-eyebrow">Editor PDF</span>
-            <div class="pdf-editor-title-row">
-              <h3 id="modalScoreTitle">Sonata BWV 1034</h3>
-              <span class="pdf-page-count-pill" id="pdfModalPageCountBadge">4 págs.</span>
-            </div>
+    <div class="modal-backdrop hidden" id="pdfModal" onclick="requestClosePdfModal(event)">
+      <div class="linearity-inspector-modal workshop-wide pdf-struct-editor pdf-lightbox-editor" onclick="event.stopPropagation()">
+        <!-- A. Barra Superior (Header del Editor) -->
+        <header class="pdf-lightbox-header">
+          <button type="button" class="pdf-hdr-btn pdf-hdr-exit" onclick="requestClosePdfModal()">
+            <span>← Salir</span>
+          </button>
+
+          <div class="pdf-hdr-title-wrap">
+            <h3 id="modalScoreTitle" class="pdf-hdr-title" title="Clic para editar datos de la obra" onclick="togglePdfMetaPopover(event)">Nocturno Op. 9 No. 2.pdf</h3>
+            <span class="pdf-page-count-pill" id="pdfModalPageCountBadge">4 págs.</span>
           </div>
-          <div class="pdf-editor-head-actions">
-            <button class="lin-btn accent btn-save-pdf-top" onclick="saveWorkshopMetadata()">
-              <span>Cerrar</span>
+
+          <div class="pdf-hdr-right">
+            <button type="button" class="pdf-hdr-btn pdf-hdr-save" id="btnSavePdfChanges" onclick="commitAndSavePdfChanges()">
+              <span>💾 Guardar</span>
             </button>
           </div>
-        </div>
 
-        <!-- BARRA DE HERRAMIENTAS DE ESTRUCTURA PDF (1 SOLO NIVEL AL 90% DE ANCHO, CON DESHACER AL INICIO) -->
-        <div class="pdf-struct-toolbar" role="toolbar" aria-label="Herramientas de estructura de PDF">
-          <button class="pdf-tool-btn pdf-undo-btn no-box-btn" id="btnPdfUndo" type="button" onclick="undoLastPdfWorkshopAction()" title="Deshacer última acción (Ctrl+Z)" aria-label="Deshacer última acción" disabled>
-            <svg viewBox="0 0 24 24" class="v-ico" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round"><path d="M9 14 4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 5.5 5.5v0a5.5 5.5 0 0 1-5.5 5.5H11"/></svg>
-          </button>
-          <span class="pdf-toolbar-sep" aria-hidden="true"></span>
-          <button class="pdf-tool-btn no-box-btn" onclick="addBlankPdfPage()" title="Insertar página en blanco">
-            <svg viewBox="0 0 24 24" class="v-ico" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
-            <span>Página en blanco</span>
-          </button>
-          <button class="pdf-tool-btn no-box-btn" onclick="document.getElementById('appendPdfFileInput').click()" title="Agregar páginas desde otro PDF">
-            <svg viewBox="0 0 24 24" class="v-ico" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><line x1="9" y1="15" x2="15" y2="15"/></svg>
-            <span>Agregar página</span>
-          </button>
-          <button class="pdf-tool-btn no-box-btn" onclick="duplicateSelectedPdfPages()" title="Duplicar página seleccionada">
-            <svg viewBox="0 0 24 24" class="v-ico" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
-            <span>Duplicar</span>
-          </button>
-          <button class="pdf-tool-btn no-box-btn" onclick="rotateSelectedPdfPages()" title="Girar 90° la página seleccionada">
-            <svg viewBox="0 0 24 24" class="v-ico" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
-            <span>Rotar</span>
-          </button>
-          <button class="pdf-tool-btn no-box-btn" onclick="splitPdfInTwoFiles()" title="Dividir en dos archivos PDF">
-            <svg viewBox="0 0 24 24" class="v-ico" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round"><circle cx="5.5" cy="6.5" r="2.5"/><circle cx="5.5" cy="17.5" r="2.5"/><path d="M7.6 7.8 21 18.8"/><path d="M7.6 16.2 21 5.2"/><circle cx="12.4" cy="12" r="0.7" fill="currentColor" stroke="none"/></svg>
-            <span>Dividir</span>
-          </button>
-          <button class="pdf-tool-btn no-box-btn" onclick="toggleMergePdfPanel()" title="Mezclar con otro PDF">
-            <svg viewBox="0 0 24 24" class="v-ico" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
-            <span>Mezclar</span>
-          </button>
-        </div>
-
-        <!-- PANEL DESPLEGABLE PARA MEZCLAR DOS PDFs DISTINTOS -->
-        <div class="pdf-merge-inline-bar hidden" id="pdfMergeInlineBar">
-          <span class="pdf-merge-label">Mezclar con:</span>
-          <select id="mergeLibraryScoreSelect" aria-label="Seleccionar obra de la biblioteca para mezclar"></select>
-          <button class="pdf-mini-action accent" onclick="mergeWithLibraryScore()">Unir obra</button>
-          <button class="pdf-mini-action" onclick="document.getElementById('appendPdfFileInput').click()">Subir PDF...</button>
-          <button class="btn-bare-x" onclick="toggleMergePdfPanel(false)" aria-label="Cerrar mezcla">
-            <svg viewBox="0 0 24 24" class="v-ico" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-          </button>
-        </div>
-
-        <div class="pdf-editor-workspace">
-          <!-- LIENZO VISUAL DE MINIATURAS DE PÁGINAS -->
-          <div class="pdf-pages-canvas-pane">
-            <div class="workshop-pages-header">
-              <div class="pdf-sel-info">
-                <span id="pdfSelectionStatus">1 página seleccionada</span>
-                <button class="pdf-sel-link" type="button" onclick="selectAllWorkshopPages()">Todas</button>
-                <button class="pdf-sel-link" type="button" onclick="clearWorkshopPageSelection()">Ninguna</button>
-              </div>
-              <div class="range-extract-controls">
-                <label for="splitStartPage">Desde pág.</label>
-                <input type="number" id="splitStartPage" min="1" value="1" class="range-num-input" />
-                <label for="splitEndPage">hasta</label>
-                <input type="number" id="splitEndPage" min="1" value="2" class="range-num-input" />
-                <button class="pdf-mini-action" type="button" onclick="splitRealPdfRange()">
-                  <svg viewBox="0 0 24 24" class="v-ico" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round"><circle cx="5.5" cy="6.5" r="2.5"/><circle cx="5.5" cy="17.5" r="2.5"/><path d="M7.6 7.8 21 18.8"/><path d="M7.6 16.2 21 5.2"/><circle cx="12.4" cy="12" r="0.7" fill="currentColor" stroke="none"/></svg>
-                  <span>Extraer rango</span>
-                </button>
-              </div>
-            </div>
-
-            <div class="folio-strip real-pages-strip pdf-visual-grid" id="workshopPagesStrip"></div>
-          </div>
-
-          <!-- PANEL LATERAL DE METADATOS Y CLASIFICACIÓN -->
-          <aside class="pdf-meta-side-pane">
-            <div class="pdf-meta-side-title">Datos y clasificación</div>
+          <!-- Popover compacto opcional para mantener compatibilidad con metadatos si se pulsa el título -->
+          <div class="pdf-meta-popover hidden" id="pdfMetaPopover" onclick="event.stopPropagation()">
+            <div class="pdf-meta-side-title">Datos de la obra</div>
             <div class="workshop-meta-grid">
               <div class="wm-field">
-                <label for="wmTitleInput">Título de la Obra</label>
+                <label for="wmTitleInput">Título</label>
                 <input type="text" id="wmTitleInput" />
               </div>
               <div class="wm-field">
@@ -333,26 +268,88 @@
                 <input type="text" id="wmComposerInput" />
               </div>
               <div class="wm-field">
-                <label for="wmPeriodInput">Periodo Histórico</label>
-                <input type="text" id="wmPeriodInput" list="wmPeriodList" autocomplete="off" placeholder="Elige o escribe uno nuevo" />
+                <label for="wmPeriodInput">Periodo</label>
+                <input type="text" id="wmPeriodInput" list="wmPeriodList" autocomplete="off" />
                 <datalist id="wmPeriodList"></datalist>
               </div>
               <div class="wm-field">
-                <label for="wmGroupInput">Dotación Instrumental</label>
-                <input type="text" id="wmGroupInput" list="wmGroupList" autocomplete="off" placeholder="Elige o escribe una nueva" />
+                <label for="wmGroupInput">Instrumento</label>
+                <input type="text" id="wmGroupInput" list="wmGroupList" autocomplete="off" />
                 <datalist id="wmGroupList"></datalist>
               </div>
             </div>
-
-            <div class="linearity-action-bar">
-              <button class="lin-btn accent" onclick="saveWorkshopMetadata()">
-                <span>Guardar Nombre y Clasificación</span>
-              </button>
+            <div class="pdf-meta-pop-actions">
+              <button type="button" class="pdf-mini-action accent" onclick="togglePdfMetaPopover()">Listo</button>
             </div>
-          </aside>
+          </div>
+        </header>
+
+        <!-- B. Cuadrícula de Páginas (Lightbox / Mesa de Trabajo) -->
+        <div class="pdf-lightbox-workspace">
+          <div class="folio-strip real-pages-strip pdf-visual-grid pdf-lightbox-grid" id="workshopPagesStrip"></div>
+
+          <!-- Botón flotante sutil "Deshacer" y Toast de notificaciones -->
+          <div class="pdf-floating-feedback-wrap">
+            <button type="button" class="pdf-floating-undo-pill hidden" id="btnPdfUndo" onclick="undoLastPdfWorkshopAction()">
+              <span>↩ Deshacer</span>
+            </button>
+            <div class="insp-feedback pdf-floating-toast" id="pdfToast"></div>
+          </div>
         </div>
 
-        <div class="insp-feedback" id="pdfToast"></div>
+        <!-- C. Barra de Acciones Inferior (Modo Normal) -->
+        <footer class="pdf-lightbox-footer" id="pdfNormalFooter" role="toolbar" aria-label="Acciones de composición PDF">
+          <button type="button" class="pdf-bottom-action-btn" onclick="addBlankPdfPage()">
+            <span>📄 + Hoja</span>
+          </button>
+          <button type="button" class="pdf-bottom-action-btn" onclick="document.getElementById('appendPdfFileInput').click()">
+            <span>📁 + PDF</span>
+          </button>
+          <button type="button" class="pdf-bottom-action-btn" id="btnEnterExtractMode" onclick="togglePdfExtractMode(true)">
+            <span>✂️ Extraer</span>
+          </button>
+          <button type="button" class="pdf-bottom-action-btn" id="btnRevertPdfChanges" onclick="revertPdfWorkshopToInitial()">
+            <span>🔄 Revertir</span>
+          </button>
+        </footer>
+
+        <!-- D. Barra de Acciones Inferior (Modo "✂️ Extraer") -->
+        <footer class="pdf-lightbox-footer pdf-extract-footer hidden" id="pdfExtractFooter" role="toolbar" aria-label="Extraer páginas a nuevo PDF">
+          <button type="button" class="pdf-bottom-action-btn pdf-extract-cancel" onclick="togglePdfExtractMode(false)">
+            <span>✕ Cancelar</span>
+          </button>
+          <button type="button" class="pdf-bottom-action-btn pdf-extract-confirm accent" id="btnCreateExtractedPdf" onclick="openExtractNewPdfModal()" disabled>
+            <span id="lblCreateExtractedPdf">📤 Crear PDF (0)</span>
+          </button>
+        </footer>
+
+        <!-- Modal Minimalista: Nuevo archivo (Modo Extraer) -->
+        <div class="pdf-submodal-backdrop hidden" id="pdfExtractModalBackdrop" onclick="closeExtractNewPdfModal()">
+          <div class="pdf-submodal-card" onclick="event.stopPropagation()">
+            <h4 class="pdf-submodal-title">Nuevo archivo</h4>
+            <input type="text" id="extractNewPdfNameInput" class="pdf-submodal-input" placeholder="Nombre del PDF..." autocomplete="off" />
+            <label class="pdf-submodal-check-row">
+              <input type="checkbox" id="extractRemoveFromCurrentChk" />
+              <span>Borrar del actual</span>
+            </label>
+            <div class="pdf-submodal-actions">
+              <button type="button" class="pdf-submodal-btn" onclick="closeExtractNewPdfModal()">Cancelar</button>
+              <button type="button" class="pdf-submodal-btn accent" onclick="confirmCreateExtractedPdf()">Guardar</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Modal Minimalista: Aviso breve al salir con modificaciones sin guardar -->
+        <div class="pdf-submodal-backdrop hidden" id="pdfExitConfirmBackdrop" onclick="closePdfExitConfirm()">
+          <div class="pdf-submodal-card pdf-exit-confirm-card" onclick="event.stopPropagation()">
+            <h4 class="pdf-submodal-title">¿Descartar cambios?</h4>
+            <p class="pdf-submodal-desc">Tienes modificaciones sin guardar en la mesa de trabajo.</p>
+            <div class="pdf-submodal-actions">
+              <button type="button" class="pdf-submodal-btn" onclick="closePdfExitConfirm()">Seguir editando</button>
+              <button type="button" class="pdf-submodal-btn danger" onclick="forceClosePdfModalDiscard()">Descartar y salir</button>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   </main>
