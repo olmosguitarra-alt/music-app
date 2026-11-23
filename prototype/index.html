@@ -11,7 +11,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:wght@600;700&display=swap" />
-  <link rel="stylesheet" href="styles.css?v=75" />
+  <link rel="stylesheet" href="styles.css?v=76" />
   <!-- Motores Oficiales para Renderizar (PDF.js) y Particionar/Editar PDFs Reales (pdf-lib) -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf-lib/1.17.1/pdf-lib.min.js"></script>
@@ -240,7 +240,7 @@
       <div class="linearity-inspector-modal workshop-wide pdf-struct-editor" onclick="event.stopPropagation()">
         <div class="insp-head pdf-editor-head">
           <div class="pdf-editor-title-wrap">
-            <span class="insp-eyebrow">✂ EDITOR DE ESTRUCTURA PDF &amp; METADATOS</span>
+            <span class="insp-eyebrow">Editor PDF</span>
             <div class="pdf-editor-title-row">
               <h3 id="modalScoreTitle">Sonata BWV 1034</h3>
               <span class="pdf-page-count-pill" id="pdfModalPageCountBadge">4 págs.</span>
@@ -248,44 +248,51 @@
           </div>
           <div class="pdf-editor-head-actions">
             <button class="lin-btn accent btn-save-pdf-top" onclick="saveWorkshopMetadata()">
-              <span>✓ Guardar y Cerrar</span>
+              <span>Cerrar</span>
             </button>
-            <button class="btn-circle-ghost" onclick="closePdfModal()" aria-label="Cerrar taller">✕</button>
           </div>
         </div>
 
-        <!-- BARRA DE HERRAMIENTAS DE ESTRUCTURA PDF -->
+        <!-- BARRA DE HERRAMIENTAS DE ESTRUCTURA PDF (1 SOLO NIVEL AL 90% DE ANCHO) -->
         <div class="pdf-struct-toolbar" role="toolbar" aria-label="Herramientas de estructura de PDF">
-          <button class="pdf-tool-btn" onclick="addBlankPdfPage()" title="Insertar página en blanco después de la seleccionada">
-            <span>📄＋ Página en blanco</span>
+          <button class="pdf-tool-btn no-box-btn" onclick="addBlankPdfPage()" title="Insertar página en blanco">
+            <svg viewBox="0 0 24 24" class="v-ico" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+            <span>Página en blanco</span>
           </button>
-          <button class="pdf-tool-btn" onclick="document.getElementById('appendPdfFileInput').click()" title="Agregar páginas desde otro archivo PDF">
-            <span>📥 Agregar página PDF</span>
+          <button class="pdf-tool-btn no-box-btn" onclick="document.getElementById('appendPdfFileInput').click()" title="Agregar páginas desde otro PDF">
+            <svg viewBox="0 0 24 24" class="v-ico" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><line x1="9" y1="15" x2="15" y2="15"/></svg>
+            <span>Agregar página</span>
           </button>
-          <button class="pdf-tool-btn" onclick="duplicateSelectedPdfPages()" title="Duplicar páginas seleccionadas">
-            <span>⧉ Duplicar página</span>
+          <button class="pdf-tool-btn no-box-btn" onclick="duplicateSelectedPdfPages()" title="Duplicar página seleccionada">
+            <svg viewBox="0 0 24 24" class="v-ico" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+            <span>Duplicar</span>
           </button>
-          <button class="pdf-tool-btn" onclick="rotateSelectedPdfPages()" title="Girar 90° las páginas seleccionadas">
-            <span>↻ Rotar 90°</span>
+          <button class="pdf-tool-btn no-box-btn" onclick="rotateSelectedPdfPages()" title="Girar 90° la página seleccionada">
+            <svg viewBox="0 0 24 24" class="v-ico" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
+            <span>Rotar</span>
           </button>
-          <button class="pdf-tool-btn" onclick="splitPdfInTwoFiles()" title="Dividir el documento en 2 archivos PDF independientes">
-            <span>✂ Dividir en 2 PDFs</span>
+          <button class="pdf-tool-btn no-box-btn" onclick="splitPdfInTwoFiles()" title="Dividir en dos archivos PDF">
+            <svg viewBox="0 0 24 24" class="v-ico" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round"><circle cx="5.5" cy="6.5" r="2.5"/><circle cx="5.5" cy="17.5" r="2.5"/><path d="M7.6 7.8 21 18.8"/><path d="M7.6 16.2 21 5.2"/><circle cx="12.4" cy="12" r="0.7" fill="currentColor" stroke="none"/></svg>
+            <span>Dividir</span>
           </button>
-          <button class="pdf-tool-btn" onclick="toggleMergePdfPanel()" title="Mezclar con otra partitura de tu biblioteca o archivo PDF">
-            <span>🔗 Mezclar 2 PDFs</span>
+          <button class="pdf-tool-btn no-box-btn" onclick="toggleMergePdfPanel()" title="Mezclar con otro PDF">
+            <svg viewBox="0 0 24 24" class="v-ico" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+            <span>Mezclar</span>
           </button>
-          <button class="pdf-tool-btn danger" onclick="deleteSelectedPdfPages()" title="Quitar o eliminar las páginas seleccionadas">
-            <span>🗑️ Quitar página</span>
+          <button class="pdf-tool-btn no-box-btn danger icon-only-tool" onclick="deleteSelectedPdfPages()" title="Quitar página seleccionada" aria-label="Quitar página">
+            <svg viewBox="0 0 24 24" class="v-ico" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
           </button>
         </div>
 
         <!-- PANEL DESPLEGABLE PARA MEZCLAR DOS PDFs DISTINTOS -->
         <div class="pdf-merge-inline-bar hidden" id="pdfMergeInlineBar">
-          <span class="pdf-merge-label">🔗 Mezclar este PDF con:</span>
+          <span class="pdf-merge-label">Mezclar con:</span>
           <select id="mergeLibraryScoreSelect" aria-label="Seleccionar obra de la biblioteca para mezclar"></select>
-          <button class="pdf-mini-action accent" onclick="mergeWithLibraryScore()">Unir obra seleccionada</button>
-          <button class="pdf-mini-action" onclick="document.getElementById('appendPdfFileInput').click()">Subir otro archivo PDF...</button>
-          <button class="btn-bare-x" onclick="toggleMergePdfPanel(false)" aria-label="Cerrar mezcla">✕</button>
+          <button class="pdf-mini-action accent" onclick="mergeWithLibraryScore()">Unir obra</button>
+          <button class="pdf-mini-action" onclick="document.getElementById('appendPdfFileInput').click()">Subir PDF...</button>
+          <button class="btn-bare-x" onclick="toggleMergePdfPanel(false)" aria-label="Cerrar mezcla">
+            <svg viewBox="0 0 24 24" class="v-ico" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+          </button>
         </div>
 
         <div class="pdf-editor-workspace">
@@ -302,7 +309,10 @@
                 <input type="number" id="splitStartPage" min="1" value="1" class="range-num-input" />
                 <label for="splitEndPage">hasta</label>
                 <input type="number" id="splitEndPage" min="1" value="2" class="range-num-input" />
-                <button class="pdf-mini-action" type="button" onclick="splitRealPdfRange()">✂ Extraer rango</button>
+                <button class="pdf-mini-action" type="button" onclick="splitRealPdfRange()">
+                  <svg viewBox="0 0 24 24" class="v-ico" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round"><circle cx="5.5" cy="6.5" r="2.5"/><circle cx="5.5" cy="17.5" r="2.5"/><path d="M7.6 7.8 21 18.8"/><path d="M7.6 16.2 21 5.2"/><circle cx="12.4" cy="12" r="0.7" fill="currentColor" stroke="none"/></svg>
+                  <span>Extraer rango</span>
+                </button>
               </div>
             </div>
 
@@ -335,7 +345,7 @@
 
             <div class="linearity-action-bar">
               <button class="lin-btn accent" onclick="saveWorkshopMetadata()">
-                <span>✓ Guardar Nombre y Clasificación</span>
+                <span>Guardar Nombre y Clasificación</span>
               </button>
             </div>
           </aside>
@@ -833,6 +843,6 @@
     <span class="pdf-loading-text">Cargando...</span>
   </div>
 
-  <script src="app.js?v=75"></script>
+  <script src="app.js?v=76"></script>
 </body>
 </html>

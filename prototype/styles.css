@@ -8328,3 +8328,258 @@ body.mode-library-active .programs-slide {
     display: none !important;
   }
 }
+
+/* ==========================================================================
+   V76 — Editor PDF minimalista alineado a la UI de Biblioteca (iconos lineales,
+         barra de 1 nivel al 90% de ancho, vistas previas tipo tarjeta de
+         biblioteca, botones sin recuadro en páginas) + +15% transparencia y
+         textura de cristal esmerilado en las 2 ventanas de Programas
+   ========================================================================== */
+
+/* 13. +15% más transparencia (78% -> 63%) y textura de cristal esmerilado en las 2 ventanas de Programas */
+body .programs-sidebar-panel,
+body .programs-detail-panel {
+  background:
+    linear-gradient(135deg, rgba(255, 255, 255, 0.11) 0%, rgba(255, 255, 255, 0.02) 100%),
+    color-mix(in srgb, var(--card-bg) 63%, transparent) !important;
+  backdrop-filter: blur(22px) saturate(155%) !important;
+  -webkit-backdrop-filter: blur(22px) saturate(155%) !important;
+  border: 0.5px solid color-mix(in srgb, var(--glass-border) 85%, rgba(255, 255, 255, 0.28)) !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.22),
+    inset 0 0 24px rgba(255, 255, 255, 0.05) !important;
+}
+
+/* 8. Barra de herramientas del Editor PDF en 1 solo nivel al 90% del ancho de la ventana flotante */
+.pdf-struct-editor .pdf-struct-toolbar {
+  width: 90% !important;
+  margin: 0 auto !important;
+  display: flex !important;
+  flex-direction: row !important;
+  flex-wrap: nowrap !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  gap: 4px !important;
+  padding: 4px 10px !important;
+  border-radius: 999px !important;
+  background: color-mix(in srgb, var(--card-bg) 78%, transparent) !important;
+  backdrop-filter: blur(14px) saturate(140%) !important;
+  -webkit-backdrop-filter: blur(14px) saturate(140%) !important;
+  border: 0.5px solid var(--glass-border) !important;
+  box-sizing: border-box !important;
+}
+
+.pdf-struct-editor .pdf-tool-btn.no-box-btn {
+  flex: 0 1 auto !important;
+  height: 32px !important;
+  padding: 0 10px !important;
+  border: none !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  border-radius: 999px !important;
+  color: var(--text-primary) !important;
+  font-size: 12.5px !important;
+  font-weight: 500 !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 6px !important;
+  white-space: nowrap !important;
+  cursor: pointer;
+  transition: color 0.15s ease, background 0.15s ease;
+}
+
+.pdf-struct-editor .pdf-tool-btn.no-box-btn .v-ico {
+  width: 15px !important;
+  height: 15px !important;
+  flex-shrink: 0;
+}
+
+.pdf-struct-editor .pdf-tool-btn.no-box-btn:hover {
+  color: var(--accent) !important;
+  background: color-mix(in srgb, var(--accent) 12%, transparent) !important;
+}
+
+.pdf-struct-editor .pdf-tool-btn.no-box-btn.danger.icon-only-tool {
+  margin-left: 0 !important;
+  width: 32px !important;
+  min-width: 32px !important;
+  padding: 0 !important;
+  color: var(--text-secondary) !important;
+}
+
+.pdf-struct-editor .pdf-tool-btn.no-box-btn.danger.icon-only-tool:hover {
+  color: #d9534f !important;
+  background: rgba(217, 83, 79, 0.12) !important;
+}
+
+.range-extract-controls .pdf-mini-action {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  border: none !important;
+  background: transparent !important;
+  color: var(--text-primary);
+}
+
+.range-extract-controls .pdf-mini-action:hover {
+  color: var(--accent);
+}
+
+.range-extract-controls .pdf-mini-action .v-ico {
+  width: 14px;
+  height: 14px;
+}
+
+/* 9. Vistas previas de cada página del PDF idénticas a las tarjetas de la biblioteca */
+#workshopPagesStrip.pdf-visual-grid {
+  grid-template-columns: repeat(auto-fill, minmax(146px, 1fr)) !important;
+  gap: 12px !important;
+}
+
+.pdf-visual-grid .folio-page-thumb {
+  height: 186px !important;
+  padding: 8px 9px 6px !important;
+  border-radius: 14px !important;
+  background: color-mix(in srgb, var(--card-bg) 78%, transparent) !important;
+  border: 0.5px solid var(--glass-border) !important;
+  box-shadow: none !important;
+}
+
+.pdf-visual-grid .folio-page-thumb.active {
+  border-color: var(--accent) !important;
+  background: color-mix(in srgb, var(--accent) 10%, var(--card-bg)) !important;
+}
+
+.pdf-thumb-chk {
+  width: 17px !important;
+  height: 17px !important;
+  border-width: 1.2px !important;
+}
+
+.pdf-thumb-chk .v-ico {
+  width: 11px !important;
+  height: 11px !important;
+}
+
+.pdf-thumb-sheet-wrap {
+  flex: 1 1 auto;
+  width: 100%;
+  min-height: 0;
+  display: flex;
+  align-items: stretch;
+  justify-content: center;
+  margin: 5px 0 4px !important;
+  overflow: hidden;
+}
+
+.folio-preview-sheet.pdf-thumb-folio-sheet {
+  width: 100% !important;
+  height: 114px !important;
+  padding: 7px 9px !important;
+  border-radius: 9px !important;
+  box-sizing: border-box !important;
+}
+
+.folio-preview-sheet.pdf-thumb-folio-sheet .folio-preview-head strong {
+  font-size: 9.5px !important;
+}
+
+.folio-preview-sheet.pdf-thumb-folio-sheet .folio-preview-head small {
+  font-size: 8px !important;
+  display: block;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.folio-preview-sheet.pdf-thumb-folio-sheet .mini-staves {
+  gap: 7px !important;
+}
+
+.folio-preview-sheet.pdf-thumb-folio-sheet .mini-staff-bar {
+  height: 6px !important;
+}
+
+.folio-preview-sheet.pdf-thumb-folio-sheet .mini-staff-bar::after {
+  font-size: 8.5px !important;
+  top: -6px !important;
+  letter-spacing: 1.8px !important;
+}
+
+.folio-preview-sheet.pdf-thumb-folio-sheet .folio-preview-foot {
+  font-size: 8px !important;
+}
+
+.folio-preview-sheet.pdf-thumb-folio-sheet.is-blank-sheet {
+  justify-content: center;
+  align-items: center;
+}
+
+.folio-preview-sheet.pdf-thumb-folio-sheet.is-blank-sheet::after {
+  opacity: 0.03;
+}
+
+.blank-sheet-inner {
+  width: 100%;
+  height: 100%;
+  border: 1px dashed rgba(0, 0, 0, 0.16);
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 9.5px;
+  opacity: 0.55;
+}
+
+/* 12. Botones en las vistas de páginas sin cuadros: solo iconos lineales limpios */
+.pdf-thumb-quick-bar {
+  border-top: none !important;
+  padding-top: 2px !important;
+  gap: 2px !important;
+}
+
+.ptq-btn.no-box-btn {
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  height: 24px !important;
+  border-radius: 999px !important;
+  color: var(--text-secondary) !important;
+  opacity: 0.72;
+  transition: opacity 0.15s ease, color 0.15s ease, transform 0.12s ease;
+}
+
+.ptq-btn.no-box-btn .v-ico {
+  width: 14px !important;
+  height: 14px !important;
+}
+
+.ptq-btn.no-box-btn:hover:not(:disabled) {
+  background: transparent !important;
+  color: var(--accent) !important;
+  opacity: 1;
+  transform: scale(1.1);
+}
+
+.ptq-btn.no-box-btn.danger:hover:not(:disabled) {
+  background: transparent !important;
+  color: #d9534f !important;
+  opacity: 1;
+}
+
+.pdf-add-tile-plus .v-ico {
+  width: 22px !important;
+  height: 22px !important;
+}
+
+@media (max-width: 760px) {
+  .pdf-struct-editor .pdf-struct-toolbar {
+    width: 96% !important;
+    overflow-x: auto !important;
+    scrollbar-width: none;
+  }
+  .pdf-struct-editor .pdf-struct-toolbar::-webkit-scrollbar {
+    display: none;
+  }
+}

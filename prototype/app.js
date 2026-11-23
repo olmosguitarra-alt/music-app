@@ -245,7 +245,7 @@ function inferMusicMetadataFromFilename(rawFilename) {
     group,
     aiData: {
       history: `Partitura PDF importada directamente de tu tablet (${rawFilename}). Clasificada automáticamente en el periodo ${period} bajo la autoría asociada a ${composer}.`,
-      theory: `Obra catalogada para dotación de ${group}. Puedes utilizar el Taller de PDF (✂) para extraer movimientos individuales o limpiar páginas sobrantes.`,
+      theory: `Obra catalogada para dotación de ${group}. Puedes utilizar Editar PDF para extraer movimientos individuales o limpiar páginas sobrantes.`,
       performance: `Abre esta partitura tocando su tarjeta para estudiarla en Hoja Parada a pantalla completa, escribir digitaciones con tu lápiz óptico y convertirlas a letra de molde.`,
       links: [
         { label: `▶ YouTube: Buscar interpretaciones de "${finalTitle}"`, url: `https://www.youtube.com/results?search_query=${searchEncoded}` },
@@ -665,6 +665,16 @@ function renderWorkshopPageStrip(scoreObj) {
   const total = items.length;
   let html = "";
 
+  const leftIco = `<svg viewBox="0 0 24 24" class="v-ico" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>`;
+  const rightIco = `<svg viewBox="0 0 24 24" class="v-ico" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>`;
+  const rotIco = `<svg viewBox="0 0 24 24" class="v-ico" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>`;
+  const plusIco = `<svg viewBox="0 0 24 24" class="v-ico" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>`;
+  const trashIco = `<svg viewBox="0 0 24 24" class="v-ico" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>`;
+  const chkIco = `<svg viewBox="0 0 24 24" class="v-ico" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>`;
+
+  const cleanTitle = scoreObj.clean || scoreObj.title || "Partitura";
+  const cleanComp = (scoreObj.composer || "").split("(")[0].trim();
+
   for (let p = 1; p <= total; p++) {
     const item = items[p - 1];
     const isSel = selectedWorkshopPages.has(p);
@@ -672,23 +682,52 @@ function renderWorkshopPageStrip(scoreObj) {
     const rot = item.rotation || 0;
     const rotTag = rot ? `<span class="pdf-thumb-rot-badge">${rot}°</span>` : "";
 
+    const sheetPreviewHtml = isBlank
+      ? `
+        <div class="folio-preview-sheet pdf-thumb-folio-sheet is-blank-sheet" style="transform: rotate(${rot}deg)">
+          <div class="blank-sheet-inner"><span>Página en blanco</span></div>
+        </div>
+      `
+      : item.thumbUrl || scoreObj.thumbDataUrl
+      ? `
+        <div class="folio-preview-sheet pdf-thumb-folio-sheet has-real-thumb" style="transform: rotate(${rot}deg)">
+          <img src="${item.thumbUrl || scoreObj.thumbDataUrl}" alt="Pág. ${p}" class="real-pdf-thumb-img" />
+        </div>
+      `
+      : `
+        <div class="folio-preview-sheet pdf-thumb-folio-sheet" style="transform: rotate(${rot}deg)">
+          <div class="folio-preview-head">
+            <strong>${cleanTitle}</strong>
+            <small>${item.label || cleanComp}</small>
+          </div>
+          <div class="mini-staves">
+            <div class="mini-staff-bar"></div>
+            <div class="mini-staff-bar"></div>
+            <div class="mini-staff-bar"></div>
+          </div>
+          <div class="folio-preview-foot">
+            <span>${scoreObj.tuning || ""}</span>
+            <span>Pág. ${p}</span>
+          </div>
+        </div>
+      `;
+
     html += `
       <div class="folio-page-thumb ${isSel ? "active" : ""} ${isBlank ? "is-blank-page" : ""}" onclick="toggleWorkshopPageSelection(${p}, this)">
         <div class="pdf-thumb-top">
           <span class="pdf-thumb-num">Pág. ${p}</span>
           ${rotTag}
-          <span class="pdf-thumb-chk ${isSel ? "checked" : ""}">${isSel ? "✓" : ""}</span>
+          <span class="pdf-thumb-chk ${isSel ? "checked" : ""}">${isSel ? chkIco : ""}</span>
         </div>
-        <div class="pdf-thumb-sheet-wrap" style="transform: rotate(${rot}deg)">
-          ${isBlank ? `<div class="blank-sheet-preview"><span>En blanco</span></div>` : `<div class="mini-staff-lines"></div>`}
+        <div class="pdf-thumb-sheet-wrap">
+          ${sheetPreviewHtml}
         </div>
-        <small class="pdf-thumb-sub">${item.label || (isBlank ? "Página en blanco" : `Sección ${p}`)}</small>
         <div class="pdf-thumb-quick-bar" onclick="event.stopPropagation()">
-          <button type="button" class="ptq-btn" onclick="moveSingleWorkshopPage(event, ${p}, -1)" ${p === 1 ? "disabled" : ""} title="Mover antes" aria-label="Mover página antes">←</button>
-          <button type="button" class="ptq-btn" onclick="moveSingleWorkshopPage(event, ${p}, 1)" ${p === total ? "disabled" : ""} title="Mover después" aria-label="Mover página después">→</button>
-          <button type="button" class="ptq-btn" onclick="rotateSingleWorkshopPage(event, ${p})" title="Rotar 90°" aria-label="Rotar página 90 grados">↻</button>
-          <button type="button" class="ptq-btn" onclick="insertBlankAfterPage(event, ${p})" title="Insertar página en blanco después" aria-label="Insertar página en blanco">＋</button>
-          <button type="button" class="ptq-btn danger" onclick="deleteSingleWorkshopPage(event, ${p})" title="Eliminar esta página" aria-label="Eliminar página">🗑</button>
+          <button type="button" class="ptq-btn no-box-btn" onclick="moveSingleWorkshopPage(event, ${p}, -1)" ${p === 1 ? "disabled" : ""} title="Mover antes" aria-label="Mover página antes">${leftIco}</button>
+          <button type="button" class="ptq-btn no-box-btn" onclick="moveSingleWorkshopPage(event, ${p}, 1)" ${p === total ? "disabled" : ""} title="Mover después" aria-label="Mover página después">${rightIco}</button>
+          <button type="button" class="ptq-btn no-box-btn" onclick="rotateSingleWorkshopPage(event, ${p})" title="Rotar 90°" aria-label="Rotar página 90 grados">${rotIco}</button>
+          <button type="button" class="ptq-btn no-box-btn" onclick="insertBlankAfterPage(event, ${p})" title="Insertar página en blanco después" aria-label="Insertar página en blanco">${plusIco}</button>
+          <button type="button" class="ptq-btn no-box-btn danger" onclick="deleteSingleWorkshopPage(event, ${p})" title="Eliminar esta página" aria-label="Eliminar página">${trashIco}</button>
         </div>
       </div>
     `;
@@ -696,9 +735,9 @@ function renderWorkshopPageStrip(scoreObj) {
 
   html += `
     <div class="folio-page-thumb pdf-add-card-tile" onclick="addBlankPdfPage()">
-      <span class="pdf-add-tile-plus">＋</span>
-      <strong>Añadir página en blanco</strong>
-      <small>o usa "Agregar página PDF" arriba</small>
+      <span class="pdf-add-tile-plus">${plusIco}</span>
+      <strong>Página en blanco</strong>
+      <small>o usa "Agregar página" arriba</small>
     </div>
   `;
 
@@ -973,7 +1012,7 @@ async function splitPdfInTwoFiles() {
       selectedWorkshopPages = new Set([1]);
       renderWorkshopPageStrip(s);
       renderLibrary();
-      triggerPdfToast(`✂ PDF dividido en 2 archivos: Parte 1 (1–${cutAfter}) y Parte 2 (${cutAfter + 1}–${total}).`);
+      triggerPdfToast(`PDF dividido en 2 archivos: Parte 1 (1–${cutAfter}) y Parte 2 (${cutAfter + 1}–${total}).`);
       return;
     } catch (err) {
       console.warn(err);
@@ -998,7 +1037,7 @@ async function splitPdfInTwoFiles() {
   selectedWorkshopPages = new Set([1]);
   renderWorkshopPageStrip(s);
   renderLibrary();
-  triggerPdfToast(`✂ PDF dividido en 2 archivos: Parte 1 (1–${cutAfter}) y Parte 2 (${cutAfter + 1}–${total}).`);
+  triggerPdfToast(`PDF dividido en 2 archivos: Parte 1 (1–${cutAfter}) y Parte 2 (${cutAfter + 1}–${total}).`);
 }
 
 function toggleMergePdfPanel(forceState) {
@@ -1091,7 +1130,7 @@ async function splitRealPdfRange() {
       scores.unshift(splitScore);
       await saveRealPdfToDb(splitScore);
       renderLibrary();
-      triggerPdfToast(`✂ Nueva partitura creada con las páginas ${startP} a ${endP}.`);
+      triggerPdfToast(`Nueva partitura creada con las páginas ${startP} a ${endP}.`);
       return;
     } catch (e) {
       console.warn("Error al particionar PDF real:", e);
@@ -1111,7 +1150,7 @@ async function splitRealPdfRange() {
   };
   scores.unshift(demoSplit);
   renderLibrary();
-  triggerPdfToast(`✂ Partición creada (Págs. ${startP}–${endP}) y agregada a tu biblioteca.`);
+  triggerPdfToast(`Partición creada (Págs. ${startP}–${endP}) y agregada a tu biblioteca.`);
 }
 
 async function deleteSelectedPdfPages() {
@@ -1661,7 +1700,7 @@ let activeWorkMenuScoreId = null;
 function renderWorkActionsMenuItems(menu, id) {
   const aiHead = buildMonochromeBachHeadSvg();
   const addSvg = `<svg viewBox="0 0 24 24" class="v-ico"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>`;
-  const cutSvg = `<svg viewBox="0 0 24 24" class="v-ico"><circle cx="6" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><line x1="20" y1="4" x2="8.12" y2="15.88"/><line x1="14.47" y1="14.48" x2="20" y2="20"/><line x1="8.12" y1="8.12" x2="12" y2="12"/></svg>`;
+  const cutSvg = `<svg viewBox="0 0 24 24" class="v-ico" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round"><circle cx="5.5" cy="6.5" r="2.5"/><circle cx="5.5" cy="17.5" r="2.5"/><path d="M7.6 7.8 21 18.8"/><path d="M7.6 16.2 21 5.2"/><circle cx="12.4" cy="12" r="0.7" fill="currentColor" stroke="none"/></svg>`;
   const trashSvg = `<svg viewBox="0 0 24 24" class="v-ico"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>`;
 
   menu.classList.remove("is-prog-mode");
