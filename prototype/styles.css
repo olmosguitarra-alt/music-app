@@ -8656,3 +8656,15 @@ body .programs-detail-panel {
   margin-top: auto;
   padding-top: 2px !important;
 }
+
+/* V78 — Ajuste de padding en barra de 6 botones del Editor PDF para evitar recorte en ventanas medianas */
+.pdf-struct-editor .pdf-struct-toolbar {
+  padding: 4px 8px !important;
+  gap: 2px !important;
+}
+
+.pdf-struct-editor .pdf-tool-btn.no-box-btn {
+  padding: 0 7px !important;
+  font-size: 12px !important;
+  gap: 5px !important;
+}
