@@ -9068,3 +9068,118 @@ body.mode-library-active #bachGptFab.bachgpt-fab,
   margin: 0 4px !important;
   display: inline-block !important;
 }
+
+/* ==========================================================================
+   V83 — Corrección del cinto inferior en Tablet (altura sincronizada con
+         safe-area para no atravesar iconos/píldoras) y en Celular (espacio
+         exclusivo entre + y BachGPT sin encimar los 4 modos principales)
+   ========================================================================== */
+
+body.mode-library-active .bottom-glass-cintillo {
+  height: calc(60px + env(safe-area-inset-bottom, 0px)) !important;
+}
+
+body.mode-library-active .floating-import-fab-wrap,
+body.mode-library-active #bottomNavDock.bottom-nav-dock,
+body.mode-library-active #bachGptFab.bachgpt-fab,
+.floating-import-fab-wrap,
+#bottomNavDock.bottom-nav-dock,
+#bachGptFab.bachgpt-fab {
+  bottom: calc(11px + env(safe-area-inset-bottom, 0px)) !important;
+  height: 38px !important;
+  min-height: 38px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+}
+
+.floating-import-fab-wrap {
+  display: none !important;
+}
+
+body.mode-library-active .floating-import-fab-wrap {
+  display: inline-flex !important;
+}
+
+@media (max-width: 760px) {
+  #bottomNavDock .bottom-mode-capsule {
+    gap: 22px !important;
+  }
+}
+
+@media (max-width: 600px) {
+  body.mode-library-active .bottom-glass-cintillo {
+    height: calc(52px + env(safe-area-inset-bottom, 0px)) !important;
+  }
+
+  body.mode-library-active .floating-import-fab-wrap,
+  body.mode-library-active #bottomNavDock.bottom-nav-dock,
+  body.mode-library-active #bachGptFab.bachgpt-fab,
+  .floating-import-fab-wrap,
+  #bottomNavDock.bottom-nav-dock,
+  #bachGptFab.bachgpt-fab {
+    bottom: calc(9px + env(safe-area-inset-bottom, 0px)) !important;
+    height: 34px !important;
+    min-height: 34px !important;
+  }
+
+  .floating-import-fab-wrap {
+    left: 10px !important;
+  }
+
+  .floating-import-fab {
+    width: 34px !important;
+    height: 34px !important;
+    min-width: 34px !important;
+  }
+
+  #bachGptFab.bachgpt-fab {
+    right: 10px !important;
+    height: 34px !important;
+    min-height: 34px !important;
+    padding: 0 9px 0 6px !important;
+    gap: 4px !important;
+  }
+
+  #bachGptFab .bach-8bit-icon {
+    width: 20px !important;
+    height: 20px !important;
+  }
+
+  #bachGptFab .bach-fab-label {
+    font-size: 10.5px !important;
+  }
+
+  #bachGptFab .bach-fab-sparkle {
+    display: none !important;
+  }
+
+  /* Franja central exclusiva entre (+) a la izquierda y BachGPT a la derecha */
+  #bottomNavDock.bottom-nav-dock {
+    left: 52px !important;
+    right: 98px !important;
+    transform: none !important;
+    width: auto !important;
+    justify-content: center !important;
+  }
+
+  #bottomNavDock .bottom-mode-capsule {
+    width: 100% !important;
+    max-width: 196px !important;
+    height: 34px !important;
+    min-height: 34px !important;
+    padding: 0 2px !important;
+    gap: 0 !important;
+    justify-content: space-between !important;
+  }
+
+  #bottomNavDock .bottom-mode-capsule .seg-btn {
+    width: 32px !important;
+    height: 32px !important;
+    min-width: 32px !important;
+  }
+
+  #bottomNavDock .bottom-mode-capsule .seg-btn .v-ico {
+    width: 18px !important;
+    height: 18px !important;
+  }
+}
