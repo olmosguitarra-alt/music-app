@@ -1114,7 +1114,10 @@ function onPdfThumbPointerDown(e, initialIdx) {
   const items = ensureScorePageItems(s);
   if (items.length < 2) return;
 
+  const strip = document.getElementById("workshopPagesStrip");
   const itemEl = e.currentTarget;
+  if (!strip || !itemEl) return;
+
   const isMouse = e.pointerType === "mouse";
   const startX = e.clientX;
   const startY = e.clientY;
@@ -1127,14 +1130,29 @@ function onPdfThumbPointerDown(e, initialIdx) {
   let gestureCancelled = false;
   let ghost = null;
   let autoScrollRaf = null;
+  let lastPointerX = startX;
   let lastPointerY = startY;
   const preDragSnapshot = capturePdfWorkshopSnapshot(s, "Reordenar páginas");
   const indexPermutation = items.map((_, i) => i);
 
-  const applyActiveSlotStyle = () => {
-    document
-      .querySelectorAll(`#workshopPagesStrip .folio-page-thumb[data-pdf-thumb-idx="${currentIdx}"]`)
-      .forEach((el) => el.classList.add("dragging", "is-drag-slot"));
+  const getPageCards = () => [
+    ...strip.querySelectorAll(".folio-page-thumb[data-pdf-thumb-idx]")
+  ];
+
+  const syncDomIndicesAndLabels = () => {
+    const cards = getPageCards();
+    cards.forEach((card, idx) => {
+      card.dataset.pdfThumbIdx = String(idx);
+      const numEl = card.querySelector(".pdf-thumb-num");
+      if (numEl) numEl.textContent = `Pág. ${idx + 1}`;
+    });
+  };
+
+  const updateGhostPosition = (clientX, clientY) => {
+    if (!ghost) return;
+    const gx = Math.round(clientX - offsetX);
+    const gy = Math.round(clientY - offsetY);
+    ghost.style.transform = `translate3d(${gx}px, ${gy}px, 0) scale(1.04) rotate(-1.2deg)`;
   };
 
   const beginGhost = () => {
@@ -1143,53 +1161,92 @@ function onPdfThumbPointerDown(e, initialIdx) {
     document.body.classList.add("is-reordering-drag");
     if (navigator.vibrate) {
       try {
-        navigator.vibrate(14);
+        navigator.vibrate(12);
       } catch (_) {}
     }
     ghost = itemEl.cloneNode(true);
     ghost.classList.add("floating-drag-ghost", "pdf-page-drag-ghost");
-    ghost.style.left = `${rect.left}px`;
-    ghost.style.top = `${rect.top}px`;
+    ghost.style.left = "0px";
+    ghost.style.top = "0px";
     ghost.style.width = `${rect.width}px`;
     ghost.style.height = `${rect.height}px`;
+    updateGhostPosition(lastPointerX, lastPointerY);
     document.body.appendChild(ghost);
-    applyActiveSlotStyle();
+    itemEl.classList.add("dragging", "is-drag-slot");
   };
 
-  // En pantalla táctil requiere mantener presionado 240ms sin deslizar para no interferir con el scroll vertical de la cuadrícula
-  const holdTimer = setTimeout(beginGhost, 240);
+  // En pantalla táctil requiere mantener presionado 220ms sin deslizar para no interferir con el scroll vertical
+  const holdTimer = setTimeout(beginGhost, 220);
 
   const stepAutoScroll = () => {
     if (!dragStarted || gestureCancelled) return;
-    const strip = document.getElementById("workshopPagesStrip");
-    if (strip) {
-      const sr = strip.getBoundingClientRect();
-      const edgeZone = 38;
-      if (lastPointerY < sr.top + edgeZone && strip.scrollTop > 0) {
-        strip.scrollTop -= 6;
-      } else if (
-        lastPointerY > sr.bottom - edgeZone &&
-        strip.scrollTop < strip.scrollHeight - strip.clientHeight
-      ) {
-        strip.scrollTop += 6;
-      }
+    const sr = strip.getBoundingClientRect();
+    const edgeZone = 42;
+    if (lastPointerY < sr.top + edgeZone && strip.scrollTop > 0) {
+      strip.scrollTop -= 7;
+    } else if (
+      lastPointerY > sr.bottom - edgeZone &&
+      strip.scrollTop < strip.scrollHeight - strip.clientHeight
+    ) {
+      strip.scrollTop += 7;
     }
     autoScrollRaf = requestAnimationFrame(stepAutoScroll);
   };
 
+  const performFlipSwap = (targetIdx) => {
+    const cards = getPageCards();
+    const firstRects = new Map();
+    cards.forEach((c) => firstRects.set(c, c.getBoundingClientRect()));
+
+    const targetCard = cards[targetIdx];
+    if (!targetCard || targetCard === itemEl) return;
+
+    if (targetIdx > currentIdx) {
+      strip.insertBefore(itemEl, targetCard.nextSibling);
+    } else {
+      strip.insertBefore(itemEl, targetCard);
+    }
+
+    const [movedItem] = items.splice(currentIdx, 1);
+    items.splice(targetIdx, 0, movedItem);
+    const [movedOrigIdx] = indexPermutation.splice(currentIdx, 1);
+    indexPermutation.splice(targetIdx, 0, movedOrigIdx);
+    currentIdx = targetIdx;
+    syncDomIndicesAndLabels();
+
+    // Animación FLIP suave en las tarjetas vecinas sin destruir el DOM
+    getPageCards().forEach((c) => {
+      if (c === itemEl) return;
+      const first = firstRects.get(c);
+      if (!first) return;
+      const last = c.getBoundingClientRect();
+      const dx = first.left - last.left;
+      const dy = first.top - last.top;
+      if (Math.abs(dx) > 1 || Math.abs(dy) > 1) {
+        c.style.transition = "none";
+        c.style.transform = `translate3d(${dx}px, ${dy}px, 0)`;
+        requestAnimationFrame(() => {
+          c.style.transition = "transform 190ms cubic-bezier(0.22, 1, 0.36, 1)";
+          c.style.transform = "";
+        });
+      }
+    });
+  };
+
   const onMove = (ev) => {
     if (gestureCancelled) return;
+    lastPointerX = ev.clientX;
     lastPointerY = ev.clientY;
     const dist = Math.hypot(ev.clientX - startX, ev.clientY - startY);
 
     if (!dragStarted) {
       if (isMouse) {
-        if (dist < 7) return;
+        if (dist < 5) return;
         clearTimeout(holdTimer);
         beginGhost();
         autoScrollRaf = requestAnimationFrame(stepAutoScroll);
       } else {
-        // Si desliza el dedo antes de los 240ms, es scroll vertical para ver más páginas
+        // Si desliza el dedo antes de los 220ms, es scroll vertical para ver más páginas
         if (dist > 9) {
           gestureCancelled = true;
           clearTimeout(holdTimer);
@@ -1203,26 +1260,27 @@ function onPdfThumbPointerDown(e, initialIdx) {
     if (!autoScrollRaf) {
       autoScrollRaf = requestAnimationFrame(stepAutoScroll);
     }
-    if (ghost) {
-      ghost.style.left = `${ev.clientX - offsetX}px`;
-      ghost.style.top = `${ev.clientY - offsetY}px`;
+    updateGhostPosition(ev.clientX, ev.clientY);
+
+    // Detección geométrica directa por cajas de cada página (sin depender de elementFromPoint)
+    const cards = getPageCards();
+    let hitIdx = -1;
+    for (let i = 0; i < cards.length; i++) {
+      if (i === currentIdx) continue;
+      const r = cards[i].getBoundingClientRect();
+      if (
+        ev.clientX >= r.left + r.width * 0.12 &&
+        ev.clientX <= r.right - r.width * 0.12 &&
+        ev.clientY >= r.top + r.height * 0.12 &&
+        ev.clientY <= r.bottom - r.height * 0.12
+      ) {
+        hitIdx = i;
+        break;
+      }
     }
 
-    const elUnder = document
-      .elementFromPoint(ev.clientX, ev.clientY)
-      ?.closest(".folio-page-thumb[data-pdf-thumb-idx]");
-    if (elUnder) {
-      const targetIdx = Number(elUnder.dataset.pdfThumbIdx);
-      if (!Number.isNaN(targetIdx) && targetIdx !== currentIdx) {
-        const [movedItem] = items.splice(currentIdx, 1);
-        items.splice(targetIdx, 0, movedItem);
-        const [movedOrigIdx] = indexPermutation.splice(currentIdx, 1);
-        indexPermutation.splice(targetIdx, 0, movedOrigIdx);
-        currentIdx = targetIdx;
-        selectedWorkshopPages = new Set([currentIdx + 1]);
-        renderWorkshopPageStrip(s);
-        applyActiveSlotStyle();
-      }
+    if (hitIdx !== -1 && hitIdx !== currentIdx) {
+      performFlipSwap(hitIdx);
     }
   };
 
@@ -1238,9 +1296,12 @@ function onPdfThumbPointerDown(e, initialIdx) {
     document.body.classList.remove("is-reordering-drag");
     if (ghost && ghost.parentNode) ghost.parentNode.removeChild(ghost);
     ghost = null;
-    document
-      .querySelectorAll("#workshopPagesStrip .folio-page-thumb.dragging, #workshopPagesStrip .folio-page-thumb.is-drag-slot")
-      .forEach((el) => el.classList.remove("dragging", "is-drag-slot"));
+    itemEl.classList.remove("dragging", "is-drag-slot");
+    getPageCards().forEach((c) => {
+      c.style.transition = "";
+      c.style.transform = "";
+      c.classList.remove("dragging", "is-drag-slot");
+    });
   };
 
   const onUp = async () => {
@@ -1261,6 +1322,7 @@ function onPdfThumbPointerDown(e, initialIdx) {
           if (pdfWorkshopUndoStack.length > 25) pdfWorkshopUndoStack.shift();
           updatePdfUndoButtonState();
         }
+        selectedWorkshopPages = new Set([finalIdx + 1]);
         invalidateScorePageThumbnails(s);
         if (s.isRealPdf && s.pdfBytes && window.PDFLib) {
           try {

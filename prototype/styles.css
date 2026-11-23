@@ -8736,3 +8736,312 @@ body.is-reordering-drag #workshopPagesStrip .folio-page-thumb {
   border: 1.5px dashed var(--accent) !important;
   transform: scale(0.97) !important;
 }
+
+/* ==========================================================================
+   V80 — Refinamiento Editorial UI Anti-"Vibe Coding" (7 puntos), Cinto Inferior
+         Minimalista sin Píldora (conservando BachGPT Pixel-Art), Deshacer
+         integrado en la barra de acciones y Arrastre 2D FLIP de hojas PDF
+   ========================================================================== */
+
+:root {
+  --ease-editorial: cubic-bezier(0.22, 1, 0.36, 1);
+  --shadow-ambient-card:
+    0 1px 2px rgba(24, 18, 12, 0.04),
+    0 8px 20px -4px rgba(24, 18, 12, 0.06);
+  --shadow-ambient-hover:
+    0 2px 5px rgba(24, 18, 12, 0.06),
+    0 14px 28px -6px rgba(24, 18, 12, 0.10);
+  --shadow-ambient-menu:
+    0 2px 6px rgba(20, 15, 10, 0.07),
+    0 16px 36px -6px rgba(20, 15, 10, 0.16);
+  --specular-top-light: inset 0 1px 0 rgba(255, 255, 255, 0.42);
+}
+
+body.palette-luthier,
+body.palette-velvet {
+  --shadow-ambient-card:
+    0 1px 2px rgba(0, 0, 0, 0.18),
+    0 10px 24px -4px rgba(0, 0, 0, 0.26);
+  --shadow-ambient-hover:
+    0 3px 8px rgba(0, 0, 0, 0.24),
+    0 16px 32px -6px rgba(0, 0, 0, 0.36);
+  --shadow-ambient-menu:
+    0 4px 10px rgba(0, 0, 0, 0.28),
+    0 20px 42px -6px rgba(0, 0, 0, 0.45);
+  --specular-top-light: inset 0 1px 0 rgba(255, 255, 255, 0.10);
+}
+
+/* 3.7 Iconografía de trazo fino uniforme (1.6px) */
+.v-ico {
+  stroke-width: 1.6px;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+/* 3.1, 3.2, 3.4, 3.5 Sombras atmosféricas multicapa, bordes especulares 0.5px, radios concéntricos (14px / 9px) y curvas spring */
+.folio-card,
+.list-detail-row,
+.setlist-item {
+  border: 0.5px solid var(--glass-border) !important;
+  border-radius: 14px !important;
+  box-shadow: var(--specular-top-light), var(--shadow-ambient-card) !important;
+  transition:
+    transform 240ms var(--ease-editorial),
+    box-shadow 240ms var(--ease-editorial),
+    border-color 200ms var(--ease-editorial),
+    background 200ms var(--ease-editorial) !important;
+}
+
+.folio-card:hover {
+  transform: translateY(-1.5px) !important;
+  box-shadow: var(--specular-top-light), var(--shadow-ambient-hover) !important;
+  border-color: color-mix(in srgb, var(--accent) 45%, var(--glass-border)) !important;
+}
+
+.folio-preview-sheet {
+  border-radius: 9px !important;
+}
+
+#workActionsMenu,
+#sharedFilterMenu,
+#progQuickPopover,
+#importPdfMenu.import-icons-only,
+#settingsDrawer {
+  border: 0.5px solid var(--glass-border) !important;
+  border-radius: 14px !important;
+  box-shadow: var(--specular-top-light), var(--shadow-ambient-menu) !important;
+}
+
+/* 3.6 Tipografía editorial afinada y contraste de tinta */
+.folio-card-title,
+.list-work-title,
+.setlist-item-info strong {
+  font-weight: 600 !important;
+  letter-spacing: -0.014em !important;
+}
+
+.prog-detail-title {
+  font-weight: 600 !important;
+  letter-spacing: -0.018em !important;
+}
+
+.lib-unified-row .filter-ribbon .ribbon-tab {
+  font-weight: 500 !important;
+  letter-spacing: -0.005em;
+  transition:
+    color 180ms var(--ease-editorial),
+    background 180ms var(--ease-editorial),
+    transform 180ms var(--ease-editorial) !important;
+}
+
+.lib-unified-row .filter-ribbon .ribbon-tab.active {
+  font-weight: 600 !important;
+}
+
+/* 3.3 Micro-grabado SVG vectorial real de pentagrama y notación en lugar de caracteres "♩ ♪ ♬" */
+.mini-staff-bar {
+  height: 11px !important;
+  border: none !important;
+  opacity: 0.78;
+  background-repeat: no-repeat;
+  background-size: 100% 100%;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 180 16'%3E%3Cg stroke='%232c241d' stroke-width='0.55' stroke-opacity='0.55'%3E%3Cline x1='0' y1='2' x2='180' y2='2'/%3E%3Cline x1='0' y1='5' x2='180' y2='5'/%3E%3Cline x1='0' y1='8' x2='180' y2='8'/%3E%3Cline x1='0' y1='11' x2='180' y2='11'/%3E%3Cline x1='0' y1='14' x2='180' y2='14'/%3E%3Cline x1='62' y1='2' x2='62' y2='14' stroke-width='0.7'/%3E%3Cline x1='124' y1='2' x2='124' y2='14' stroke-width='0.7'/%3E%3Cline x1='179.5' y1='2' x2='179.5' y2='14' stroke-width='0.8'/%3E%3C/g%3E%3Cg fill='%232c241d' fill-opacity='0.72' stroke='%232c241d' stroke-width='0.75' stroke-opacity='0.72'%3E%3Cellipse cx='14' cy='11' rx='2.1' ry='1.45' transform='rotate(-18 14 11)'/%3E%3Cline x1='15.8' y1='10.5' x2='15.8' y2='3.2'/%3E%3Cellipse cx='28' cy='8' rx='2.1' ry='1.45' transform='rotate(-18 28 8)'/%3E%3Cline x1='29.8' y1='7.5' x2='29.8' y2='1.8'/%3E%3Cellipse cx='41' cy='9.5' rx='2.1' ry='1.45' transform='rotate(-18 41 9.5)'/%3E%3Cline x1='42.8' y1='9' x2='42.8' y2='2.5'/%3E%3Cpath d='M15.8 3.2 L42.8 2.5' stroke-width='1.35'/%3E%3Cellipse cx='52' cy='6.5' rx='2.1' ry='1.45' transform='rotate(-18 52 6.5)'/%3E%3Cline x1='50.2' y1='7' x2='50.2' y2='14.2'/%3E%3Cellipse cx='75' cy='9.5' rx='2.1' ry='1.45' transform='rotate(-18 75 9.5)'/%3E%3Cline x1='76.8' y1='9' x2='76.8' y2='2.4'/%3E%3Cellipse cx='89' cy='11' rx='2.1' ry='1.45' transform='rotate(-18 89 11)'/%3E%3Cline x1='90.8' y1='10.5' x2='90.8' y2='3.2'/%3E%3Cpath d='M76.8 2.4 L90.8 3.2' stroke-width='1.35'/%3E%3Cellipse cx='104' cy='8' rx='2.1' ry='1.45' transform='rotate(-18 104 8)'/%3E%3Cline x1='105.8' y1='7.5' x2='105.8' y2='1.5'/%3E%3Cellipse cx='115' cy='5' rx='2.1' ry='1.45' transform='rotate(-18 115 5)'/%3E%3Cline x1='113.2' y1='5.5' x2='113.2' y2='13.2'/%3E%3Cellipse cx='138' cy='11' rx='2.1' ry='1.45' transform='rotate(-18 138 11)'/%3E%3Cline x1='139.8' y1='10.5' x2='139.8' y2='3.2'/%3E%3Cellipse cx='152' cy='9.5' rx='2.1' ry='1.45' transform='rotate(-18 152 9.5)'/%3E%3Cline x1='153.8' y1='9' x2='153.8' y2='2.4'/%3E%3Cellipse cx='166' cy='8' rx='2.1' ry='1.45' transform='rotate(-18 166 8)'/%3E%3Cline x1='167.8' y1='7.5' x2='167.8' y2='1.8'/%3E%3Cpath d='M139.8 3.2 L167.8 1.8' stroke-width='1.35'/%3E%3C/g%3E%3C/svg%3E");
+}
+
+.mini-staff-bar::after {
+  content: "" !important;
+  display: none !important;
+}
+
+.folio-preview-sheet.pdf-thumb-folio-sheet[data-page-variant="2"] .mini-staff-bar {
+  background-Position: 18px 0;
+}
+
+.folio-preview-sheet.pdf-thumb-folio-sheet[data-page-variant="3"] .mini-staff-bar {
+  background-position: -14px 0;
+}
+
+/* 2. CINTO INFERIOR REDISEÑADO: Iconos lineales sin píldora contenedora, aire entre los 4 modos y más espacio para archivos */
+body.mode-library-active .bottom-glass-cintillo {
+  height: 54px !important;
+}
+
+body.mode-library-active .catalog-slide,
+body.mode-library-active .programs-slide {
+  padding-bottom: 72px !important;
+}
+
+body.mode-library-active .floating-import-fab-wrap,
+body.mode-library-active #bottomNavDock.bottom-nav-dock,
+body.mode-library-active #bachGptFab.bachgpt-fab,
+.floating-import-fab-wrap,
+#bottomNavDock.bottom-nav-dock,
+#bachGptFab.bachgpt-fab {
+  bottom: max(10px, env(safe-area-inset-bottom)) !important;
+}
+
+#bottomNavDock .bottom-mode-capsule {
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  padding: 0 10px !important;
+  height: 38px !important;
+  min-height: 38px !important;
+  gap: 36px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+
+#bottomNavDock .bottom-mode-capsule .seg-btn {
+  position: relative !important;
+  width: 38px !important;
+  height: 38px !important;
+  min-width: 38px !important;
+  padding: 0 !important;
+  border: none !important;
+  border-radius: 50% !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  color: var(--text-secondary) !important;
+  opacity: 0.68;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  transition:
+    color 220ms var(--ease-editorial),
+    opacity 220ms var(--ease-editorial),
+    transform 220ms var(--ease-editorial) !important;
+}
+
+#bottomNavDock .bottom-mode-capsule .seg-btn .v-ico {
+  width: 21px !important;
+  height: 21px !important;
+}
+
+#bottomNavDock .bottom-mode-capsule .seg-btn:hover {
+  color: var(--text-primary) !important;
+  opacity: 0.95;
+  background: transparent !important;
+  transform: translateY(-1.5px);
+}
+
+#bottomNavDock .bottom-mode-capsule .seg-btn.active {
+  color: var(--accent) !important;
+  opacity: 1 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  transform: translateY(-1px);
+}
+
+#bottomNavDock .bottom-mode-capsule .seg-btn.active::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  bottom: 1px;
+  width: 12px;
+  height: 2.5px;
+  border-radius: 999px;
+  background: var(--accent);
+  transform: translateX(-50%);
+}
+
+/* Botón (+) y BachGPT (con su avatar Pixel-Art intacto) alineados a 38px con borde especular sutil */
+.floating-import-fab {
+  width: 38px !important;
+  height: 38px !important;
+  min-width: 38px !important;
+  border: 0.5px solid var(--glass-border) !important;
+  box-shadow: var(--specular-top-light), var(--shadow-ambient-card) !important;
+  transition:
+    transform 220ms var(--ease-editorial),
+    border-color 200ms var(--ease-editorial),
+    box-shadow 220ms var(--ease-editorial) !important;
+}
+
+.floating-import-fab:hover {
+  transform: translateY(-1.5px) !important;
+  border-color: var(--accent) !important;
+  box-shadow: var(--specular-top-light), var(--shadow-ambient-hover) !important;
+}
+
+#bachGptFab.bachgpt-fab {
+  height: 38px !important;
+  min-height: 38px !important;
+  padding: 0 13px 0 10px !important;
+  border: 0.5px solid var(--glass-border) !important;
+  box-shadow: var(--specular-top-light), var(--shadow-ambient-card) !important;
+  transition:
+    transform 220ms var(--ease-editorial),
+    border-color 200ms var(--ease-editorial),
+    box-shadow 220ms var(--ease-editorial) !important;
+}
+
+#bachGptFab.bachgpt-fab:hover {
+  transform: translateY(-1.5px) !important;
+  border-color: var(--accent) !important;
+  box-shadow: var(--specular-top-light), var(--shadow-ambient-hover) !important;
+}
+
+@media (max-width: 600px) {
+  body.mode-library-active .bottom-glass-cintillo {
+    height: 48px !important;
+  }
+  body.mode-library-active .catalog-slide,
+  body.mode-library-active .programs-slide {
+    padding-bottom: 64px !important;
+  }
+  #bottomNavDock .bottom-mode-capsule {
+    gap: 18px !important;
+    height: 34px !important;
+  }
+  #bottomNavDock .bottom-mode-capsule .seg-btn {
+    width: 34px !important;
+    height: 34px !important;
+    min-width: 34px !important;
+  }
+  #bottomNavDock .bottom-mode-capsule .seg-btn .v-ico {
+    width: 19px !important;
+    height: 19px !important;
+  }
+  .floating-import-fab,
+  #bachGptFab.bachgpt-fab {
+    height: 34px !important;
+    min-height: 34px !important;
+  }
+  .floating-import-fab {
+    width: 34px !important;
+    min-width: 34px !important;
+  }
+}
+
+/* 1. EDITOR PDF: Botón Deshacer integrado al inicio de la barra principal y fantasma 2D con GPU translate3d */
+.pdf-struct-editor .pdf-struct-toolbar .pdf-undo-btn.no-box-btn {
+  width: auto !important;
+  min-width: 0 !important;
+  height: 32px !important;
+  padding: 0 8px !important;
+  gap: 5px !important;
+}
+
+.pdf-struct-editor .pdf-struct-toolbar .pdf-undo-btn.no-box-btn .v-ico {
+  width: 15px !important;
+  height: 15px !important;
+}
+
+.pdf-toolbar-sep {
+  width: 1px;
+  height: 18px;
+  background: var(--glass-border);
+  flex-shrink: 0;
+  margin: 0 2px;
+}
+
+.pdf-page-drag-ghost {
+  left: 0 !important;
+  top: 0 !important;
+  will-change: transform;
+  pointer-events: none !important;
+}
