@@ -8079,3 +8079,36 @@ body.mode-library-active .programs-slide {
     grid-template-columns: repeat(2, 1fr) !important;
   }
 }
+
+/* V73 — Programas: solo alinear el borde superior de las ventanas con el de las tarjetas de la biblioteca */
+body.mode-library-active .programs-slide {
+  padding-top: 70px !important;
+}
+
+.programs-slide-top-nav {
+  margin: 0 auto 24px !important;
+}
+
+@media (max-width: 1050px) {
+  body.mode-library-active .programs-slide {
+    padding-top: 66px !important;
+  }
+  .programs-slide-top-nav {
+    margin: 0 auto 20px !important;
+  }
+}
+
+@media (min-width: 601px) and (max-width: 760px) {
+  .programs-slide-top-nav {
+    margin: 0 auto 24px !important;
+  }
+}
+
+@media (max-width: 600px) {
+  body.mode-library-active .programs-slide {
+    padding-top: 56px !important;
+  }
+  .programs-slide-top-nav {
+    margin: 0 auto 20px !important;
+  }
+}
