@@ -11,7 +11,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:wght@600;700&display=swap" />
-  <link rel="stylesheet" href="styles.css?v=74" />
+  <link rel="stylesheet" href="styles.css?v=75" />
   <!-- Motores Oficiales para Renderizar (PDF.js) y Particionar/Editar PDFs Reales (pdf-lib) -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf-lib/1.17.1/pdf-lib.min.js"></script>
@@ -168,13 +168,17 @@
                 <!-- Buscador minimalista y controles diferenciados (Filtro vs Orden) -->
                 <div class="prog-sidebar-search">
                   <svg viewBox="0 0 24 24" class="v-ico"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
-                  <input type="text" id="progSidebarSearchInput" placeholder="Buscar programa..." oninput="renderSetlistDrawer()" autocomplete="off" />
+                  <input type="text" id="progSidebarSearchInput" placeholder="Buscar programa..." oninput="onProgSidebarSearchInput()" autocomplete="off" />
                 </div>
 
                 <div class="prog-sidebar-filters" role="tablist" aria-label="Filtrar y ordenar programas">
                   <div class="prog-filter-group">
                     <button class="prog-filter-btn no-box-btn active" data-pfilter="all" onclick="setProgramSidebarFilter('all')">Todos</button>
                     <button class="prog-filter-btn no-box-btn" data-pfilter="pinned" onclick="setProgramSidebarFilter('pinned')">Fijados</button>
+                    <button class="prog-filter-btn prog-mobile-dd-btn no-box-btn" id="btnMobileProgListToggle" type="button" onclick="toggleMobileProgramsDropdown(event)" aria-expanded="false">
+                      <span id="mobileProgDropdownLabel">Programas</span>
+                      <svg viewBox="0 0 24 24" class="v-ico wedge-ico"><polyline points="6 9 12 15 18 9"/></svg>
+                    </button>
                   </div>
                   <button class="prog-sort-btn no-box-btn" id="btnProgSortToggle" onclick="toggleProgramSidebarSort()" title="Cambiar orden de la lista">
                     <svg viewBox="0 0 24 24" class="v-ico" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="m3 16 4 4 4-4"/><path d="M7 20V4"/><path d="m21 8-4-4-4 4"/><path d="M17 4v16"/></svg>
@@ -829,6 +833,6 @@
     <span class="pdf-loading-text">Cargando...</span>
   </div>
 
-  <script src="app.js?v=74"></script>
+  <script src="app.js?v=75"></script>
 </body>
 </html>

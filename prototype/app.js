@@ -3505,7 +3505,7 @@ function loadProgramsState() {
     const raw = localStorage.getItem(PROGRAMS_STORAGE_KEY);
     if (raw) {
       const parsed = JSON.parse(raw);
-      if (parsed && Array.isArray(parsed.list) && parsed.list.length > 0) {
+      if (parsed && Array.isArray(parsed.list)) {
         programsState = parsed;
       }
     }
@@ -3519,7 +3519,36 @@ function saveProgramsState() {
 }
 
 function getActiveProgram() {
-  return programsState.list.find((p) => p.id === programsState.activeId) || programsState.list[0];
+  if (!Array.isArray(programsState.list) || programsState.list.length === 0) return null;
+  return programsState.list.find((p) => p.id === programsState.activeId) || programsState.list[0] || null;
+}
+
+function toggleMobileProgramsDropdown(e, forceState) {
+  if (e) e.stopPropagation();
+  const listEl = document.getElementById("programsMasterList");
+  const btn = document.getElementById("btnMobileProgListToggle");
+  if (!listEl) return;
+  const shouldOpen =
+    typeof forceState === "boolean" ? forceState : !listEl.classList.contains("mobile-dropdown-open");
+  listEl.classList.toggle("mobile-dropdown-open", shouldOpen);
+  if (btn) {
+    btn.classList.toggle("active", shouldOpen);
+    btn.setAttribute("aria-expanded", shouldOpen ? "true" : "false");
+  }
+  if (shouldOpen) {
+    document.getElementById("newProgInline")?.classList.add("hidden");
+  }
+}
+
+function closeMobileProgramsDropdown() {
+  toggleMobileProgramsDropdown(null, false);
+}
+
+function onProgSidebarSearchInput() {
+  renderSetlistDrawer();
+  if (window.innerWidth <= 760) {
+    toggleMobileProgramsDropdown(null, true);
+  }
 }
 
 function toggleSetlistDrawer(forceState) {
@@ -3536,6 +3565,7 @@ function toggleNewProgramInput(show) {
   const row = document.getElementById("newProgInline");
   const inp = document.getElementById("newProgNameInput");
   if (!row) return;
+  if (show) closeMobileProgramsDropdown();
   row.classList.toggle("hidden", !show);
   if (show && inp) {
     inp.value = "";
@@ -3576,18 +3606,12 @@ function renameActiveProgramPrompt() {
 function deleteActiveProgramPrompt() {
   const prog = getActiveProgram();
   if (!prog) return;
-  if (programsState.list.length <= 1) {
-    if (!window.confirm(`"${prog.name}" es el único programa. ¿Deseas vaciar sus obras?`)) return;
-    prog.scoreIds = [];
-    saveProgramsState();
-    renderSetlistDrawer();
-    return;
-  }
   if (!window.confirm(`¿Eliminar el programa "${prog.name}"?`)) return;
   programsState.list = programsState.list.filter((p) => p.id !== prog.id);
-  programsState.activeId = programsState.list[0].id;
+  programsState.activeId = programsState.list[0] ? programsState.list[0].id : null;
   activeProgramScoreIndex = 0;
   saveProgramsState();
+  refreshProgramRecentSnapshot();
   renderSetlistDrawer();
 }
 
@@ -3603,6 +3627,7 @@ function switchActiveProgram(progId) {
   const p = programsState.list.find((item) => item.id === progId);
   if (p) p.updatedAt = Date.now();
   saveProgramsState();
+  closeMobileProgramsDropdown();
   renderSetlistDrawer();
 }
 
@@ -3799,8 +3824,8 @@ function renderSetlistDrawer() {
   }
 
   const prog = getActiveProgram();
-  if (detailTitleEl && prog) {
-    detailTitleEl.textContent = prog.name;
+  if (detailTitleEl) {
+    detailTitleEl.textContent = prog ? prog.name : "Sin programas";
   }
 
   const validScores = (prog ? prog.scoreIds : [])
@@ -4489,6 +4514,11 @@ document.addEventListener("click", (e) => {
   const impMenu = document.getElementById("importPdfMenu");
   if (impMenu && !impMenu.classList.contains("hidden") && !e.target.closest("#importPopoverWrap")) {
     impMenu.classList.add("hidden");
+  }
+
+  const mobProgList = document.getElementById("programsMasterList");
+  if (mobProgList && mobProgList.classList.contains("mobile-dropdown-open") && !e.target.closest(".programs-sidebar-panel")) {
+    closeMobileProgramsDropdown();
   }
 
   const bachWin = document.getElementById("bachGptWindow");
