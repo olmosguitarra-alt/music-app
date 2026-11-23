@@ -4568,16 +4568,39 @@ function togglePinProgram(e, progId) {
 function renderSetlistDrawer() {
   const sel = document.getElementById("activeProgramSelect");
   const masterListEl = document.getElementById("programsMasterList");
+  const mobilePillsEl = document.getElementById("mobileProgramsPillCarousel");
   const detailTitleEl = document.getElementById("progDetailTitle");
   const itemsEl = document.getElementById("setlistItems");
   const sumEl = document.getElementById("setlistSummary");
   const launchBtn = document.getElementById("btnLaunchProgram");
+  const startConcertBtn = document.getElementById("btnStartProgramConcert");
   const quickSel = document.getElementById("quickAddScoreSelect");
   if (!sel || !itemsEl) return;
 
   sel.innerHTML = programsState.list
     .map((p) => `<option value="${p.id}" ${p.id === programsState.activeId ? "selected" : ""}>${p.name}</option>`)
     .join("");
+
+  if (mobilePillsEl) {
+    const plusSvg = `<svg viewBox="0 0 24 24" class="v-ico" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>`;
+    mobilePillsEl.innerHTML =
+      programsState.list
+        .map((p) => {
+          const isActive = p.id === programsState.activeId;
+          return `<button type="button" class="mobile-prog-pill ${isActive ? "active" : ""}" role="tab" aria-selected="${isActive}" onclick="switchActiveProgram('${p.id}')">${p.name}</button>`;
+        })
+        .join("") +
+      `<button type="button" class="mobile-prog-pill mobile-prog-pill-new" onclick="toggleNewProgramInput(true)">${plusSvg}<span>Nuevo</span></button>`;
+
+    const activeChip = mobilePillsEl.querySelector(".mobile-prog-pill.active");
+    if (activeChip) {
+      requestAnimationFrame(() => {
+        try {
+          activeChip.scrollIntoView({ behavior: "smooth", inline: "nearest", block: "nearest" });
+        } catch (_) {}
+      });
+    }
+  }
 
   if (masterListEl) {
     const qProg = (document.getElementById("progSidebarSearchInput")?.value || "").trim().toLowerCase();
@@ -4644,6 +4667,7 @@ function renderSetlistDrawer() {
 
   if (sumEl) sumEl.textContent = `Obras (${validScores.length}):`;
   if (launchBtn) launchBtn.disabled = false;
+  if (startConcertBtn) startConcertBtn.disabled = validScores.length === 0;
 
   const concertFooterLeft = document.getElementById("concertFooterLeft");
   if (concertFooterLeft && prog) {
@@ -4651,31 +4675,280 @@ function renderSetlistDrawer() {
   }
 
   if (validScores.length === 0) {
-    itemsEl.innerHTML = "";
+    itemsEl.innerHTML = `
+      <div class="setlist-empty-state">
+        <span>No hay obras en este programa aún</span>
+      </div>
+    `;
     return;
   }
 
+  const gripSvg = `<svg viewBox="0 0 24 24" class="pq-drag-ico" fill="currentColor" stroke="none" aria-hidden="true"><circle cx="9" cy="6" r="1.5"/><circle cx="15" cy="6" r="1.5"/><circle cx="9" cy="12" r="1.5"/><circle cx="15" cy="12" r="1.5"/><circle cx="9" cy="18" r="1.5"/><circle cx="15" cy="18" r="1.5"/></svg>`;
+  const peekSvg = `<svg viewBox="0 0 24 24" class="v-ico" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>`;
+  const dotsSvg = `<svg viewBox="0 0 24 24" class="v-ico" fill="none" stroke="none"><circle cx="12" cy="12" r="1.5" fill="currentColor"/><circle cx="19" cy="12" r="1.5" fill="currentColor"/><circle cx="5" cy="12" r="1.5" fill="currentColor"/></svg>`;
+
+  const notesMap = (prog && prog.notes) || {};
+
   itemsEl.innerHTML = validScores
-    .map(
-      (s, idx) => `
+    .map((s, idx) => {
+      const pieceNote = (notesMap[String(s.id)] || "").trim();
+      const noteHtml = pieceNote ? `<span class="sl-piece-note">${pieceNote}</span>` : "";
+      return `
       <div class="setlist-item"
            data-sl-idx="${idx}"
            onpointerdown="onSlPointerDown(event, ${idx})">
-        <svg viewBox="0 0 24 24" class="pq-drag-ico" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="8" y1="7" x2="16" y2="7"/><line x1="8" y1="12" x2="16" y2="12"/><line x1="8" y1="17" x2="16" y2="17"/></svg>
+        ${gripSvg}
         <span class="setlist-num">${idx + 1}</span>
         <div class="setlist-item-info" onclick="openScoreById(${s.id}, 'study')" title="Abrir partitura">
           <strong>${s.clean || s.title}</strong>
           <small>${[(s.composer || "").split("(")[0].trim(), s.period, s.group || s.ensemble].filter(Boolean).join(" · ")}</small>
+          ${noteHtml}
         </div>
         <div class="setlist-item-controls" onclick="event.stopPropagation()">
-          <button class="pq-step-btn" onclick="moveProgramItem(${idx}, -1)" ${idx === 0 ? "disabled" : ""} title="Subir" aria-label="Subir">↑</button>
-          <button class="pq-step-btn" onclick="moveProgramItem(${idx}, 1)" ${idx === validScores.length - 1 ? "disabled" : ""} title="Bajar" aria-label="Bajar">↓</button>
-          <button class="pq-remove-btn" onclick="removeProgramItem(${idx})" title="Quitar del programa" aria-label="Quitar">−</button>
+          <button type="button" class="sl-item-peek-btn no-box-btn" onclick="openProgramQuickPeek(event, ${s.id})" title="Vista previa rápida" aria-label="Vista previa rápida">${peekSvg}</button>
+          <button type="button" class="sl-item-more-btn no-box-btn" onclick="openSetlistItemContextMenu(event, ${idx}, ${s.id})" title="Opciones de pieza" aria-label="Opciones de pieza">${dotsSvg}</button>
         </div>
       </div>
-    `
-    )
+    `;
+    })
     .join("");
+}
+
+// ==========================================================================
+// MÓVIL: BOTTOM SHEET PARA AGREGAR OBRAS + TABLET: MENÚ CONTEXTUAL Y QUICK PEEK
+// ==========================================================================
+function openMobileAddScoreSheet() {
+  const sheet = document.getElementById("progAddScoreBottomSheet");
+  const inp = document.getElementById("mobileProgSheetSearchInput");
+  if (!sheet) return;
+  if (inp) inp.value = "";
+  renderMobileAddScoreSheetList();
+  sheet.classList.remove("hidden");
+  requestAnimationFrame(() => sheet.classList.add("is-open"));
+}
+
+function closeMobileAddScoreSheet() {
+  const sheet = document.getElementById("progAddScoreBottomSheet");
+  if (!sheet) return;
+  sheet.classList.remove("is-open");
+  sheet.classList.add("hidden");
+}
+
+function renderMobileAddScoreSheetList() {
+  const listEl = document.getElementById("mobileProgSheetScoreList");
+  const inp = document.getElementById("mobileProgSheetSearchInput");
+  if (!listEl) return;
+  const q = (inp?.value || "").trim().toLowerCase();
+  const prog = getActiveProgram();
+  const existingIds = new Set(prog ? prog.scoreIds : []);
+
+  const matches = scores.filter((s) => {
+    const t = (s.clean || s.title || "").toLowerCase();
+    const c = (s.composer || "").toLowerCase();
+    const p = (s.period || "").toLowerCase();
+    const g = (s.group || s.ensemble || "").toLowerCase();
+    return !q || t.includes(q) || c.includes(q) || p.includes(q) || g.includes(q);
+  });
+
+  if (matches.length === 0) {
+    listEl.innerHTML = `<div class="prog-sug-empty">Sin coincidencias en tu biblioteca</div>`;
+    return;
+  }
+
+  const checkSvg = `<svg viewBox="0 0 24 24" class="v-ico" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>`;
+  const plusSvg = `<svg viewBox="0 0 24 24" class="v-ico" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>`;
+
+  listEl.innerHTML = matches
+    .map((s) => {
+      const added = existingIds.has(s.id);
+      return `
+        <button type="button" class="prog-sheet-score-row ${added ? "is-added" : ""}" onclick="toggleScoreInActiveProgramFromSheet(${s.id})">
+          <div class="prog-sheet-score-meta">
+            <strong>${s.clean || s.title}</strong>
+            <small>${[(s.composer || "").split("(")[0].trim(), s.period, s.group || s.ensemble].filter(Boolean).join(" · ")}</small>
+          </div>
+          <span class="prog-sheet-row-badge">${added ? checkSvg : plusSvg}</span>
+        </button>
+      `;
+    })
+    .join("");
+}
+
+function toggleScoreInActiveProgramFromSheet(scoreId) {
+  const prog = getActiveProgram();
+  if (!prog) return;
+  const numId = Number(scoreId);
+  const idx = prog.scoreIds.indexOf(numId);
+  if (idx === -1) {
+    prog.scoreIds.push(numId);
+  } else {
+    prog.scoreIds.splice(idx, 1);
+  }
+  prog.updatedAt = Date.now();
+  saveProgramsState();
+  renderSetlistDrawer();
+  renderMobileAddScoreSheetList();
+}
+
+function openSetlistItemContextMenu(e, idx, scoreId) {
+  if (e) e.stopPropagation();
+  const menu = document.getElementById("setlistItemContextMenu");
+  const prog = getActiveProgram();
+  if (!menu || !prog) return;
+  const total = prog.scoreIds.length;
+
+  const upSvg = `<svg viewBox="0 0 24 24" class="v-ico" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="19" x2="12" y2="5"/><polyline points="5 12 12 5 19 12"/></svg>`;
+  const downSvg = `<svg viewBox="0 0 24 24" class="v-ico" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><polyline points="19 12 12 19 5 12"/></svg>`;
+  const noteSvg = `<svg viewBox="0 0 24 24" class="v-ico" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>`;
+  const trashSvg = `<svg viewBox="0 0 24 24" class="v-ico" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>`;
+
+  menu.innerHTML = `
+    <button type="button" class="wa-menu-item" ${idx === 0 ? "disabled" : ""} onclick="closeSetlistItemContextMenu(); moveProgramItem(${idx}, -1)">
+      ${upSvg}
+      <span>Subir</span>
+    </button>
+    <button type="button" class="wa-menu-item" ${idx >= total - 1 ? "disabled" : ""} onclick="closeSetlistItemContextMenu(); moveProgramItem(${idx}, 1)">
+      ${downSvg}
+      <span>Bajar</span>
+    </button>
+    <button type="button" class="wa-menu-item" onclick="closeSetlistItemContextMenu(); openProgramPieceNoteModal(${idx}, ${scoreId})">
+      ${noteSvg}
+      <span>Nota rápida</span>
+    </button>
+    <button type="button" class="wa-menu-item wa-danger" onclick="closeSetlistItemContextMenu(); removeProgramItem(${idx})">
+      ${trashSvg}
+      <span>Quitar del programa</span>
+    </button>
+  `;
+
+  menu.classList.remove("hidden");
+  if (e && e.currentTarget) {
+    const rect = e.currentTarget.getBoundingClientRect();
+    const mw = 210;
+    const mh = Math.max(176, menu.offsetHeight || 176);
+    const left = Math.max(12, Math.min(window.innerWidth - mw - 12, rect.right - mw));
+    let top = rect.bottom + 6;
+    if (top + mh > window.innerHeight - 24) {
+      top = Math.max(12, rect.top - mh - 6);
+    }
+    menu.style.width = `${mw}px`;
+    menu.style.left = `${left}px`;
+    menu.style.top = `${top}px`;
+  }
+}
+
+function closeSetlistItemContextMenu() {
+  const menu = document.getElementById("setlistItemContextMenu");
+  if (menu) menu.classList.add("hidden");
+}
+
+let activeProgNoteScoreId = null;
+
+function openProgramPieceNoteModal(idx, scoreId) {
+  const prog = getActiveProgram();
+  const s = scores.find((item) => item.id === Number(scoreId));
+  const modal = document.getElementById("progPieceNoteModal");
+  const inp = document.getElementById("progPieceNoteInput");
+  const titleEl = document.getElementById("progNoteModalTitle");
+  if (!prog || !modal || !inp) return;
+
+  activeProgNoteScoreId = Number(scoreId);
+  if (titleEl) {
+    titleEl.textContent = s ? `Nota: ${s.clean || s.title}` : "Nota rápida";
+  }
+  inp.value = (prog.notes && prog.notes[String(activeProgNoteScoreId)]) || "";
+  modal.classList.remove("hidden");
+  setTimeout(() => {
+    inp.focus();
+    inp.select();
+  }, 40);
+}
+
+function closeProgramPieceNoteModal() {
+  const modal = document.getElementById("progPieceNoteModal");
+  if (modal) modal.classList.add("hidden");
+  activeProgNoteScoreId = null;
+}
+
+function saveProgramPieceNote() {
+  const prog = getActiveProgram();
+  const inp = document.getElementById("progPieceNoteInput");
+  if (!prog || activeProgNoteScoreId == null || !inp) return;
+  if (!prog.notes || typeof prog.notes !== "object") prog.notes = {};
+  const val = inp.value.trim();
+  if (val) {
+    prog.notes[String(activeProgNoteScoreId)] = val;
+  } else {
+    delete prog.notes[String(activeProgNoteScoreId)];
+  }
+  prog.updatedAt = Date.now();
+  saveProgramsState();
+  closeProgramPieceNoteModal();
+  renderSetlistDrawer();
+}
+
+async function openProgramQuickPeek(e, scoreId) {
+  if (e) e.stopPropagation();
+  const s = scores.find((item) => item.id === Number(scoreId));
+  const modal = document.getElementById("progQuickPeekModal");
+  const titleEl = document.getElementById("progPeekTitle");
+  const subEl = document.getElementById("progPeekSub");
+  const box = document.getElementById("progPeekPreviewBox");
+  const openBtn = document.getElementById("progPeekOpenStudyBtn");
+  if (!s || !modal || !box) return;
+
+  if (titleEl) titleEl.textContent = s.clean || s.title;
+  if (subEl) {
+    subEl.textContent = [s.composer, s.period, s.group || s.ensemble, s.pages].filter(Boolean).join(" · ");
+  }
+  if (openBtn) {
+    openBtn.onclick = () => {
+      closeProgramQuickPeek();
+      openScoreById(s.id, "study");
+    };
+  }
+
+  let thumbUrl = s.thumbDataUrl || null;
+  if (!thumbUrl && s.isRealPdf && s.pdfBytes && typeof generatePdfThumbnailDataUrl === "function") {
+    box.innerHTML = `<div class="prog-peek-loading">Renderizando primera página...</div>`;
+    modal.classList.remove("hidden");
+    try {
+      const prev = await generatePdfThumbnailDataUrl(s.pdfBytes);
+      if (prev && prev.thumbUrl) {
+        thumbUrl = prev.thumbUrl;
+        s.thumbDataUrl = thumbUrl;
+      }
+    } catch (_) {}
+  }
+
+  if (thumbUrl) {
+    box.innerHTML = `<img src="${thumbUrl}" alt="${s.clean || s.title}" class="prog-peek-img" />`;
+  } else {
+    box.innerHTML = `
+      <div class="prog-peek-folio-mock">
+        <div class="folio-preview-head">
+          <strong>${s.clean || s.title}</strong>
+          <small>${s.composer || ""}</small>
+        </div>
+        <div class="mini-staves">
+          <div class="mini-staff-bar"></div>
+          <div class="mini-staff-bar"></div>
+          <div class="mini-staff-bar"></div>
+          <div class="mini-staff-bar"></div>
+        </div>
+        <div class="folio-preview-foot">
+          <span>${s.tuning || ""}</span>
+          <span>${s.pages || ""}</span>
+        </div>
+      </div>
+    `;
+  }
+  modal.classList.remove("hidden");
+}
+
+function closeProgramQuickPeek() {
+  const modal = document.getElementById("progQuickPeekModal");
+  if (modal) modal.classList.add("hidden");
 }
 
 let slDragIndex = null;
@@ -5262,6 +5535,7 @@ document.addEventListener("pointerdown", (e) => {
 
   const floatingMenus = [
     { id: "workActionsMenu", close: () => closeWorkActionsMenu() },
+    { id: "setlistItemContextMenu", close: () => closeSetlistItemContextMenu() },
     { id: "progQuickPopover", close: () => document.getElementById("progQuickPopover")?.classList.add("hidden") },
     { id: "sharedFilterMenu", close: () => closeSharedFilterMenu() },
     { id: "progScoreSuggestions", close: () => document.getElementById("progScoreSuggestions")?.classList.add("hidden") },
@@ -5277,6 +5551,7 @@ document.addEventListener("pointerdown", (e) => {
     if (el && !el.classList.contains("hidden") && !e.target.closest(`#${m.id}`)) {
       // No cerrar si el toque fue en su propio botón disparador
       if (m.id === "workActionsMenu" && e.target.closest(".work-more-btn")) continue;
+      if (m.id === "setlistItemContextMenu" && e.target.closest(".sl-item-more-btn")) continue;
       if (m.id === "importPdfMenu" && e.target.closest("#importPopoverWrap")) continue;
       if (m.id === "settingsDrawer" && e.target.closest("#btnSettingsDrawer")) continue;
       if (m.id === "sharedFilterMenu" && e.target.closest(".filter-dd-btn")) continue;
@@ -5310,6 +5585,11 @@ document.addEventListener("click", (e) => {
   const workMenu = document.getElementById("workActionsMenu");
   if (workMenu && !workMenu.classList.contains("hidden") && !e.target.closest("#workActionsMenu") && !e.target.closest(".work-more-btn")) {
     workMenu.classList.add("hidden");
+  }
+
+  const slCtxMenu = document.getElementById("setlistItemContextMenu");
+  if (slCtxMenu && !slCtxMenu.classList.contains("hidden") && !e.target.closest("#setlistItemContextMenu") && !e.target.closest(".sl-item-more-btn")) {
+    slCtxMenu.classList.add("hidden");
   }
 
   const sharedFilterMenu = document.getElementById("sharedFilterMenu");

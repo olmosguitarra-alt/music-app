@@ -11,7 +11,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:wght@600;700&display=swap" />
-  <link rel="stylesheet" href="styles.css?v=87" />
+  <link rel="stylesheet" href="styles.css?v=88" />
   <!-- Motores Oficiales para Renderizar (PDF.js) y Particionar/Editar PDFs Reales (pdf-lib) -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf-lib/1.17.1/pdf-lib.min.js"></script>
@@ -150,6 +150,7 @@
               <button class="prog-slide-back-btn" onclick="closeProgramsSlideView()" title="Volver a Biblioteca" aria-label="Volver">
                 <svg viewBox="0 0 24 24" class="v-ico"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
               </button>
+              <span class="prog-mobile-header-title">Programas</span>
             </div>
 
             <div class="programs-two-pane">
@@ -186,6 +187,9 @@
                   </button>
                 </div>
 
+                <!-- Carrusel deslizable de píldoras horizontales en móvil -->
+                <div class="mobile-prog-pills-carousel" id="mobileProgramsPillCarousel" role="tablist" aria-label="Seleccionar programa"></div>
+
                 <div class="programs-master-list" id="programsMasterList"></div>
               </aside>
 
@@ -217,13 +221,21 @@
                     </div>
                     <div class="prog-score-suggestions hidden" id="progScoreSuggestions"></div>
                   </div>
+                  <button type="button" class="mobile-add-score-btn" id="btnMobileOpenAddScoreSheet" onclick="openMobileAddScoreSheet()">
+                    <svg viewBox="0 0 24 24" class="v-ico" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                    <span>Agregar obra</span>
+                  </button>
                 </div>
 
                 <div class="setlist-items" id="setlistItems"></div>
 
                 <div class="setlist-foot">
-                  <button class="btn-launch-concert" id="btnLaunchProgram" onclick="saveSetlistDrawerChanges()">
+                  <button class="btn-launch-concert btn-save-prog-secondary" id="btnLaunchProgram" onclick="saveSetlistDrawerChanges()">
                     <span>Guardar cambios</span>
+                  </button>
+                  <button type="button" class="btn-launch-concert btn-start-concert-sticky" id="btnStartProgramConcert" onclick="launchActiveProgramInConcert()">
+                    <svg viewBox="0 0 24 24" class="v-ico" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><polygon points="6 3 20 12 6 21 6 3"/></svg>
+                    <span>Iniciar Concierto</span>
                   </button>
                 </div>
               </div>
@@ -856,12 +868,70 @@
   <!-- MENÚ FLOTANTE DISCRETO PARA AGREGAR/ORDENAR EN PROGRAMA -->
   <div class="prog-quick-popover hidden" id="progQuickPopover" onclick="event.stopPropagation()"></div>
 
+  <!-- MENÚ CONTEXTUAL RÁPIDO POR OBRA EN PROGRAMA (⋯) -->
+  <div class="work-actions-menu setlist-ctx-menu hidden" id="setlistItemContextMenu" onclick="event.stopPropagation()"></div>
+
+  <!-- BOTTOM SHEET MÓVIL: AGREGAR OBRA AL PROGRAMA -->
+  <div class="prog-bottom-sheet-backdrop hidden" id="progAddScoreBottomSheet" onclick="closeMobileAddScoreSheet()">
+    <div class="prog-bottom-sheet-card" onclick="event.stopPropagation()">
+      <div class="prog-sheet-grabber" aria-hidden="true"></div>
+      <div class="prog-sheet-head">
+        <span class="prog-sheet-title">Agregar obra al programa</span>
+        <button type="button" class="pdf-metadata-close-btn" onclick="closeMobileAddScoreSheet()" aria-label="Cerrar">
+          <svg viewBox="0 0 24 24" class="v-ico" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+      <div class="prog-sheet-search">
+        <svg viewBox="0 0 24 24" class="v-ico" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+        <input type="text" id="mobileProgSheetSearchInput" placeholder="Buscar por título o compositor..." oninput="renderMobileAddScoreSheetList()" autocomplete="off" />
+      </div>
+      <div class="prog-sheet-list" id="mobileProgSheetScoreList"></div>
+    </div>
+  </div>
+
+  <!-- MODAL LIGERO: VISTA PREVIA RÁPIDA (QUICK PEEK) DE OBRA EN PROGRAMA -->
+  <div class="modal-backdrop hidden" id="progQuickPeekModal" onclick="closeProgramQuickPeek()">
+    <div class="prog-quick-peek-card" onclick="event.stopPropagation()">
+      <div class="prog-peek-head">
+        <div class="prog-peek-meta">
+          <h4 id="progPeekTitle">Partitura</h4>
+          <small id="progPeekSub">Compositor</small>
+        </div>
+        <button type="button" class="pdf-metadata-close-btn" onclick="closeProgramQuickPeek()" aria-label="Cerrar vista previa">
+          <svg viewBox="0 0 24 24" class="v-ico" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+      <div class="prog-peek-preview-box" id="progPeekPreviewBox"></div>
+      <div class="prog-peek-foot">
+        <button type="button" class="pdf-submodal-btn" onclick="closeProgramQuickPeek()">Cerrar</button>
+        <button type="button" class="pdf-submodal-btn accent" id="progPeekOpenStudyBtn">Abrir en Estudio</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL LIGERO: NOTA RÁPIDA PARA PIEZA DEL SETLIST -->
+  <div class="modal-backdrop hidden" id="progPieceNoteModal" onclick="closeProgramPieceNoteModal()">
+    <div class="pdf-submodal-card prog-note-modal-card" onclick="event.stopPropagation()">
+      <div class="pdf-metadata-modal-head">
+        <h4 class="pdf-submodal-title" id="progNoteModalTitle">Nota rápida</h4>
+        <button type="button" class="pdf-metadata-close-btn" onclick="closeProgramPieceNoteModal()" aria-label="Cerrar">
+          <svg viewBox="0 0 24 24" class="v-ico" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+      <input type="text" id="progPieceNoteInput" class="pdf-submodal-input" placeholder='Ej. "Sin repeticiones", "Entrada en c. 32"...' autocomplete="off" onkeydown="if(event.key==='Enter') saveProgramPieceNote()" />
+      <div class="pdf-submodal-actions">
+        <button type="button" class="pdf-submodal-btn" onclick="closeProgramPieceNoteModal()">Cancelar</button>
+        <button type="button" class="pdf-submodal-btn accent" onclick="saveProgramPieceNote()">Guardar nota</button>
+      </div>
+    </div>
+  </div>
+
   <!-- ANIMACIÓN DE CARGA DE PDFs (> 2s) CON BACHGPT CUERPO COMPLETO -->
   <div class="pdf-loading-overlay hidden" id="pdfLoadingOverlay" aria-live="polite">
     <div class="pdf-loading-sprite" id="pdfLoadingSprite"></div>
     <span class="pdf-loading-text">Cargando...</span>
   </div>
 
-  <script src="app.js?v=87"></script>
+  <script src="app.js?v=88"></script>
 </body>
 </html>

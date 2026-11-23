@@ -1,0 +1,59 @@
+# PROMPT DE IMPLEMENTACIÓN: OPTIMIZACIÓN UI/UX DE LA VISTA DE PROGRAMAS (SETLISTS) EN CADENZA
+
+Actúa como Ingeniero Frontend y Diseñador UX/UI especializado en interfaces adaptativas para móviles y tabletas en aplicaciones de música (`prototype/index.html`, `prototype/styles.css`, `prototype/app.js`).
+
+Tu objetivo es implementar mejoras ergonómicas y funcionales concretas en la vista de Programas (`.programs-two-pane` / `#programsSlideView`), optimizando tanto la versión para teléfonos (pantalla angosta/vertical) como la versión para tablets (pantalla amplia/táctil).
+
+---
+
+## 📱 PARTE 1: MEJORAS PARA LA VERSIÓN MÓVIL (PANTALLA TELÉFONO)
+
+En pantallas móviles (`max-width: 760px`), la interfaz debe ser 100% operable con una sola mano (zona ergonómica del pulgar) sin elementos comprimidos ni teclados que rompan el layout:
+
+1. **Desacoplar el Botón de Volver y el Selector de Programas:**
+   - Eliminar la compresión de 38px donde compiten el botón de volver (`prog-slide-back-btn`) y el selector.
+   - Ubicar el botón de regreso en una barra de cabecera limpia e independiente.
+   - El área de selección de programas debe contar con un espacio propio y área táctil cómoda (mínimo 44px de alto para evitar toques accidentales).
+
+2. **Carrusel Deslizable de Píldoras Horizontales (Horizontal Pill Tabs):**
+   - Reemplazar el menú desplegable oculto (`#btnMobileProgListToggle`) por un carrusel táctil de desplazamiento horizontal suave (`overflow-x: auto; scroll-snap`).
+   - Cada programa se muestra como un chip/píldora elegante: `[ Chopin Op.9 ]` `[ Gala Navidad ]` `[ Ensayos ]` `[ ＋ Nuevo ]`.
+   - El usuario desliza con el pulgar y selecciona el concierto activo con un solo toque visual inmediato.
+
+3. **Búsqueda de Obras mediante "Bottom Sheet" (Hoja Inferior Emergente):**
+   - En móvil, ocultar el buscador fijo incrustado (`progScoreSearchWrap`), ya que al enfocarse el teclado virtual tapa la pantalla.
+   - En su lugar, añadir un botón accesible: `[ ＋ Agregar obra ]`.
+   - Al pulsar, desplegar un Bottom Sheet animado (hoja modal que sube desde abajo con `backdrop-filter: blur`) con su propio campo de búsqueda y lista táctil amplia de partituras para seleccionar y añadir.
+
+4. **Botón de Acción Fijo al Pie (Sticky Bottom Bar):**
+   - Fijar en la base de la pantalla el botón principal de acción: `[ Iniciar Concierto / Tocar ]`.
+   - Debe permanecer siempre visible y al alcance del pulgar, sin importar la cantidad de obras agregadas al programa ni el scroll de la lista.
+
+---
+
+## 💻 PARTE 2: MEJORAS PARA LA VERSIÓN TABLET (PANTALLA GRANDE / TCL 14")
+
+En tablets y pantallas amplias, aprovechar el esquema de dos paneles para máxima agilidad en ensayos y conciertos:
+
+1. **Reordenamiento Táctil de Obras con Manija Visual (Drag & Drop):**
+   - Añadir a la izquierda de cada obra en la lista del programa un asa táctil sobria y discreta (`⋮⋮` o líneas sutiles de agarre).
+   - Permitir arrastrar y soltar (Drag & Drop táctil y ratón) para reordenar las piezas del repertorio de forma inmediata y con animaciones suaves de reubicación.
+
+2. **Menú Contextual Rápido por Obra (`⋯`):**
+   - Incorporar al final de cada fila de obra un botón de opciones lineal y sobrio (`⋯`).
+   - Al tocarlo, despliega un menú contextual flotante con:
+     * `⬆ Subir` / `⬇ Bajar` (como alternativa accesible al arrastre).
+     * `📝 Nota rápida para esta pieza` (anotación específica del setlist, ej: *"Sin repeticiones"*, *"Entrada en compás 32"*).
+     * `🗑 Quitar del programa`.
+
+3. **Vista Previa Rápida en Tarjeta Flotante (Quick Peek):**
+   - Al mantener presionada una obra de la lista (o tocar su miniatura/icono de partitura), mostrar una ventana flotante limpia (modal ligero o popover) con la primera página/portada renderizada para confirmar la versión de la partitura sin tener que salir ni abandonar la vista de Programas.
+
+---
+
+## 🎨 LÍNEA DE DISEÑO Y DETALLES TÉCNICOS
+- Respetar rigurosamente la estética sobria y elegante de Cadenza: iconos lineales SVG (trazo 1.5px), bordes de 1px sutiles, esquinas suaves (`border-radius: 8px a 14px`) y transiciones fluidas.
+- No romper la reactividad ni los datos existentes de programas guardados en `localStorage`.
+- Asegurar que la alternancia entre la vista de móvil y la de tablet responda limpiamente a las media queries sin generar duplicidad de eventos en JavaScript.
+
+Por favor, revisa `prototype/index.html`, `prototype/styles.css` y `prototype/app.js` e implementa estas optimizaciones.

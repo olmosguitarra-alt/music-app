@@ -10112,3 +10112,583 @@ body.mode-library-active .floating-import-fab-wrap {
     font-size: 13px !important;
   }
 }
+
+
+/* ==========================================================================
+   V88 — OPTIMIZACIÓN UI/UX DE LA VISTA DE PROGRAMAS (MÓVIL + TABLET)
+   ========================================================================== */
+
+.prog-mobile-header-title,
+.mobile-prog-pills-carousel,
+.mobile-add-score-btn {
+  display: none !important;
+}
+
+/* Tablet / Desktop: Barra inferior con Guardar cambios + Iniciar Concierto */
+.setlist-foot {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+.btn-start-concert-sticky {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  background: var(--accent) !important;
+  color: var(--accent-ink) !important;
+  border: 1px solid var(--accent) !important;
+}
+
+.btn-start-concert-sticky .v-ico {
+  width: 15px;
+  height: 15px;
+  stroke-width: 1.65px;
+}
+
+.btn-save-prog-secondary {
+  background: transparent !important;
+  color: var(--text-secondary) !important;
+  border: 1px solid color-mix(in srgb, var(--glass-border) 90%, transparent) !important;
+  box-shadow: none !important;
+}
+
+.btn-save-prog-secondary:hover {
+  color: var(--text-primary) !important;
+  border-color: color-mix(in srgb, var(--accent) 45%, var(--glass-border)) !important;
+}
+
+/* Manija visual (6 puntos), nota rápida de pieza y botones sobrios (Quick Peek + ⋯) */
+.setlist-item .pq-drag-ico {
+  width: 16px;
+  height: 18px;
+  color: var(--text-secondary);
+  opacity: 0.45;
+  flex-shrink: 0;
+  cursor: grab;
+  touch-action: none;
+  transition: opacity 150ms ease, color 150ms ease;
+}
+
+.setlist-item:hover .pq-drag-ico {
+  opacity: 0.85;
+  color: var(--text-primary);
+}
+
+.sl-piece-note {
+  display: inline-block;
+  margin-top: 3px;
+  padding: 2px 7px;
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 9%, transparent);
+  border: 0.5px solid color-mix(in srgb, var(--accent) 26%, transparent);
+  max-width: 100%;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.setlist-item-controls {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+.sl-item-peek-btn,
+.sl-item-more-btn {
+  width: 34px;
+  height: 34px;
+  border-radius: 9px;
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--text-secondary);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  touch-action: manipulation;
+  transition: color 150ms ease, background 150ms ease, border-color 150ms ease;
+}
+
+.sl-item-peek-btn .v-ico,
+.sl-item-more-btn .v-ico {
+  width: 16px;
+  height: 16px;
+  stroke-width: 1.5px;
+}
+
+.sl-item-peek-btn:hover,
+.sl-item-more-btn:hover {
+  color: var(--text-primary);
+  background: color-mix(in srgb, var(--text-primary) 6%, transparent);
+}
+
+.setlist-empty-state {
+  padding: 28px 16px;
+  text-align: center;
+  font-size: 13px;
+  color: var(--text-secondary);
+  opacity: 0.75;
+}
+
+/* Menú contextual rápido por obra (⋯) */
+#setlistItemContextMenu.setlist-ctx-menu {
+  z-index: 280 !important;
+  padding: 6px;
+  border-radius: 13px;
+  border: 1px solid color-mix(in srgb, var(--glass-border) 95%, transparent);
+  background: color-mix(in srgb, var(--card-bg) 96%, var(--bg-canvas)) !important;
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+  box-shadow: var(--specular-top-light), var(--shadow-ambient-menu);
+}
+
+#setlistItemContextMenu .wa-menu-item:disabled {
+  opacity: 0.35;
+  pointer-events: none;
+}
+
+/* Modal ligero: Quick Peek (Vista Previa Rápida) */
+.prog-quick-peek-card {
+  width: min(440px, 92vw);
+  max-height: 86vh;
+  padding: 18px 20px;
+  border-radius: 16px;
+  background: color-mix(in srgb, var(--card-bg) 95%, var(--bg-canvas));
+  backdrop-filter: blur(22px) saturate(140%);
+  -webkit-backdrop-filter: blur(22px) saturate(140%);
+  border: 1px solid color-mix(in srgb, var(--glass-border) 95%, transparent);
+  box-shadow: var(--specular-top-light), 0 24px 56px rgba(0, 0, 0, 0.28);
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.prog-peek-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.prog-peek-meta {
+  min-width: 0;
+}
+
+.prog-peek-meta h4 {
+  margin: 0;
+  font-size: 15.5px;
+  font-weight: 600;
+  color: var(--text-primary);
+  letter-spacing: -0.015em;
+}
+
+.prog-peek-meta small {
+  display: block;
+  margin-top: 2px;
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
+.prog-peek-preview-box {
+  flex: 1 1 auto;
+  min-height: 220px;
+  max-height: 54vh;
+  border-radius: 11px;
+  overflow: hidden;
+  border: 1px solid color-mix(in srgb, var(--glass-border) 85%, transparent);
+  background: var(--paper-bg, #faf6f0);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.prog-peek-img {
+  width: 100%;
+  height: 100%;
+  max-height: 54vh;
+  object-fit: contain;
+  display: block;
+}
+
+.prog-peek-loading {
+  font-size: 12.5px;
+  color: var(--text-secondary);
+  padding: 24px;
+}
+
+.prog-peek-folio-mock {
+  width: 100%;
+  height: 280px;
+  padding: 20px 22px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  box-sizing: border-box;
+}
+
+.prog-peek-foot {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+/* Bottom Sheet Móvil: Agregar obra */
+.prog-bottom-sheet-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(12, 10, 8, 0.42);
+  backdrop-filter: blur(5px);
+  -webkit-backdrop-filter: blur(5px);
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  z-index: 290;
+}
+
+.prog-bottom-sheet-backdrop.hidden {
+  display: none;
+}
+
+.prog-bottom-sheet-card {
+  width: 100%;
+  max-width: 560px;
+  max-height: 82vh;
+  border-radius: 20px 20px 0 0;
+  padding: 10px 16px calc(18px + env(safe-area-inset-bottom, 0px));
+  background: color-mix(in srgb, var(--card-bg) 94%, var(--bg-canvas));
+  backdrop-filter: blur(24px) saturate(145%);
+  -webkit-backdrop-filter: blur(24px) saturate(145%);
+  border-top: 1px solid color-mix(in srgb, var(--glass-border) 95%, transparent);
+  box-shadow: 0 -18px 46px rgba(0, 0, 0, 0.28);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  transform: translateY(20px);
+  transition: transform 220ms var(--ease-editorial);
+}
+
+.prog-bottom-sheet-backdrop.is-open .prog-bottom-sheet-card {
+  transform: translateY(0);
+}
+
+.prog-sheet-grabber {
+  width: 38px;
+  height: 4px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--text-secondary) 32%, transparent);
+  margin: 0 auto 2px;
+}
+
+.prog-sheet-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.prog-sheet-title {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text-primary);
+  letter-spacing: -0.014em;
+}
+
+.prog-sheet-search {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 42px;
+  padding: 0 12px;
+  border-radius: 11px;
+  border: 1px solid color-mix(in srgb, var(--glass-border) 95%, transparent);
+  background: var(--bg-canvas);
+}
+
+.prog-sheet-search .v-ico {
+  width: 16px;
+  height: 16px;
+  color: var(--text-secondary);
+  flex-shrink: 0;
+}
+
+.prog-sheet-search input {
+  flex: 1 1 auto;
+  min-width: 0;
+  border: none;
+  outline: none;
+  background: transparent;
+  color: var(--text-primary);
+  font-size: 14px;
+}
+
+.prog-sheet-list {
+  flex: 1 1 auto;
+  min-height: 160px;
+  max-height: 54vh;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.prog-sheet-score-row {
+  width: 100%;
+  min-height: 50px;
+  padding: 9px 12px;
+  border-radius: 11px;
+  border: 1px solid color-mix(in srgb, var(--glass-border) 85%, transparent);
+  background: color-mix(in srgb, var(--bg-canvas) 70%, transparent);
+  color: var(--text-primary);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  text-align: left;
+  cursor: pointer;
+  touch-action: manipulation;
+  transition: border-color 150ms ease, background 150ms ease;
+}
+
+.prog-sheet-score-row.is-added {
+  border-color: color-mix(in srgb, var(--accent) 45%, var(--glass-border));
+  background: color-mix(in srgb, var(--accent) 9%, transparent);
+}
+
+.prog-sheet-score-meta {
+  min-width: 0;
+  flex: 1 1 auto;
+}
+
+.prog-sheet-score-meta strong {
+  display: block;
+  font-size: 13.5px;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.prog-sheet-score-meta small {
+  display: block;
+  font-size: 11.5px;
+  color: var(--text-secondary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.prog-sheet-row-badge {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-secondary);
+  flex-shrink: 0;
+}
+
+.prog-sheet-score-row.is-added .prog-sheet-row-badge {
+  color: var(--accent);
+}
+
+.prog-sheet-row-badge .v-ico {
+  width: 16px;
+  height: 16px;
+}
+
+/* ==========================================================================
+   PARTE 1: MEJORAS ESPECÍFICAS PARA MÓVIL (max-width: 760px)
+   ========================================================================== */
+@media (max-width: 760px) {
+  body.mode-library-active .programs-slide {
+    padding-top: 52px !important;
+    padding-bottom: calc(64px + env(safe-area-inset-bottom, 0px)) !important;
+    display: flex !important;
+    flex-direction: column !important;
+  }
+
+  /* 1. Barra de cabecera limpia e independiente para el botón de volver */
+  .programs-slide-top-nav {
+    position: static !important;
+    height: 44px !important;
+    min-height: 44px !important;
+    margin: 0 0 6px !important;
+    padding: 0 2px !important;
+    display: flex !important;
+    align-items: center !important;
+    gap: 10px !important;
+    flex: 0 0 auto !important;
+  }
+
+  .programs-slide-top-nav .prog-slide-back-btn {
+    position: static !important;
+    width: 42px !important;
+    height: 42px !important;
+    min-width: 42px !important;
+    border-radius: 12px !important;
+    border: 1px solid color-mix(in srgb, var(--glass-border) 90%, transparent) !important;
+    background: color-mix(in srgb, var(--card-bg) 82%, transparent) !important;
+    color: var(--text-primary) !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+  }
+
+  .prog-mobile-header-title {
+    display: inline-block !important;
+    font-size: 16px;
+    font-weight: 600;
+    letter-spacing: -0.015em;
+    color: var(--text-primary);
+  }
+
+  /* 2. Área independiente de selección de programas: Carrusel de píldoras horizontales */
+  .programs-sidebar-panel {
+    height: auto !important;
+    min-height: 46px !important;
+    max-height: none !important;
+    flex: 0 0 auto !important;
+    padding: 2px 0 6px !important;
+    margin: 0 0 4px !important;
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 6px !important;
+    overflow: visible !important;
+  }
+
+  .programs-sidebar-head,
+  .prog-sidebar-search,
+  .prog-sidebar-filters,
+  .programs-master-list {
+    display: none !important;
+  }
+
+  .mobile-prog-pills-carousel {
+    display: flex !important;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+    overflow-x: auto;
+    scroll-snap-type: x proximity;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    padding: 2px 2px;
+  }
+
+  .mobile-prog-pills-carousel::-webkit-scrollbar {
+    display: none;
+  }
+
+  .mobile-prog-pill {
+    flex: 0 0 auto;
+    min-height: 44px;
+    padding: 0 16px;
+    border-radius: 999px;
+    border: 1px solid color-mix(in srgb, var(--glass-border) 95%, transparent);
+    background: color-mix(in srgb, var(--card-bg) 80%, transparent);
+    color: var(--text-secondary);
+    font-size: 13px;
+    font-weight: 500;
+    white-space: nowrap;
+    scroll-snap-align: start;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    cursor: pointer;
+    touch-action: manipulation;
+    transition: background 160ms ease, border-color 160ms ease, color 160ms ease;
+  }
+
+  .mobile-prog-pill.active {
+    background: color-mix(in srgb, var(--accent) 13%, var(--card-bg));
+    border-color: color-mix(in srgb, var(--accent) 60%, var(--glass-border));
+    color: var(--accent);
+    font-weight: 600;
+  }
+
+  .mobile-prog-pill-new {
+    border-style: dashed;
+    color: var(--text-primary);
+  }
+
+  .mobile-prog-pill-new .v-ico {
+    width: 14px;
+    height: 14px;
+  }
+
+  /* 3. Ocultar buscador fijo y mostrar botón [ + Agregar obra ] */
+  #progScoreSearchWrap.prog-score-search-wrap {
+    display: none !important;
+  }
+
+  .mobile-add-score-btn {
+    display: inline-flex !important;
+    align-items: center;
+    gap: 5px;
+    min-height: 36px;
+    padding: 0 12px;
+    border-radius: 10px;
+    border: 1px solid color-mix(in srgb, var(--accent) 36%, var(--glass-border));
+    background: color-mix(in srgb, var(--accent) 9%, transparent);
+    color: var(--accent);
+    font-size: 12.5px;
+    font-weight: 600;
+    cursor: pointer;
+    touch-action: manipulation;
+    margin-left: auto;
+  }
+
+  .mobile-add-score-btn .v-ico {
+    width: 14px;
+    height: 14px;
+  }
+
+  /* 4. Botón de acción fijo al pie (Sticky Bottom Bar) */
+  .programs-detail-panel {
+    display: flex !important;
+    flex-direction: column !important;
+    min-height: 0 !important;
+    padding-bottom: 8px !important;
+  }
+
+  #setlistItems.setlist-items {
+    flex: 1 1 auto !important;
+    min-height: 0 !important;
+    overflow-y: auto !important;
+    padding-bottom: 8px !important;
+  }
+
+  .setlist-foot {
+    position: sticky;
+    bottom: 0;
+    flex: 0 0 auto;
+    padding: 8px 0 2px !important;
+    background: linear-gradient(to top, color-mix(in srgb, var(--card-bg) 96%, var(--bg-canvas)) 78%, transparent);
+    z-index: 15;
+  }
+
+  .btn-save-prog-secondary {
+    display: none !important;
+  }
+
+  .btn-start-concert-sticky {
+    width: 100% !important;
+    height: 44px !important;
+    border-radius: 12px !important;
+    font-size: 13.5px !important;
+    font-weight: 600 !important;
+  }
+}
