@@ -1139,20 +1139,31 @@ function onPdfThumbPointerDown(e, initialIdx) {
     ...strip.querySelectorAll(".folio-page-thumb[data-pdf-thumb-idx]")
   ];
 
-  // Coordenadas puras de celda en el Grid (inmunes a transformaciones CSS FLIP en vuelo)
-  const getUntransformedCardRect = (card) => {
-    const sr = strip.getBoundingClientRect();
-    const left = sr.left + card.offsetLeft - strip.scrollLeft;
-    const top = sr.top + card.offsetTop - strip.scrollTop;
-    const width = card.offsetWidth;
-    const height = card.offsetHeight;
+  // Capturamos las celdas geométricas fijas del Grid al inicio (100% inmunes a animaciones FLIP y a offsetParent)
+  const initialScrollTop = strip.scrollTop;
+  const baseSlotRects = getPageCards().map((c) => {
+    const r = c.getBoundingClientRect();
     return {
-      left,
-      top,
-      right: left + width,
-      bottom: top + height,
-      width,
-      height
+      left: r.left,
+      top: r.top,
+      right: r.right,
+      bottom: r.bottom,
+      width: r.width,
+      height: r.height
+    };
+  });
+
+  const getSlotRect = (slotIdx) => {
+    const b = baseSlotRects[slotIdx];
+    if (!b) return null;
+    const scrollDelta = strip.scrollTop - initialScrollTop;
+    return {
+      left: b.left,
+      top: b.top - scrollDelta,
+      right: b.right,
+      bottom: b.bottom - scrollDelta,
+      width: b.width,
+      height: b.height
     };
   };
 
@@ -1167,9 +1178,8 @@ function onPdfThumbPointerDown(e, initialIdx) {
 
   const updateGhostPosition = (clientX, clientY) => {
     if (!ghost) return;
-    const gx = Math.round(clientX - offsetX);
-    const gy = Math.round(clientY - offsetY);
-    ghost.style.transform = `translate3d(${gx}px, ${gy}px, 0) scale(1.04) rotate(-1.2deg)`;
+    ghost.style.left = `${Math.round(clientX - offsetX)}px`;
+    ghost.style.top = `${Math.round(clientY - offsetY)}px`;
   };
 
   const beginGhost = () => {
@@ -1183,8 +1193,6 @@ function onPdfThumbPointerDown(e, initialIdx) {
     }
     ghost = itemEl.cloneNode(true);
     ghost.classList.add("floating-drag-ghost", "pdf-page-drag-ghost");
-    ghost.style.left = "0px";
-    ghost.style.top = "0px";
     ghost.style.width = `${rect.width}px`;
     ghost.style.height = `${rect.height}px`;
     updateGhostPosition(lastPointerX, lastPointerY);
@@ -1211,11 +1219,11 @@ function onPdfThumbPointerDown(e, initialIdx) {
   };
 
   const performFlipSwap = (targetIdx) => {
-    const cards = getPageCards();
-    const firstRects = new Map();
-    cards.forEach((c) => firstRects.set(c, getUntransformedCardRect(c)));
+    const cardsBefore = getPageCards();
+    const prevSlotByCard = new Map();
+    cardsBefore.forEach((c, idx) => prevSlotByCard.set(c, idx));
 
-    const targetCard = cards[targetIdx];
+    const targetCard = cardsBefore[targetIdx];
     if (!targetCard || targetCard === itemEl) return;
 
     if (targetIdx > currentIdx) {
@@ -1231,19 +1239,21 @@ function onPdfThumbPointerDown(e, initialIdx) {
     currentIdx = targetIdx;
     syncDomIndicesAndLabels();
 
-    // Animación FLIP suave en las tarjetas vecinas usando coordenadas de layout puras
-    getPageCards().forEach((c) => {
+    // Animación FLIP suave en las tarjetas vecinas usando las celdas fijas del Grid
+    getPageCards().forEach((c, newSlotIdx) => {
       if (c === itemEl) return;
-      const first = firstRects.get(c);
-      if (!first) return;
-      const last = getUntransformedCardRect(c);
+      const oldSlotIdx = prevSlotByCard.get(c);
+      if (oldSlotIdx === undefined || oldSlotIdx === newSlotIdx) return;
+      const first = getSlotRect(oldSlotIdx);
+      const last = getSlotRect(newSlotIdx);
+      if (!first || !last) return;
       const dx = first.left - last.left;
       const dy = first.top - last.top;
       if (Math.abs(dx) > 1 || Math.abs(dy) > 1) {
         c.style.transition = "none";
         c.style.transform = `translate3d(${dx}px, ${dy}px, 0)`;
         requestAnimationFrame(() => {
-          c.style.transition = "transform 190ms cubic-bezier(0.22, 1, 0.36, 1)";
+          c.style.transition = "transform 180ms cubic-bezier(0.22, 1, 0.36, 1)";
           c.style.transform = "";
         });
       }
@@ -1279,17 +1289,17 @@ function onPdfThumbPointerDown(e, initialIdx) {
     }
     updateGhostPosition(ev.clientX, ev.clientY);
 
-    // Detección geométrica directa por celdas puras del Grid (inmune a animaciones FLIP en vuelo)
-    const cards = getPageCards();
+    // Detección geométrica directa contra las celdas fijas del Grid (100% estable durante toda la trayectoria)
     let hitIdx = -1;
-    for (let i = 0; i < cards.length; i++) {
+    for (let i = 0; i < baseSlotRects.length; i++) {
       if (i === currentIdx) continue;
-      const r = getUntransformedCardRect(cards[i]);
+      const r = getSlotRect(i);
+      if (!r) continue;
       if (
-        ev.clientX >= r.left + r.width * 0.10 &&
-        ev.clientX <= r.right - r.width * 0.10 &&
-        ev.clientY >= r.top + r.height * 0.10 &&
-        ev.clientY <= r.bottom - r.height * 0.10
+        ev.clientX >= r.left + r.width * 0.12 &&
+        ev.clientX <= r.right - r.width * 0.12 &&
+        ev.clientY >= r.top + r.height * 0.12 &&
+        ev.clientY <= r.bottom - r.height * 0.12
       ) {
         hitIdx = i;
         break;

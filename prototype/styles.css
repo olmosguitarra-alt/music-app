@@ -9040,9 +9040,7 @@ body.mode-library-active #bachGptFab.bachgpt-fab,
 }
 
 .pdf-page-drag-ghost {
-  left: 0 !important;
-  top: 0 !important;
-  will-change: transform;
+  will-change: left, top;
   pointer-events: none !important;
 }
 
