@@ -9828,45 +9828,136 @@ body.mode-library-active .floating-import-fab-wrap {
 }
 
 @media (max-width: 760px) {
+  #pdfModal.modal-backdrop {
+    padding: 54px 12px calc(62px + env(safe-area-inset-bottom, 0px)) !important;
+    box-sizing: border-box !important;
+    align-items: center !important;
+    justify-content: center !important;
+  }
+
   .linearity-inspector-modal.pdf-lightbox-editor {
-    width: 96vw !important;
-    height: 91vh !important;
+    width: 100% !important;
+    max-width: calc(100vw - 24px) !important;
+    height: 100% !important;
+    max-height: calc(100vh - 116px - env(safe-area-inset-bottom, 0px)) !important;
+    max-height: calc(100dvh - 116px - env(safe-area-inset-bottom, 0px)) !important;
+    border-radius: 16px !important;
+    box-sizing: border-box !important;
   }
 
   .pdf-lightbox-header {
-    padding: 8px 12px;
+    grid-template-columns: auto minmax(0, 1fr) auto !important;
+    gap: 6px !important;
+    padding: 8px 10px !important;
   }
 
   .pdf-hdr-btn {
-    height: 32px;
-    padding: 0 10px;
-    font-size: 12px;
+    height: 30px !important;
+    padding: 0 9px !important;
+    font-size: 11.5px !important;
+    gap: 4px !important;
+  }
+
+  .pdf-hdr-btn .v-ico {
+    width: 13.5px !important;
+    height: 13.5px !important;
+  }
+
+  .pdf-hdr-btn.pdf-hdr-save {
+    padding: 0 11px !important;
+  }
+
+  .pdf-hdr-title-wrap {
+    gap: 5px !important;
+    min-width: 0 !important;
+    max-width: 100% !important;
+    overflow: hidden !important;
   }
 
   .pdf-hdr-title {
-    font-size: 13px;
+    font-size: 12.5px !important;
+    min-width: 0 !important;
+  }
+
+  .pdf-lightbox-header .pdf-page-count-pill {
+    font-size: 10px !important;
+    padding: 1px 6px !important;
+    flex-shrink: 0 !important;
   }
 
   #workshopPagesStrip.pdf-lightbox-grid {
-    grid-template-columns: repeat(auto-fill, minmax(138px, 1fr)) !important;
-    gap: 12px !important;
-    padding: 14px 14px 62px !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 10px !important;
+    padding: 12px 12px 54px !important;
   }
 
   #workshopPagesStrip.pdf-lightbox-grid .folio-page-thumb.pdf-lightbox-card {
-    height: 198px !important;
+    height: 172px !important;
+    padding: 7px 7px 5px !important;
+    border-radius: 12px !important;
+  }
+
+  .pdf-float-icon-btn {
+    width: 24px !important;
+    height: 24px !important;
+  }
+
+  .pdf-float-icon-btn .v-ico {
+    width: 12.5px !important;
+    height: 12.5px !important;
+  }
+
+  .pdf-lightbox-card .pdf-thumb-num {
+    font-size: 11px !important;
+  }
+
+  .pdf-floating-feedback-wrap {
+    bottom: 8px !important;
+  }
+
+  .pdf-floating-undo-pill {
+    height: 28px !important;
+    padding: 0 10px !important;
+    font-size: 11px !important;
+  }
+
+  .pdf-floating-toast {
+    padding: 5px 11px !important;
+    font-size: 11px !important;
   }
 
   .pdf-lightbox-footer {
-    gap: 6px;
-    padding: 8px 10px;
-    justify-content: space-around;
+    gap: 4px !important;
+    padding: 7px 8px !important;
+    justify-content: space-between !important;
+    flex-wrap: nowrap !important;
   }
 
   .pdf-bottom-action-btn {
-    height: 32px;
-    padding: 0 9px;
-    font-size: 12px;
-    gap: 5px;
+    flex: 1 1 0 !important;
+    min-width: 0 !important;
+    height: 32px !important;
+    padding: 0 6px !important;
+    font-size: 11.5px !important;
+    gap: 4px !important;
+  }
+
+  .pdf-bottom-action-btn .v-ico {
+    width: 13.5px !important;
+    height: 13.5px !important;
+  }
+
+  .pdf-submodal-card {
+    width: calc(100% - 24px) !important;
+    max-width: 310px !important;
+    padding: 15px 16px !important;
+  }
+}
+
+@media (max-width: 390px) {
+  .pdf-bottom-action-btn {
+    font-size: 10.5px !important;
+    padding: 0 4px !important;
+    gap: 3px !important;
   }
 }
