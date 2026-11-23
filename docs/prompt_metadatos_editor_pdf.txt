@@ -1,0 +1,65 @@
+# ADICIÓN PUNTUAL: EDITOR DE METADATOS Y FILTROS DINÁMICOS EN CADENZA
+
+Actúa como Ingeniero Frontend y Diseñador UI en Cadenza. No modifiques ni rehagas la arquitectura ya implementada del editor de PDF. Únicamente agrega la edición de metadatos y su sincronización dinámica con la biblioteca.
+
+---
+
+### 1. OBJETIVO ESPECÍFICO
+Permitir editar 4 campos de texto libre para la partitura activa:
+1. **Título**
+2. **Compositor**
+3. **Período**
+4. **Dotación**
+
+Sin listas predeterminadas ni opciones fijas: el usuario escribe texto libre y estos valores se convierten en nuevas opciones automáticas en los filtros de la Biblioteca, en los metadatos internos del PDF (`pdf-lib`) y en la información de programas/repertorio.
+
+---
+
+### 2. ESTÉTICA Y LÍNEA EDITORIAL UI (ESTILO CADENZA)
+El menú y los controles deben respetar rigurosamente la identidad visual del resto del editor:
+- **Botones y Controles:** Formas redondeadas suaves (`border-radius: 8px - 12px`), bordes tenues y elegantes (1px sutil en tonos neutros/oscuros), fondos discretos con transiciones suaves al toque/hover.
+- **Iconografía:** Iconos lineales limpios (SVG sobrio tipo Feather / Lucide de trazo delgado de 1.5px), sin colores chillones ni emojis pesados en la UI final.
+- **Tipografía y Jerarquía:** Tipografía sobria, etiquetas de campo sutiles en mayúsculas pequeñas o muted color (`font-size: 11-12px`, tono tenue), seguidas de cajas de texto limpias con focus suave.
+- **Modal "Ficha Técnica":** Tarjeta modal flotante con fondo difuminado suave (`backdrop-filter: blur`), sombra elegante y espaciado generoso para uso táctil sin saturar la pantalla.
+
+---
+
+### 3. ELEMENTOS DE INTERFAZ
+- **Acceso:** En la barra superior del Editor, junto al nombre del archivo, añadir el botón:
+  `[ (icono lineal de etiqueta/tag) Datos ]` (con el mismo estilo, tamaño y padding que los botones vecinos como `← Salir` o `💾 Guardar`).
+- **Modal de Metadatos:**
+  - Encabezado sobrio: `Metadatos de la Partitura` + botón discreto de cierre `✕`.
+  - 4 inputs con diseño estilizado:
+    * `TÍTULO`
+    * `COMPOSITOR`
+    * `PERÍODO`
+    * `DOTACIÓN`
+  - Botones de acción inferiores:
+    * `[ Cancelar ]` (secundario, borde suave transparente)
+    * `[ Aplicar ]` (primario, tono acento elegante de Cadenza)
+
+---
+
+### 4. COMPORTAMIENTO Y SINCRONIZACIÓN
+Al presionar `[ Aplicar ]`:
+
+1. **En la estructura del PDF (`pdf-lib`):**
+   - Inyectar los valores en el documento:
+     * `pdfDoc.setTitle(titulo)`
+     * `pdfDoc.setAuthor(compositor)`
+     * `pdfDoc.setSubject(periodo)`
+     * `pdfDoc.setKeywords([periodo, dotacion])`
+
+2. **En la Biblioteca de Cadenza (`localStorage` / catálogo activo):**
+   - Actualizar el registro de la partitura con `{ title, composer, period, ensemble }`.
+
+3. **Filtros Dinámicos en la Biblioteca:**
+   - La Biblioteca debe recalcular de inmediato las categorías en sus selectores de filtro:
+     * Si el usuario escribió en Período un valor nuevo (ej: `"Nacionalismo"`, `"Minimalismo"` o `"Impresionismo"`), esa opción se incorpora dinámicamente al desplegable de Período.
+     * Si escribió en Dotación un valor nuevo (ej: `"Trío con Clarinete"` o `"Coro Mixto"`), se incorpora de inmediato al menú de Dotación.
+   - Si no hay partituras que utilicen una etiqueta, esta no se muestra; el sistema es 100% orgánico y alimentado por el usuario.
+
+4. **Información de Programas y Fichas:**
+   - La vista de repertorio y notas al programa reflejan automáticamente estos 4 datos actualizados.
+
+Por favor, implementa esta funcionalidad en `prototype/` manteniendo la consistencia de estilos con `styles.css` sin alterar las funciones existentes del editor.

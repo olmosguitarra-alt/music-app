@@ -9961,3 +9961,154 @@ body.mode-library-active .floating-import-fab-wrap {
     gap: 3px !important;
   }
 }
+
+
+/* ==========================================================================
+   V87 — EDITOR DE METADATOS ("Ficha Técnica") Y BOTÓN [ Datos ] EN CABECERA
+   ========================================================================== */
+
+.pdf-hdr-btn.pdf-hdr-meta-btn {
+  height: 32px;
+  padding: 0 11px;
+  border-radius: 10px;
+  border: 1px solid color-mix(in srgb, var(--glass-border) 90%, transparent);
+  background: color-mix(in srgb, var(--card-bg) 70%, transparent);
+  color: var(--text-secondary);
+  font-size: 12.5px;
+  font-weight: 500;
+  gap: 5px;
+  flex-shrink: 0;
+}
+
+.pdf-hdr-btn.pdf-hdr-meta-btn .v-ico {
+  width: 14px;
+  height: 14px;
+  stroke-width: 1.5px;
+}
+
+.pdf-hdr-btn.pdf-hdr-meta-btn:hover {
+  color: var(--text-primary);
+  border-color: color-mix(in srgb, var(--accent) 40%, var(--glass-border));
+  background: color-mix(in srgb, var(--card-bg) 95%, transparent);
+}
+
+/* Modal Ficha Técnica */
+.pdf-submodal-card.pdf-metadata-modal-card {
+  width: min(410px, 92vw);
+  padding: 20px 22px;
+  border-radius: 16px;
+  background: color-mix(in srgb, var(--card-bg) 92%, var(--bg-canvas));
+  backdrop-filter: blur(22px) saturate(140%);
+  -webkit-backdrop-filter: blur(22px) saturate(140%);
+  border: 1px solid color-mix(in srgb, var(--glass-border) 95%, transparent);
+  box-shadow: var(--specular-top-light), 0 24px 54px rgba(0, 0, 0, 0.28);
+  gap: 16px;
+}
+
+.pdf-metadata-modal-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.pdf-metadata-close-btn {
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  border-radius: 9px;
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--text-secondary);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: color 150ms ease, background 150ms ease, border-color 150ms ease;
+}
+
+.pdf-metadata-close-btn .v-ico {
+  width: 16px;
+  height: 16px;
+  stroke-width: 1.5px;
+}
+
+.pdf-metadata-close-btn:hover {
+  color: var(--text-primary);
+  background: color-mix(in srgb, var(--text-primary) 6%, transparent);
+}
+
+.pdf-metadata-fields {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.pdf-meta-field {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.pdf-meta-field label {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-secondary);
+  opacity: 0.85;
+}
+
+.pdf-meta-field .pdf-submodal-input {
+  height: 39px;
+  padding: 0 12px;
+  border-radius: 10px;
+  border: 1px solid color-mix(in srgb, var(--glass-border) 95%, transparent);
+  background: color-mix(in srgb, var(--bg-canvas) 88%, transparent);
+  font-size: 13.5px;
+  transition: border-color 160ms ease, box-shadow 160ms ease, background 160ms ease;
+}
+
+.pdf-meta-field .pdf-submodal-input:focus {
+  border-color: color-mix(in srgb, var(--accent) 65%, var(--glass-border));
+  background: var(--bg-canvas);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 12%, transparent);
+}
+
+.pdf-meta-cancel-btn,
+.pdf-meta-apply-btn {
+  height: 36px;
+  padding: 0 16px;
+  border-radius: 10px;
+  font-size: 13px;
+}
+
+.pdf-meta-cancel-btn {
+  border: 1px solid color-mix(in srgb, var(--glass-border) 90%, transparent);
+  background: transparent;
+}
+
+@media (max-width: 760px) {
+  .pdf-hdr-btn.pdf-hdr-meta-btn {
+    height: 28px !important;
+    padding: 0 8px !important;
+    font-size: 11px !important;
+    border-radius: 8px !important;
+    gap: 4px !important;
+  }
+
+  .pdf-hdr-btn.pdf-hdr-meta-btn .v-ico {
+    width: 12.5px !important;
+    height: 12.5px !important;
+  }
+
+  .pdf-submodal-card.pdf-metadata-modal-card {
+    padding: 16px 16px !important;
+    gap: 12px !important;
+  }
+
+  .pdf-meta-field .pdf-submodal-input {
+    height: 36px !important;
+    font-size: 13px !important;
+  }
+}

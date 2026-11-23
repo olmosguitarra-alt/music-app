@@ -735,8 +735,13 @@ document.addEventListener("keydown", (e) => {
     e.preventDefault();
     undoLastPdfWorkshopAction();
   } else if (e.key === "Escape") {
+    const metaModal = document.getElementById("pdfMetadataModalBackdrop");
     const extModal = document.getElementById("pdfExtractModalBackdrop");
     const exitModal = document.getElementById("pdfExitConfirmBackdrop");
+    if (metaModal && !metaModal.classList.contains("hidden")) {
+      closePdfMetadataModal();
+      return;
+    }
     if (extModal && !extModal.classList.contains("hidden")) {
       closeExtractNewPdfModal();
       return;
@@ -840,23 +845,13 @@ async function openPdfModalById(scoreId) {
   if (wmPer) wmPer.value = pdfWorkshopDraft.period;
   if (wmGrp) wmGrp.value = pdfWorkshopDraft.group;
 
-  const fillDl = (dlId, defaults, key) => {
-    const dl = document.getElementById(dlId);
-    if (!dl) return;
-    const vals = [...new Set([...defaults, ...scores.map((x) => (x[key] || "").trim()).filter(Boolean)])];
-    dl.innerHTML = vals.map((v) => `<option value="${v.replace(/"/g, "&quot;")}"></option>`).join("");
-  };
-  fillDl("wmPeriodList", ["Renacimiento", "Barroco", "Clasicismo", "Romanticismo", "Siglo XX"], "period");
-  fillDl("wmGroupList", ["Guitarra Sola", "Dúo / Cámara", "Guitarra y Orquesta", "Otro Instrumento"], "group");
-
   const toastEl = document.getElementById("pdfToast");
   if (toastEl) {
     toastEl.textContent = "";
     toastEl.classList.remove("is-visible");
   }
 
-  const metaPop = document.getElementById("pdfMetaPopover");
-  if (metaPop) metaPop.classList.add("hidden");
+  closePdfMetadataModal();
   closeExtractNewPdfModal();
   closePdfExitConfirm();
 
@@ -884,24 +879,164 @@ async function openPdfModalById(scoreId) {
   }
 }
 
-function togglePdfMetaPopover(e) {
+const SCORES_META_STORAGE_KEY = "cadenza_scores_metadata_v1";
+
+function saveScoreMetadataOverride(scoreObj) {
+  if (!scoreObj || scoreObj.id == null) return;
+  try {
+    const map = JSON.parse(localStorage.getItem(SCORES_META_STORAGE_KEY) || "{}");
+    map[String(scoreObj.id)] = {
+      title: scoreObj.title || "",
+      clean: scoreObj.clean || scoreObj.title || "",
+      composer: scoreObj.composer || "",
+      period: scoreObj.period || "",
+      group: scoreObj.group || "",
+      ensemble: scoreObj.ensemble || scoreObj.group || ""
+    };
+    localStorage.setItem(SCORES_META_STORAGE_KEY, JSON.stringify(map));
+  } catch (_) {}
+}
+
+function loadScoreMetadataOverrides() {
+  try {
+    const map = JSON.parse(localStorage.getItem(SCORES_META_STORAGE_KEY) || "{}");
+    if (!map || typeof map !== "object") return;
+    scores.forEach((s) => {
+      const ov = map[String(s.id)];
+      if (!ov) return;
+      if (ov.title) {
+        s.title = ov.title;
+        s.clean = ov.clean || ov.title;
+      }
+      if (typeof ov.composer === "string") s.composer = ov.composer;
+      if (typeof ov.period === "string") s.period = ov.period;
+      if (typeof ov.group === "string" || typeof ov.ensemble === "string") {
+        const ens = ov.ensemble || ov.group || "";
+        s.group = ens;
+        s.ensemble = ens;
+      }
+      s.raw = false;
+    });
+  } catch (_) {}
+}
+
+function syncActiveReaderHeadersForScore(s) {
+  if (!s || typeof activeScore === "undefined" || !activeScore || activeScore.id !== s.id) return;
+  activeScore = s;
+  const displayTitle = s.clean || s.title;
+  const shortComp = (s.composer || "").split("(")[0].trim();
+  const hudTitle = document.getElementById("hudPieceTitle");
+  const studyHead = document.getElementById("studyTitleHeading");
+  const studySub = document.getElementById("studySubHeading");
+  const concertHead = document.getElementById("concertTitleHeading");
+  const concertSub = document.getElementById("concertSub");
+  if (hudTitle) hudTitle.textContent = shortComp ? `${shortComp} — ${displayTitle}` : displayTitle;
+  if (studyHead) studyHead.textContent = displayTitle;
+  if (studySub) studySub.textContent = s.composer || "";
+  if (concertHead) concertHead.textContent = displayTitle;
+  if (concertSub) concertSub.textContent = s.composer || "";
+}
+
+function openPdfMetadataModal(e) {
   if (e) e.stopPropagation();
-  const pop = document.getElementById("pdfMetaPopover");
-  if (!pop || !pdfWorkshopDraft) return;
-  const isOpening = pop.classList.contains("hidden");
-  pop.classList.toggle("hidden", !isOpening);
-  if (!isOpening) {
-    const newTitle = (document.getElementById("wmTitleInput")?.value || "").trim();
-    if (newTitle && newTitle !== pdfWorkshopDraft.title) {
-      pdfWorkshopDraft.title = newTitle;
-      document.getElementById("modalScoreTitle").textContent = formatPdfEditorFilenameTitle(newTitle);
-      isPdfWorkshopDirty = true;
-      updatePdfUndoButtonState();
+  const backdrop = document.getElementById("pdfMetadataModalBackdrop");
+  if (!backdrop || !pdfWorkshopDraft) return;
+  const wmTitle = document.getElementById("wmTitleInput");
+  const wmComp = document.getElementById("wmComposerInput");
+  const wmPer = document.getElementById("wmPeriodInput");
+  const wmGrp = document.getElementById("wmGroupInput");
+  if (wmTitle) wmTitle.value = pdfWorkshopDraft.title || "";
+  if (wmComp) wmComp.value = pdfWorkshopDraft.composer || "";
+  if (wmPer) wmPer.value = pdfWorkshopDraft.period || "";
+  if (wmGrp) wmGrp.value = pdfWorkshopDraft.group || pdfWorkshopDraft.ensemble || "";
+  backdrop.classList.remove("hidden");
+  setTimeout(() => {
+    if (wmTitle) {
+      wmTitle.focus();
+      wmTitle.select();
     }
-    pdfWorkshopDraft.composer = (document.getElementById("wmComposerInput")?.value || "").trim() || pdfWorkshopDraft.composer;
-    pdfWorkshopDraft.period = (document.getElementById("wmPeriodInput")?.value || "").trim() || pdfWorkshopDraft.period;
-    pdfWorkshopDraft.group = (document.getElementById("wmGroupInput")?.value || "").trim() || pdfWorkshopDraft.group;
+  }, 40);
+}
+
+function closePdfMetadataModal() {
+  const backdrop = document.getElementById("pdfMetadataModalBackdrop");
+  if (backdrop) backdrop.classList.add("hidden");
+}
+
+function togglePdfMetaPopover(e) {
+  const backdrop = document.getElementById("pdfMetadataModalBackdrop");
+  if (backdrop && backdrop.classList.contains("hidden")) {
+    openPdfMetadataModal(e);
+  } else {
+    closePdfMetadataModal();
   }
+}
+
+async function applyPdfMetadataChanges() {
+  const draft = pdfWorkshopDraft;
+  if (!draft) return;
+
+  const rawTitle = (document.getElementById("wmTitleInput")?.value || "").trim();
+  const titulo = rawTitle.replace(/\.pdf$/i, "").trim() || draft.title || "Partitura";
+  const compositor = (document.getElementById("wmComposerInput")?.value || "").trim();
+  const periodo = (document.getElementById("wmPeriodInput")?.value || "").trim();
+  const dotacion = (document.getElementById("wmGroupInput")?.value || "").trim();
+
+  draft.title = titulo;
+  draft.composer = compositor;
+  draft.period = periodo;
+  draft.group = dotacion;
+  draft.ensemble = dotacion;
+
+  const modalTitleEl = document.getElementById("modalScoreTitle");
+  if (modalTitleEl) {
+    modalTitleEl.textContent = formatPdfEditorFilenameTitle(titulo);
+  }
+
+  // 1. Inyectar metadatos internos en el documento PDF mediante pdf-lib
+  if (draft.isRealPdf && window.PDFLib) {
+    try {
+      if (!pdfWorkingDoc && draft.pdfBytes) {
+        pdfWorkingDoc = await window.PDFLib.PDFDocument.load(draft.pdfBytes);
+      }
+      if (pdfWorkingDoc) {
+        pdfWorkingDoc.setTitle(titulo);
+        pdfWorkingDoc.setAuthor(compositor);
+        pdfWorkingDoc.setSubject(periodo);
+        pdfWorkingDoc.setKeywords([periodo, dotacion].filter(Boolean));
+        await syncWorkingPdfBytesFromDoc();
+      }
+    } catch (err) {
+      console.warn("Error inyectando metadatos en PDFLib.PDFDocument:", err);
+    }
+  }
+
+  // 2. Actualizar registro en el catálogo activo y persistir en localStorage / IndexedDB
+  const s = scores.find((item) => item.id === draft.id);
+  if (s) {
+    s.title = titulo;
+    s.clean = titulo;
+    s.composer = compositor;
+    s.period = periodo;
+    s.group = dotacion;
+    s.ensemble = dotacion;
+    s.raw = false;
+    if (draft.pdfBytes) {
+      s.pdfBytes = draft.pdfBytes.slice(0);
+    }
+    saveScoreMetadataOverride(s);
+    if (s.isRealPdf && s.pdfBytes) {
+      await saveRealPdfToDb(s);
+    }
+    syncActiveReaderHeadersForScore(s);
+  }
+
+  // 3 y 4. Recalcular filtros dinámicos de Biblioteca y actualizar Programas / Repertorio
+  refreshDynamicLibraryFilters();
+  if (typeof renderSetlistDrawer === "function") renderSetlistDrawer();
+
+  closePdfMetadataModal();
+  triggerPdfToast("Metadatos actualizados");
 }
 
 function syncExtractModeBarsUI() {
@@ -1716,6 +1851,10 @@ async function commitAndSavePdfChanges() {
         pdfWorkingDoc = await window.PDFLib.PDFDocument.load(draft.pdfBytes);
       }
       if (pdfWorkingDoc) {
+        pdfWorkingDoc.setTitle(draft.title || "");
+        pdfWorkingDoc.setAuthor(draft.composer || "");
+        pdfWorkingDoc.setSubject(draft.period || "");
+        pdfWorkingDoc.setKeywords([draft.period, draft.group || draft.ensemble].filter(Boolean));
         draft.pdfBytes = await pdfWorkingDoc.save();
       }
       if (draft.pdfBytes) {
@@ -1731,9 +1870,10 @@ async function commitAndSavePdfChanges() {
 
   s.title = draft.title || s.title;
   s.clean = s.title;
-  s.composer = draft.composer || s.composer;
-  s.period = draft.period || s.period;
-  s.group = draft.group || s.group;
+  s.composer = draft.composer ?? s.composer;
+  s.period = draft.period ?? s.period;
+  s.group = draft.group ?? s.group;
+  s.ensemble = s.group;
   s.raw = false;
   s.isRealPdf = draft.isRealPdf;
   s.pdfBytes = draft.pdfBytes ? draft.pdfBytes.slice(0) : null;
@@ -1742,9 +1882,11 @@ async function commitAndSavePdfChanges() {
   s.pageCount = s.pageItems.length;
   s.pages = `${s.pageCount} págs.`;
 
+  saveScoreMetadataOverride(s);
   if (s.isRealPdf && s.pdfBytes) {
     await saveRealPdfToDb(s);
   }
+  syncActiveReaderHeadersForScore(s);
 
   // Si la partitura editada es la activa en el visor (Estudio/Concierto), recargar su instancia PDF.js
   if (typeof activeScore !== "undefined" && activeScore && activeScore.id === s.id) {
@@ -1766,7 +1908,7 @@ async function commitAndSavePdfChanges() {
   isPdfWorkshopDirty = false;
   pdfWorkshopUndoStack = [];
   updatePdfUndoButtonState();
-  renderLibrary();
+  refreshDynamicLibraryFilters();
   if (typeof renderSetlistDrawer === "function") renderSetlistDrawer();
   triggerPdfToast("Cambios guardados");
   setTimeout(() => forceClosePdfModalDiscard(), 320);
@@ -1796,8 +1938,7 @@ function closePdfExitConfirm() {
 function forceClosePdfModalDiscard() {
   closePdfExitConfirm();
   closeExtractNewPdfModal();
-  const metaPop = document.getElementById("pdfMetaPopover");
-  if (metaPop) metaPop.classList.add("hidden");
+  closePdfMetadataModal();
   isPdfExtractMode = false;
   isPdfWorkshopDirty = false;
   pdfWorkshopDraft = null;
@@ -1885,6 +2026,69 @@ function selectClassification(clsKey, labelText, btn) {
   renderLibrary();
 }
 
+function getOrganicFilterValues(kind) {
+  if (kind === "composer") {
+    return [...new Set(scores.map((s) => (s.composer || "").split("(")[0].trim()).filter(Boolean))];
+  }
+  if (kind === "period") {
+    return [...new Set(scores.map((s) => (s.period || "").trim()).filter(Boolean))];
+  }
+  if (kind === "group") {
+    return [...new Set(scores.map((s) => (s.group || s.ensemble || "").trim()).filter(Boolean))];
+  }
+  return [];
+}
+
+function buildFilterMenuOptionsHtml(kind) {
+  const vals = getOrganicFilterValues(kind);
+  let current = "all";
+  let fn = "applyComposerFilter";
+  if (kind === "composer") {
+    current = selectedComposerFilter;
+    fn = "applyComposerFilter";
+  } else if (kind === "period") {
+    current = selectedPeriodFilter;
+    fn = "applyPeriodFilter";
+  } else if (kind === "group") {
+    current = selectedGroupFilter;
+    fn = "applyGroupFilter";
+  }
+  return [
+    `<button class="filter-dd-opt ${current === "all" ? "active" : ""}" onclick="${fn}('all')">Todos</button>`,
+    ...vals.map(
+      (v) => `<button class="filter-dd-opt ${current === v ? "active" : ""}" onclick="${fn}('${v.replace(/'/g, "\\'")}')">${v}</button>`
+    )
+  ].join("");
+}
+
+function refreshDynamicLibraryFilters() {
+  const composers = getOrganicFilterValues("composer");
+  const periods = getOrganicFilterValues("period");
+  const groups = getOrganicFilterValues("group");
+
+  if (selectedComposerFilter !== "all" && !composers.some((c) => c.toLowerCase().includes(selectedComposerFilter.toLowerCase()))) {
+    selectedComposerFilter = "all";
+    const lc = document.getElementById("labelFilterComposer");
+    if (lc) lc.textContent = "Compositor";
+  }
+  if (selectedPeriodFilter !== "all" && !periods.includes(selectedPeriodFilter)) {
+    selectedPeriodFilter = "all";
+    const lp = document.getElementById("labelFilterPeriod");
+    if (lp) lp.textContent = "Periodo";
+  }
+  if (selectedGroupFilter !== "all" && !groups.includes(selectedGroupFilter)) {
+    selectedGroupFilter = "all";
+    const lg = document.getElementById("labelFilterGroup");
+    if (lg) lg.textContent = "Dotación";
+  }
+
+  const menu = document.getElementById("sharedFilterMenu");
+  if (menu && !menu.classList.contains("hidden") && activeFilterMenuKind) {
+    menu.innerHTML = buildFilterMenuOptionsHtml(activeFilterMenuKind);
+  }
+  renderLibrary();
+}
+
 function toggleFilterDropdown(kind, e) {
   if (e) e.stopPropagation();
   const menu = document.getElementById("sharedFilterMenu");
@@ -1896,29 +2100,7 @@ function toggleFilterDropdown(kind, e) {
     return;
   }
 
-  let vals = [];
-  let current = "all";
-  let fn = "applyComposerFilter";
-  if (kind === "composer") {
-    vals = [...new Set(scores.map((s) => (s.composer || "").split("(")[0].trim()).filter(Boolean))];
-    current = selectedComposerFilter;
-    fn = "applyComposerFilter";
-  } else if (kind === "period") {
-    vals = [...new Set(scores.map((s) => (s.period || "").trim()).filter(Boolean))];
-    current = selectedPeriodFilter;
-    fn = "applyPeriodFilter";
-  } else if (kind === "group") {
-    vals = [...new Set(scores.map((s) => (s.group || "").trim()).filter(Boolean))];
-    current = selectedGroupFilter;
-    fn = "applyGroupFilter";
-  }
-
-  menu.innerHTML = [
-    `<button class="filter-dd-opt ${current === "all" ? "active" : ""}" onclick="${fn}('all')">Todos</button>`,
-    ...vals.map(
-      (v) => `<button class="filter-dd-opt ${current === v ? "active" : ""}" onclick="${fn}('${v.replace(/'/g, "\\'")}')">${v}</button>`
-    )
-  ].join("");
+  menu.innerHTML = buildFilterMenuOptionsHtml(kind);
 
   const trigger = e?.currentTarget;
   if (trigger) {
@@ -4483,7 +4665,7 @@ function renderSetlistDrawer() {
         <span class="setlist-num">${idx + 1}</span>
         <div class="setlist-item-info" onclick="openScoreById(${s.id}, 'study')" title="Abrir partitura">
           <strong>${s.clean || s.title}</strong>
-          <small>${s.composer.split("(")[0].trim()}</small>
+          <small>${[(s.composer || "").split("(")[0].trim(), s.period, s.group || s.ensemble].filter(Boolean).join(" · ")}</small>
         </div>
         <div class="setlist-item-controls" onclick="event.stopPropagation()">
           <button class="pq-step-btn" onclick="moveProgramItem(${idx}, -1)" ${idx === 0 ? "disabled" : ""} title="Subir" aria-label="Subir">↑</button>
@@ -5173,6 +5355,7 @@ document.addEventListener("click", (e) => {
 
 window.addEventListener("DOMContentLoaded", async () => {
   await loadSavedPdfsFromDb();
+  loadScoreMetadataOverrides();
   loadFavoritesState();
   loadProgramsState();
   initBachGptWidget();

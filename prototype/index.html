@@ -11,7 +11,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:wght@600;700&display=swap" />
-  <link rel="stylesheet" href="styles.css?v=86" />
+  <link rel="stylesheet" href="styles.css?v=87" />
   <!-- Motores Oficiales para Renderizar (PDF.js) y Particionar/Editar PDFs Reales (pdf-lib) -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf-lib/1.17.1/pdf-lib.min.js"></script>
@@ -246,8 +246,12 @@
           </button>
 
           <div class="pdf-hdr-title-wrap">
-            <h3 id="modalScoreTitle" class="pdf-hdr-title" title="Clic para editar datos de la obra" onclick="togglePdfMetaPopover(event)">Nocturno Op. 9 No. 2.pdf</h3>
+            <h3 id="modalScoreTitle" class="pdf-hdr-title" title="Editar ficha técnica" onclick="openPdfMetadataModal(event)">Nocturno Op. 9 No. 2.pdf</h3>
             <span class="pdf-page-count-pill" id="pdfModalPageCountBadge">4 págs.</span>
+            <button type="button" class="pdf-hdr-btn pdf-hdr-meta-btn" id="btnOpenPdfMetadata" onclick="openPdfMetadataModal(event)" title="Ficha técnica y metadatos">
+              <svg viewBox="0 0 24 24" class="v-ico" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>
+              <span>Datos</span>
+            </button>
           </div>
 
           <div class="pdf-hdr-right">
@@ -255,34 +259,6 @@
               <svg viewBox="0 0 24 24" class="v-ico" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
               <span>Guardar</span>
             </button>
-          </div>
-
-          <!-- Popover compacto opcional para mantener compatibilidad con metadatos si se pulsa el título -->
-          <div class="pdf-meta-popover hidden" id="pdfMetaPopover" onclick="event.stopPropagation()">
-            <div class="pdf-meta-side-title">Datos de la obra</div>
-            <div class="workshop-meta-grid">
-              <div class="wm-field">
-                <label for="wmTitleInput">Título</label>
-                <input type="text" id="wmTitleInput" />
-              </div>
-              <div class="wm-field">
-                <label for="wmComposerInput">Compositor</label>
-                <input type="text" id="wmComposerInput" />
-              </div>
-              <div class="wm-field">
-                <label for="wmPeriodInput">Periodo</label>
-                <input type="text" id="wmPeriodInput" list="wmPeriodList" autocomplete="off" />
-                <datalist id="wmPeriodList"></datalist>
-              </div>
-              <div class="wm-field">
-                <label for="wmGroupInput">Instrumento</label>
-                <input type="text" id="wmGroupInput" list="wmGroupList" autocomplete="off" />
-                <datalist id="wmGroupList"></datalist>
-              </div>
-            </div>
-            <div class="pdf-meta-pop-actions">
-              <button type="button" class="pdf-mini-action accent" onclick="togglePdfMetaPopover()">Listo</button>
-            </div>
           </div>
         </header>
 
@@ -331,6 +307,42 @@
             <span id="lblCreateExtractedPdf">Crear PDF (0)</span>
           </button>
         </footer>
+
+        <!-- Modal Ficha Técnica: Metadatos de la Partitura -->
+        <div class="pdf-submodal-backdrop hidden" id="pdfMetadataModalBackdrop" onclick="closePdfMetadataModal()">
+          <div class="pdf-submodal-card pdf-metadata-modal-card" onclick="event.stopPropagation()">
+            <div class="pdf-metadata-modal-head">
+              <h4 class="pdf-submodal-title">Metadatos de la Partitura</h4>
+              <button type="button" class="pdf-metadata-close-btn" onclick="closePdfMetadataModal()" aria-label="Cerrar metadatos">
+                <svg viewBox="0 0 24 24" class="v-ico" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+              </button>
+            </div>
+
+            <div class="pdf-metadata-fields">
+              <div class="pdf-meta-field">
+                <label for="wmTitleInput">TÍTULO</label>
+                <input type="text" id="wmTitleInput" class="pdf-submodal-input" placeholder="Ej. Nocturno Op. 9 No. 2" autocomplete="off" />
+              </div>
+              <div class="pdf-meta-field">
+                <label for="wmComposerInput">COMPOSITOR</label>
+                <input type="text" id="wmComposerInput" class="pdf-submodal-input" placeholder="Ej. Frédéric Chopin" autocomplete="off" />
+              </div>
+              <div class="pdf-meta-field">
+                <label for="wmPeriodInput">PERÍODO</label>
+                <input type="text" id="wmPeriodInput" class="pdf-submodal-input" placeholder="Ej. Romanticismo, Nacionalismo..." autocomplete="off" />
+              </div>
+              <div class="pdf-meta-field">
+                <label for="wmGroupInput">DOTACIÓN</label>
+                <input type="text" id="wmGroupInput" class="pdf-submodal-input" placeholder="Ej. Guitarra Sola, Trío con Clarinete..." autocomplete="off" />
+              </div>
+            </div>
+
+            <div class="pdf-submodal-actions">
+              <button type="button" class="pdf-submodal-btn pdf-meta-cancel-btn" onclick="closePdfMetadataModal()">Cancelar</button>
+              <button type="button" class="pdf-submodal-btn accent pdf-meta-apply-btn" onclick="applyPdfMetadataChanges()">Aplicar</button>
+            </div>
+          </div>
+        </div>
 
         <!-- Modal Minimalista: Nuevo archivo (Modo Extraer) -->
         <div class="pdf-submodal-backdrop hidden" id="pdfExtractModalBackdrop" onclick="closeExtractNewPdfModal()">
@@ -850,6 +862,6 @@
     <span class="pdf-loading-text">Cargando...</span>
   </div>
 
-  <script src="app.js?v=86"></script>
+  <script src="app.js?v=87"></script>
 </body>
 </html>
