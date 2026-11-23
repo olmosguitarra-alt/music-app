@@ -591,11 +591,58 @@ function ensureScorePageItems(s) {
     s.pageItems = Array.from({ length: count }, (_, idx) => ({
       id: `p-${idx + 1}-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
       kind: s.isRealPdf ? "pdf" : "score",
-      label: s.isRealPdf ? "PDF Original" : `Sección ${idx + 1}`,
+      sourcePage: idx + 1,
+      label: s.isRealPdf ? `Página ${idx + 1}` : `Sección ${idx + 1}`,
       rotation: 0
     }));
   }
   return s.pageItems;
+}
+
+function invalidateScorePageThumbnails(s) {
+  if (!s || !Array.isArray(s.pageItems)) return;
+  s.pageItems.forEach((it) => {
+    it.thumbUrl = null;
+    it.thumbPageIndex = null;
+  });
+}
+
+let pdfThumbRenderToken = 0;
+
+async function hydrateWorkshopPdfPageThumbnails(scoreObj) {
+  if (!scoreObj || !scoreObj.isRealPdf || !scoreObj.pdfBytes || !window.pdfjsLib) return;
+  const items = ensureScorePageItems(scoreObj);
+  const myToken = ++pdfThumbRenderToken;
+
+  try {
+    const loadingTask = window.pdfjsLib.getDocument({ data: scoreObj.pdfBytes.slice(0) });
+    const pdfDoc = await loadingTask.promise;
+    const numPages = pdfDoc.numPages;
+
+    for (let p = 1; p <= Math.min(items.length, numPages); p++) {
+      if (myToken !== pdfThumbRenderToken || activeWorkshopScoreId !== scoreObj.id) return;
+      const item = items[p - 1];
+      if (!item || item.kind === "blank") continue;
+      if (!item.thumbUrl || item.thumbPageIndex !== p) {
+        const page = await pdfDoc.getPage(p);
+        const viewport = page.getViewport({ scale: 0.58 });
+        const canvas = document.createElement("canvas");
+        canvas.width = viewport.width;
+        canvas.height = viewport.height;
+        const ctx = canvas.getContext("2d");
+        await page.render({ canvasContext: ctx, viewport }).promise;
+        item.thumbUrl = canvas.toDataURL("image/jpeg", 0.84);
+        item.thumbPageIndex = p;
+      }
+      const imgEl = document.querySelector(`#workshopPagesStrip img[data-pdf-page-img="${p}"]`);
+      if (imgEl && item.thumbUrl) {
+        imgEl.setAttribute("src", item.thumbUrl);
+        imgEl.classList.remove("is-loading-thumb");
+      }
+    }
+  } catch (err) {
+    console.warn("Error generando miniaturas por página del PDF:", err);
+  }
 }
 
 function updatePdfWorkshopHeaderCounts(s) {
@@ -681,6 +728,16 @@ function renderWorkshopPageStrip(scoreObj) {
     const isBlank = item.kind === "blank";
     const rot = item.rotation || 0;
     const rotTag = rot ? `<span class="pdf-thumb-rot-badge">${rot}°</span>` : "";
+    const srcPageNum = item.sourcePage || p;
+    const measureStart = (srcPageNum - 1) * 16 + 1;
+    const measureEnd = srcPageNum * 16;
+    const variantIdx = ((srcPageNum - 1) % 3) + 1;
+    const pageThumbSrc =
+      item.thumbUrl && item.thumbPageIndex === p
+        ? item.thumbUrl
+        : p === 1 && !item.thumbUrl && scoreObj.thumbDataUrl
+        ? scoreObj.thumbDataUrl
+        : "";
 
     const sheetPreviewHtml = isBlank
       ? `
@@ -688,17 +745,18 @@ function renderWorkshopPageStrip(scoreObj) {
           <div class="blank-sheet-inner"><span>Página en blanco</span></div>
         </div>
       `
-      : item.thumbUrl || scoreObj.thumbDataUrl
+      : scoreObj.isRealPdf && scoreObj.pdfBytes
       ? `
         <div class="folio-preview-sheet pdf-thumb-folio-sheet has-real-thumb" style="transform: rotate(${rot}deg)">
-          <img src="${item.thumbUrl || scoreObj.thumbDataUrl}" alt="Pág. ${p}" class="real-pdf-thumb-img" />
+          <img data-pdf-page-img="${p}" src="${pageThumbSrc}" alt="Pág. ${p}" class="real-pdf-thumb-img ${pageThumbSrc ? "" : "is-loading-thumb"}" />
         </div>
       `
-      : `
-        <div class="folio-preview-sheet pdf-thumb-folio-sheet" style="transform: rotate(${rot}deg)">
+      : srcPageNum === 1
+      ? `
+        <div class="folio-preview-sheet pdf-thumb-folio-sheet is-top-aligned" data-page-variant="1" style="transform: rotate(${rot}deg)">
           <div class="folio-preview-head">
             <strong>${cleanTitle}</strong>
-            <small>${item.label || cleanComp}</small>
+            <small>${cleanComp} · c. 1–16</small>
           </div>
           <div class="mini-staves">
             <div class="mini-staff-bar"></div>
@@ -707,6 +765,24 @@ function renderWorkshopPageStrip(scoreObj) {
           </div>
           <div class="folio-preview-foot">
             <span>${scoreObj.tuning || ""}</span>
+            <span>Pág. ${p}</span>
+          </div>
+        </div>
+      `
+      : `
+        <div class="folio-preview-sheet pdf-thumb-folio-sheet is-top-aligned is-continuation-page" data-page-variant="${variantIdx}" style="transform: rotate(${rot}deg)">
+          <div class="folio-preview-running-top">
+            <strong>Pág. ${p}</strong>
+            <span>c. ${measureStart}–${measureEnd}</span>
+          </div>
+          <div class="mini-staves">
+            <div class="mini-staff-bar"></div>
+            <div class="mini-staff-bar"></div>
+            <div class="mini-staff-bar"></div>
+            <div class="mini-staff-bar"></div>
+          </div>
+          <div class="folio-preview-foot">
+            <span>${cleanTitle}</span>
             <span>Pág. ${p}</span>
           </div>
         </div>
@@ -743,6 +819,7 @@ function renderWorkshopPageStrip(scoreObj) {
 
   strip.innerHTML = html;
   updatePdfWorkshopHeaderCounts(scoreObj);
+  hydrateWorkshopPdfPageThumbnails(scoreObj);
 }
 
 function toggleWorkshopPageSelection(pNum, el) {
@@ -799,6 +876,7 @@ async function addBlankPdfPage(afterPageOverride) {
     label: "Página en blanco",
     rotation: 0
   });
+  invalidateScorePageThumbnails(s);
   s.pageCount = items.length;
   s.pages = `${s.pageCount} págs.`;
   if (s.isRealPdf) await saveRealPdfToDb(s);
@@ -846,6 +924,7 @@ async function duplicateSelectedPdfPages() {
     label: `${items[p - 1].label} (Copia)`
   }));
   items.splice(lastSel, 0, ...clones);
+  invalidateScorePageThumbnails(s);
   s.pageCount = items.length;
   s.pages = `${s.pageCount} págs.`;
   if (s.isRealPdf) await saveRealPdfToDb(s);
@@ -910,6 +989,7 @@ async function moveSingleWorkshopPage(e, pNum, dir) {
 
   const [moved] = items.splice(fromIdx, 1);
   items.splice(toIdx, 0, moved);
+  invalidateScorePageThumbnails(s);
 
   if (s.isRealPdf && s.pdfBytes && window.PDFLib) {
     try {
@@ -1003,6 +1083,8 @@ async function splitPdfInTwoFiles() {
 
       s.pdfBytes = bytes1;
       s.pageItems = items.slice(0, cutAfter);
+      invalidateScorePageThumbnails(s);
+      invalidateScorePageThumbnails(part2Score);
       s.pageCount = cutAfter;
       s.pages = `${cutAfter} págs.`;
       await saveRealPdfToDb(s);
@@ -1188,6 +1270,7 @@ async function deleteSelectedPdfPages() {
   }
 
   s.pageItems = items.filter((_, idx) => !selectedWorkshopPages.has(idx + 1));
+  invalidateScorePageThumbnails(s);
   s.pageCount = s.pageItems.length;
   s.pages = `${s.pageCount} págs.`;
   selectedWorkshopPages = new Set([Math.min(1, s.pageCount)]);

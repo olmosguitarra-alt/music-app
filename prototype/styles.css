@@ -8583,3 +8583,76 @@ body .programs-detail-panel {
     display: none;
   }
 }
+
+/* ==========================================================================
+   V77 — Editor PDF: sin papelera en la barra superior; vista previa de cada
+         página correspondiente a su número real y alineada al margen superior
+   ========================================================================== */
+.real-pdf-thumb-img,
+.folio-preview-sheet.pdf-thumb-folio-sheet .real-pdf-thumb-img {
+  width: 100% !important;
+  height: 100% !important;
+  object-fit: cover !important;
+  object-position: top center !important;
+  display: block !important;
+}
+
+.folio-preview-sheet.pdf-thumb-folio-sheet.has-real-thumb {
+  padding: 0 !important;
+  align-items: flex-start !important;
+  justify-content: flex-start !important;
+  overflow: hidden !important;
+}
+
+.real-pdf-thumb-img.is-loading-thumb {
+  opacity: 0;
+}
+
+.folio-preview-sheet.pdf-thumb-folio-sheet.is-top-aligned {
+  justify-content: flex-start !important;
+  padding: 5px 8px 4px !important;
+  gap: 5px !important;
+}
+
+.folio-preview-sheet.pdf-thumb-folio-sheet.is-top-aligned .folio-preview-head {
+  padding-bottom: 3px !important;
+  margin-top: 0 !important;
+}
+
+.folio-preview-running-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-family: "Georgia", serif;
+  font-size: 8px;
+  border-bottom: 0.5px solid var(--paper-line);
+  padding-bottom: 2px;
+  margin-top: 0;
+  opacity: 0.82;
+}
+
+.folio-preview-running-top strong {
+  font-size: 8.5px;
+  font-weight: 700;
+}
+
+.folio-preview-sheet.pdf-thumb-folio-sheet.is-top-aligned .mini-staves {
+  flex: 1 1 auto;
+  justify-content: space-evenly;
+  gap: 5px !important;
+}
+
+.folio-preview-sheet.pdf-thumb-folio-sheet[data-page-variant="2"] .mini-staff-bar::after {
+  content: "♬ ♩ ♪ ♬  ♩ ♬";
+  letter-spacing: 2.1px !important;
+}
+
+.folio-preview-sheet.pdf-thumb-folio-sheet[data-page-variant="3"] .mini-staff-bar::after {
+  content: "♪ ♬ ♩ ♪  ♬ ♩";
+  letter-spacing: 1.5px !important;
+}
+
+.folio-preview-sheet.pdf-thumb-folio-sheet.is-top-aligned .folio-preview-foot {
+  margin-top: auto;
+  padding-top: 2px !important;
+}
