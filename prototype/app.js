@@ -3955,11 +3955,16 @@ function renderStudyPageScrubber() {
   const pill = document.getElementById("scrubberPagePill");
   const fill = document.getElementById("scrubberFill");
   const bmContainer = document.getElementById("scrubberBookmarks");
+  const rng = document.getElementById("scrubberRangeInput");
 
-  if (pill) pill.textContent = `${pageNum} / ${total}`;
+  if (pill) pill.textContent = `Pág. ${pageNum} / ${total}`;
+  if (rng) {
+    rng.max = String(total);
+    rng.value = String(pageNum);
+  }
   if (fill) {
     const pct = total <= 1 ? 100 : ((pageNum - 1) / (total - 1)) * 100;
-    fill.style.width = `${Math.max(4, pct)}%`;
+    fill.style.width = `${Math.max(2, pct)}%`;
   }
   if (bmContainer) {
     const sId = activeScore ? activeScore.id : 1;
@@ -3973,20 +3978,61 @@ function renderStudyPageScrubber() {
   }
 }
 
-function handleScrubberClick(e) {
-  const track = document.getElementById("performerPageScrubber");
-  if (!track) return;
-  const rect = track.getBoundingClientRect();
-  const ratio = Math.max(0, Math.min(1, (e.clientX - rect.left) / Math.max(1, rect.width)));
+function previewScrubberPage(val) {
   const total = Math.max(1, activeScore?.pageCount || 10);
-  const target = Math.round(1 + ratio * (total - 1));
+  const target = Math.max(1, Math.min(total, parseInt(val, 10) || 1));
+  const pill = document.getElementById("scrubberPagePill");
+  const fill = document.getElementById("scrubberFill");
+  const tip = document.getElementById("scrubberHoverTip");
+  const pct = total <= 1 ? 100 : ((target - 1) / (total - 1)) * 100;
+
+  if (pill) pill.textContent = `Pág. ${target} / ${total}`;
+  if (fill) fill.style.width = `${Math.max(2, pct)}%`;
+  if (tip) {
+    tip.textContent = `Pág. ${target}`;
+    tip.style.left = `${pct}%`;
+    tip.classList.remove("hidden");
+  }
+}
+
+function commitScrubberPage(val) {
+  document.getElementById("scrubberHoverTip")?.classList.add("hidden");
+  const target = parseInt(val, 10) || 1;
   jumpToPage(target);
 }
 
-function toggleToolRailCollapse() {
+let toolRailAutoCollapseTimer = null;
+
+function resetToolRailInactivityTimer() {
+  if (toolRailAutoCollapseTimer) clearTimeout(toolRailAutoCollapseTimer);
   const rail = document.getElementById("performerToolRail");
+  if (!rail || rail.classList.contains("rail-collapsed")) return;
+  toolRailAutoCollapseTimer = setTimeout(() => {
+    toggleToolRailCollapse(false);
+  }, 30000);
+}
+
+function toggleToolRailCollapse(forceOpen) {
+  const rail = document.getElementById("performerToolRail");
+  const btn = document.getElementById("btnToggleToolRail");
+  const performer = document.getElementById("mode-performer");
   if (!rail) return;
-  rail.classList.toggle("rail-collapsed");
+
+  const shouldOpen = typeof forceOpen === "boolean" ? forceOpen : rail.classList.contains("rail-collapsed");
+  rail.classList.toggle("rail-collapsed", !shouldOpen);
+  if (btn) btn.classList.toggle("active", shouldOpen);
+  if (performer) performer.classList.toggle("rail-open-drawing", shouldOpen);
+
+  if (shouldOpen) {
+    resetToolRailInactivityTimer();
+  } else {
+    if (toolRailAutoCollapseTimer) {
+      clearTimeout(toolRailAutoCollapseTimer);
+      toolRailAutoCollapseTimer = null;
+    }
+    document.getElementById("brushPopover")?.classList.add("hidden");
+    document.getElementById("stampPopover")?.classList.add("hidden");
+  }
 }
 
 function applyInkPreset(color, width, tool, btn) {
@@ -4000,6 +4046,7 @@ function applyInkPreset(color, width, tool, btn) {
   const rng = document.getElementById("brushWidthRange");
   if (lbl) lbl.textContent = `${width.toFixed(1)} px`;
   if (rng) rng.value = String(width);
+  resetToolRailInactivityTimer();
 }
 
 async function jumpToPage(targetPage) {
@@ -4064,8 +4111,11 @@ function initStudyInteraction() {
   };
 
   const down = (e) => {
-    // Blindaje en Vivo: bloquear dibujo accidental en Modo Concierto
-    if (performanceMode === "concert") return;
+    // Blindaje en Vivo: bloquear dibujo en Concierto salvo si el usuario abrió la pluma
+    const rail = document.getElementById("performerToolRail");
+    const railOpen = rail && !rail.classList.contains("rail-collapsed");
+    if (performanceMode === "concert" && !railOpen) return;
+    resetToolRailInactivityTimer();
     e.preventDefault();
     document.body.classList.add("writing-focus");
     document.getElementById("dockRevealHandle")?.classList.remove("hidden");
@@ -4082,7 +4132,9 @@ function initStudyInteraction() {
   };
 
   const move = (e) => {
-    if (!drawing || performanceMode === "concert") return;
+    const rail = document.getElementById("performerToolRail");
+    const railOpen = rail && !rail.classList.contains("rail-collapsed");
+    if (!drawing || (performanceMode === "concert" && !railOpen)) return;
     e.preventDefault();
     const pt = getPt(e);
     const ctx = canvas.getContext("2d");
@@ -4264,15 +4316,37 @@ async function turnPage(dir) {
   showConcertPageToast();
 }
 
+function updateLayoutButtonIcon() {
+  const iconEl = document.getElementById("performerLayoutIcon");
+  const btnEl = document.getElementById("btnPerformerLayout");
+  const lbl = document.getElementById("pageModeLabel");
+  const mode = layouts[layoutIdx];
+  if (lbl) lbl.textContent = mode;
+
+  const svgs = {
+    "1 Pág": `<svg viewBox="0 0 24 24" class="v-ico" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="3" width="14" height="18" rx="2"/><line x1="8" y1="8" x2="16" y2="8"/><line x1="8" y1="12" x2="16" y2="12"/><line x1="8" y1="16" x2="13" y2="16"/></svg>`,
+    "Media Pág": `<svg viewBox="0 0 24 24" class="v-ico" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="3" width="14" height="18" rx="2"/><line x1="5" y1="12" x2="19" y2="12" stroke-dasharray="2 2"/><path d="M8 7.5h8" stroke-width="1.8"/></svg>`,
+    "2 Págs": `<svg viewBox="0 0 24 24" class="v-ico" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="4" width="8.5" height="16" rx="1.5"/><rect x="13" y="4" width="8.5" height="16" rx="1.5"/></svg>`
+  };
+  const titles = {
+    "1 Pág": "Vista: Página completa",
+    "Media Pág": "Vista: Media página",
+    "2 Págs": "Vista: Dos páginas"
+  };
+
+  if (iconEl) iconEl.innerHTML = svgs[mode] || svgs["1 Pág"];
+  if (btnEl) {
+    btnEl.title = titles[mode] || "Cambiar vista de página";
+    btnEl.setAttribute("aria-label", btnEl.title);
+  }
+}
+
 async function cyclePageLayout() {
   saveStudyAnnotationsForCurrentPage();
   layoutIdx = (layoutIdx + 1) % layouts.length;
   halfPagePhase = 0;
   syncHalfPageVisual();
-  const lbl = document.getElementById("pageModeLabel");
-  const topLbl = document.getElementById("performerLayoutLabel");
-  if (lbl) lbl.textContent = layouts[layoutIdx];
-  if (topLbl) topLbl.textContent = layouts[layoutIdx];
+  updateLayoutButtonIcon();
   await renderActiveScorePage();
 }
 
@@ -5390,7 +5464,7 @@ function setMetronomeBpm(val) {
   const chipLbl = document.getElementById("metroChipLabel");
   const rng = document.getElementById("metroBpmRange");
   if (lbl) lbl.textContent = `${metroBpm} BPM`;
-  if (chipLbl) chipLbl.textContent = `♩ ${metroBpm}`;
+  if (chipLbl) chipLbl.textContent = `${metroBpm}`;
   if (rng) rng.value = String(metroBpm);
   if (metroTimer) {
     clearInterval(metroTimer);
@@ -5405,14 +5479,14 @@ function stepMetronomeBpm(delta) {
 function playMetronomeTick() {
   const ctx = getPerformerAudioCtx();
   const dot = document.getElementById("metroBeatDot");
-  const topDot = document.getElementById("metroTopDot");
+  const topIcon = document.getElementById("metroTopIcon");
   if (dot) {
     dot.classList.add("pulse");
-    setTimeout(() => dot.classList.remove("pulse"), 90);
+    setTimeout(() => dot.classList.remove("pulse"), 95);
   }
-  if (topDot) {
-    topDot.classList.add("pulse");
-    setTimeout(() => topDot.classList.remove("pulse"), 90);
+  if (topIcon) {
+    topIcon.classList.add("beat-flash");
+    setTimeout(() => topIcon.classList.remove("beat-flash"), 110);
   }
   if (!ctx) return;
   const osc = ctx.createOscillator();
@@ -5454,7 +5528,7 @@ function setTunerFreq(hz, btn) {
   const hzLbl = document.getElementById("tunerHzLabel");
   const chipLbl = document.getElementById("tunerChipLabel");
   if (hzLbl) hzLbl.textContent = `${hz} Hz`;
-  if (chipLbl) chipLbl.textContent = `A ${hz}`;
+  if (chipLbl) chipLbl.textContent = `${hz}`;
   document.querySelectorAll(".tuner-hz-btn").forEach((b) => b.classList.toggle("active", b === btn));
   if (tunerOsc) {
     tunerOsc.frequency.setValueAtTime(tunerHz, getPerformerAudioCtx().currentTime);
@@ -5931,6 +6005,15 @@ window.addEventListener("DOMContentLoaded", async () => {
   setupEditorCanvas();
   renderStudyPageScrubber();
   updateBookmarkButton();
+  updateLayoutButtonIcon();
+
+  ["performerToolRail", "brushPopover", "stampPopover"].forEach((id) => {
+    const el = document.getElementById(id);
+    if (el) {
+      el.addEventListener("pointerdown", resetToolRailInactivityTimer);
+      el.addEventListener("input", resetToolRailInactivityTimer);
+    }
+  });
 });
 
 window.addEventListener("resize", () => {

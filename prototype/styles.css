@@ -11459,3 +11459,254 @@ body.concert-immersion #mode-performer.is-concert-mode .concert-only-bar {
     transform: translateX(-50%);
   }
 }
+
+
+/* ==========================================================================
+   V91 — ESTUDIO FULL-BLEED + 30% TRANSPARENCIA + RAIL -20% + SCRUBBER PRECISO
+   ========================================================================== */
+
+/* Modo Estudio a pantalla completa real (igual que Concierto) */
+#mode-performer.is-study-mode .performer-stage {
+  width: 100vw;
+  height: 100vh;
+  padding: 8px 14px !important;
+}
+
+#mode-performer.is-study-mode .performer-folio {
+  height: 100%;
+  max-height: 100%;
+}
+
+/* 30% más de transparencia en menús y botones flotantes sobre el PDF */
+#mode-performer .performer-top-bar,
+#mode-performer .rail-collapse-tab,
+#mode-performer .concepts-tool-rail,
+#mode-performer .performer-scrubber-bar,
+#mode-performer .perf-utility-popover,
+#mode-performer .concepts-popover {
+  background: color-mix(in srgb, var(--card-bg) 56%, transparent) !important;
+  backdrop-filter: blur(12px) saturate(140%);
+  -webkit-backdrop-filter: blur(12px) saturate(140%);
+}
+
+/* Botón flotante de pluma fuente (disponible en Estudio y Concierto) */
+#mode-performer .rail-collapse-tab {
+  position: fixed;
+  left: 12px;
+  top: 70px;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  opacity: 0.92;
+  pointer-events: auto;
+  z-index: 82;
+}
+
+#mode-performer .rail-collapse-tab.active {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+/* Rail de herramientas reducido un 20% y plegable en ambos modos */
+#mode-performer .concepts-tool-rail {
+  position: fixed;
+  left: 12px;
+  top: 114px;
+  transform: none;
+  padding: 6px 4px;
+  border-radius: 16px;
+  gap: 4px;
+  z-index: 81;
+  transition: transform 0.22s ease, opacity 0.22s ease;
+}
+
+#mode-performer .concepts-tool-rail.rail-collapsed {
+  transform: translateX(-140%);
+  opacity: 0;
+  pointer-events: none;
+}
+
+#mode-performer .concepts-tool-rail .rail-tool {
+  width: 41px;
+  height: 38px;
+  border-radius: 11px;
+  gap: 2px;
+}
+
+#mode-performer .concepts-tool-rail .rail-tool .v-ico {
+  width: 16px;
+  height: 16px;
+}
+
+#mode-performer .concepts-tool-rail .rail-label {
+  font-size: 8.5px;
+}
+
+#mode-performer .concepts-tool-rail .rail-divider {
+  margin: 2px 0;
+  width: 24px;
+}
+
+#mode-performer .rail-ink-presets {
+  gap: 5px;
+  padding: 2px 0;
+}
+
+#mode-performer .ink-preset-dot {
+  width: 14px;
+  height: 14px;
+}
+
+#mode-performer .concepts-popover {
+  left: 66px;
+  top: 120px;
+  transform: none;
+}
+
+/* En Concierto, si el usuario despliega el rail de pluma, permitir dibujar */
+#mode-performer.is-concert-mode.rail-open-drawing .draw-layer {
+  pointer-events: auto !important;
+}
+
+/* Parpadeo luminoso del icono de metrónomo al ritmo elegido */
+.metro-flash-ico {
+  transition: color 0.08s ease, filter 0.08s ease, transform 0.08s ease;
+}
+
+.metro-flash-ico.beat-flash {
+  color: var(--accent);
+  filter: drop-shadow(0 0 6px var(--accent));
+  transform: scale(1.16);
+}
+
+/* Icono dinámico de selector de vista de página */
+.perf-layout-btn {
+  width: 34px;
+  padding: 0;
+  justify-content: center;
+}
+
+.perf-layout-ico {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.perf-layout-ico .v-ico {
+  width: 16px;
+  height: 16px;
+}
+
+/* Scrubber inferior preciso */
+#mode-performer .performer-scrubber-bar {
+  width: min(500px, calc(100vw - 36px));
+  height: 32px;
+  padding: 0 8px;
+  gap: 8px;
+}
+
+.scrub-nav-btn {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  border: none;
+  background: transparent;
+  color: var(--text-primary);
+  font-size: 16px;
+  line-height: 1;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.scrub-nav-btn:hover {
+  background: color-mix(in srgb, var(--accent) 18%, transparent);
+  color: var(--accent);
+}
+
+.scrubber-page-pill {
+  min-width: 64px;
+  text-align: center;
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.scrubber-track-wrap {
+  position: relative;
+  flex: 1;
+  height: 22px;
+  display: flex;
+  align-items: center;
+}
+
+.scrubber-range-input {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  cursor: pointer;
+  margin: 0;
+  z-index: 3;
+}
+
+.scrubber-hover-tip {
+  position: absolute;
+  bottom: 28px;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 3px 9px;
+  border-radius: 8px;
+  background: var(--card-bg);
+  border: 1px solid var(--glass-border);
+  color: var(--text-primary);
+  font-size: 11px;
+  font-weight: 600;
+  white-space: nowrap;
+  pointer-events: none;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.22);
+}
+
+.scrubber-hover-tip.hidden {
+  display: none;
+}
+
+@media (max-width: 900px) {
+  #mode-performer.is-study-mode .performer-stage {
+    padding: 8px 10px !important;
+  }
+  #mode-performer .rail-collapse-tab {
+    display: inline-flex !important;
+    top: 66px;
+    left: 10px;
+  }
+  #mode-performer .concepts-tool-rail {
+    left: 10px;
+    top: 108px;
+    bottom: auto;
+    transform: none;
+    flex-direction: column;
+    max-height: calc(100vh - 160px);
+    overflow-y: auto;
+  }
+  #mode-performer .concepts-tool-rail.rail-collapsed {
+    transform: translateX(-140%);
+  }
+  #mode-performer .concepts-tool-rail .rail-divider {
+    width: 24px;
+    height: 1px;
+    margin: 2px 0;
+  }
+  #mode-performer .rail-ink-presets {
+    flex-direction: column;
+  }
+  #mode-performer .concepts-popover {
+    left: 60px;
+    top: 112px;
+    bottom: auto;
+    transform: none;
+  }
+}
