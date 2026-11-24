@@ -3779,8 +3779,6 @@ let studyTool = "pen";
 let inkColor = "#23426e";
 let autoMold = false;
 let selectedStamp = null;
-let moldIndex = 0;
-const moldWords = ["poco rit.", "dolce", "C.VII ───", "p  i  m  a", "a tempo", "espress."];
 
 let eraserMode = "stroke"; // 'stroke' | 'pixel'
 let strictPenMode = false;
@@ -4428,6 +4426,7 @@ function setupStudyCanvas() {
 
 // Smart Ink Box state
 let smartBatchId = null;
+let smartBatchStartTime = 0;
 let smartInkTimer = null;
 let smartInkBBox = null;
 let editingMoldItem = null;
@@ -4485,11 +4484,88 @@ function scheduleSmartInkBox() {
   }, 700);
 }
 
-function convertSmartBatchDirectly() {
-  if (!smartBatchId) return;
+async function recognizeHandwritingInk(inkStrokes, width, height) {
+  const url = "https://www.google.com/inputtools/request?ime=handwriting&app=mobilesearch&cs=1&oe=UTF-8";
+  const body = {
+    app_version: 0.4,
+    api_level: "537.36",
+    device: navigator.userAgent,
+    input_type: "0",
+    options: "enable_pre_space",
+    requests: [{
+      writing_guide: {
+        writing_area_width: Math.max(100, Math.round(width)),
+        writing_area_height: Math.max(60, Math.round(height))
+      },
+      ink: inkStrokes,
+      language: "es"
+    }]
+  };
+
+  try {
+    const res = await fetch(url, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body)
+    });
+    const data = await res.json();
+    if (data[0] === "SUCCESS" && data[1]?.[0]?.[1]?.length > 0) {
+      return data[1][0][1][0];
+    }
+  } catch (err) {
+    console.warn("Fallo en reconocimiento online, usando fallback local:", err);
+  }
+  return null;
+}
+
+function recognizeHandwritingFallback(batchStrokes, minX, minY, maxX, maxY) {
+  const w = Math.max(1, maxX - minX);
+  const h = Math.max(1, maxY - minY);
+  const ratio = w / h;
+
+  // Signo horizontal corto (ej. tenuto / guion)
+  if (batchStrokes.length === 1 && ratio > 2.4 && h < 18) return "—";
+
+  // Análisis geométrico básico por cuadrantes para digitaciones (0-5) y dinámicas (p, f, m)
+  if (batchStrokes.length === 1) {
+    const pts = batchStrokes[0].points || [];
+    if (pts.length >= 4) {
+      const start = pts[0];
+      const end = pts[pts.length - 1];
+      const closedDist = Math.hypot(end.x - start.x, end.y - start.y);
+      const diag = Math.hypot(w, h);
+      const startTop = (start.y - minY) / h < 0.35;
+      const endBottom = (end.y - minY) / h > 0.65;
+
+      // Bucle cerrado -> 0
+      if (closedDist < diag * 0.28 && ratio >= 0.45 && ratio <= 1.25) return "0";
+      // Trazo vertical descendente -> 1
+      if (ratio < 0.38 && startTop && endBottom) return "1";
+      // Curva superior hacia base derecha -> 2
+      if (startTop && endBottom && (end.x - minX) / w > 0.55 && (start.x - minX) / w < 0.6) return "2";
+      // Bucle superior + cola -> p
+      if (startTop && endBottom && (end.x - minX) / w < 0.45) return "p";
+    }
+  }
+
+  if (batchStrokes.length === 2) {
+    // Dos trazos cruzados o en ángulo -> 4 o f
+    if (ratio < 0.85) return "4";
+    return "+";
+  }
+
+  if (batchStrokes.length === 3) return "m";
+  return "Texto";
+}
+
+async function convertSmartBatchDirectly() {
+  const targetBatchId = smartBatchId;
+  if (!targetBatchId) return;
+  smartBatchId = null;
+
   const key = getStudyPageKey();
   const allStrokes = studyPageStrokes[key] || [];
-  const batchStrokes = allStrokes.filter((s) => s.smartBatchId === smartBatchId);
+  const batchStrokes = allStrokes.filter((s) => s.smartBatchId === targetBatchId);
   if (batchStrokes.length === 0) return;
 
   let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
@@ -4504,13 +4580,24 @@ function convertSmartBatchDirectly() {
 
   const cx = (minX + maxX) / 2;
   const cy = (minY + maxY) / 2;
+  const boxW = Math.max(60, maxX - minX + 40);
+  const boxH = Math.max(40, maxY - minY + 40);
   const estSize = Math.max(14, Math.min(28, Math.round((maxY - minY) * 0.52) || 18));
   const color = batchStrokes[0]?.color || inkColor;
-  const text = moldWords[moldIndex++ % moldWords.length];
+
+  // Formato estándar de reconocimiento de tinta: [ [x...], [y...], [t...] ]
+  const inkData = batchStrokes.map((stroke) => [
+    stroke.points.map((p) => Math.round(p.x - minX + 20)),
+    stroke.points.map((p) => Math.round(p.y - minY + 20)),
+    stroke.points.map((p, idx) => (typeof p.t === "number" ? p.t : idx * 16))
+  ]);
+
+  const recognizedText = await recognizeHandwritingInk(inkData, boxW, boxH);
+  const text = recognizedText || recognizeHandwritingFallback(batchStrokes, minX, minY, maxX, maxY);
 
   pushStudyUndoSnapshot();
-  studyPageStrokes[key] = allStrokes.filter((s) => s.smartBatchId !== smartBatchId);
-  smartBatchId = null;
+  const currentStrokes = studyPageStrokes[key] || [];
+  studyPageStrokes[key] = currentStrokes.filter((s) => s.smartBatchId !== targetBatchId);
   redrawStudyCanvas();
 
   if (!studyPageMoldItems[key]) studyPageMoldItems[key] = [];
@@ -4620,9 +4707,11 @@ function initStudyInteraction() {
 
     if (studyTool === "smarttext" && !smartBatchId) {
       smartBatchId = `sb-${Date.now()}`;
+      smartBatchStartTime = performance.now();
     }
 
     const p = computePressure(e, pt);
+    const relT = studyTool === "smarttext" ? Math.max(0, Math.round(performance.now() - smartBatchStartTime)) : 0;
     lastPt = { x: pt.x, y: pt.y, p, t: performance.now() };
     activeStroke = {
       id: `st-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
@@ -4631,7 +4720,7 @@ function initStudyInteraction() {
       baseWidth: brushWidth,
       opacity: brushOpacity,
       smartBatchId: studyTool === "smarttext" ? smartBatchId : null,
-      points: [{ x: pt.x, y: pt.y, p }]
+      points: [{ x: pt.x, y: pt.y, p, t: relT }]
     };
 
     ensureCommittedLayer(canvas.width, canvas.height);
@@ -4658,8 +4747,9 @@ function initStudyInteraction() {
       const pt = getPt(ev);
       if (lastPt && Math.hypot(pt.x - lastPt.x, pt.y - lastPt.y) < 2.0) continue;
       const p = computePressure(ev, pt);
+      const relT = studyTool === "smarttext" ? Math.max(0, Math.round(performance.now() - smartBatchStartTime)) : 0;
       lastPt = { x: pt.x, y: pt.y, p, t: performance.now() };
-      activeStroke.points.push({ x: pt.x, y: pt.y, p });
+      activeStroke.points.push({ x: pt.x, y: pt.y, p, t: relT });
       added = true;
     }
 
