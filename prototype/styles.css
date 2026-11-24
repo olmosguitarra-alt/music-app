@@ -12778,3 +12778,180 @@ body.mode-performer-active:not(.mode-concert-active) #mode-performer.is-study-mo
   background: color-mix(in srgb, var(--card-bg) 72%, transparent) !important;
   box-shadow: 0 6px 18px rgba(0, 0, 0, 0.16) !important;
 }
+
+
+/* ==========================================================================
+   V103 — PALETA FLOTANTE REUBICABLE DE SELLOS + CAPA TRANSFORMABLE DE ZOOM
+   ========================================================================== */
+
+/* Contenedor único transformable para PDF + SVG + Tinta + Sellos/Molde */
+.folio-transform-layer {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  transform-origin: 0 0;
+  will-change: transform;
+  touch-action: none;
+}
+
+/* Paleta flotante reubicable de sellos musicales */
+#mode-performer .stamp-floating-palette {
+  position: fixed !important;
+  width: min(264px, calc(100vw - 32px));
+  padding: 10px !important;
+  border-radius: 18px !important;
+  background: color-mix(in srgb, var(--card-bg) 88%, transparent) !important;
+  backdrop-filter: blur(16px) saturate(150%);
+  -webkit-backdrop-filter: blur(16px) saturate(150%);
+  border: 1px solid var(--glass-border);
+  box-shadow: 0 14px 38px rgba(0, 0, 0, 0.28);
+  z-index: 92 !important;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+#mode-performer .stamp-floating-palette.hidden {
+  display: none !important;
+}
+
+.stamp-palette-header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 2px 2px 4px;
+  border-bottom: 1px solid color-mix(in srgb, var(--glass-border) 65%, transparent);
+  touch-action: none;
+  cursor: move;
+  user-select: none;
+}
+
+.stamp-drag-grip {
+  font-size: 13px;
+  letter-spacing: -1px;
+  color: var(--text-secondary);
+  opacity: 0.75;
+}
+
+.stamp-palette-title {
+  font-size: 12.5px;
+  font-weight: 700;
+  color: var(--text-primary);
+  flex: 1;
+}
+
+.stamp-palette-close {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  border: none;
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: 12px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.stamp-palette-close:hover {
+  background: color-mix(in srgb, var(--accent) 16%, transparent);
+  color: var(--text-primary);
+}
+
+.stamp-tabs-carousel {
+  display: flex;
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  scrollbar-width: none;
+  gap: 4px;
+  padding: 2px;
+}
+
+.stamp-tabs-carousel::-webkit-scrollbar {
+  display: none;
+}
+
+.stamp-tabs-carousel .p-seg {
+  flex: 0 0 auto;
+  padding: 4px 9px;
+  font-size: 11px;
+  border-radius: 12px;
+  white-space: nowrap;
+}
+
+.stamp-grid-5col {
+  display: grid !important;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 5px !important;
+  max-height: 186px;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  padding: 2px 0;
+}
+
+.stamp-grid-5col .stamp-btn {
+  width: 40px;
+  height: 40px;
+  min-width: 40px;
+  min-height: 40px;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-family: "Georgia", serif;
+  font-size: 12.5px;
+  font-weight: 600;
+  border-radius: 10px;
+  border: 1px solid var(--glass-border);
+  background: color-mix(in srgb, var(--bg-canvas) 65%, transparent);
+  color: var(--text-primary);
+  cursor: pointer;
+  transition: border-color 0.15s ease, background 0.15s ease, transform 0.12s ease;
+}
+
+.stamp-grid-5col .stamp-btn:hover {
+  border-color: var(--accent);
+}
+
+.stamp-grid-5col .stamp-btn.active {
+  border-color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 18%, transparent);
+  color: var(--accent);
+  box-shadow: 0 0 0 1.5px var(--accent);
+}
+
+.stamp-ink-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-top: 6px;
+  border-top: 1px solid color-mix(in srgb, var(--glass-border) 65%, transparent);
+}
+
+.stamp-ink-label {
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+.stamp-ink-dots {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.stamp-ink-dot {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  border: 2px solid transparent;
+  cursor: pointer;
+  transition: transform 0.14s ease, box-shadow 0.14s ease;
+}
+
+.stamp-ink-dot.active {
+  border-color: var(--card-bg);
+  box-shadow: 0 0 0 2px var(--accent);
+  transform: scale(1.12);
+}

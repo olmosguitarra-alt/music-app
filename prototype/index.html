@@ -11,7 +11,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:wght@600;700&display=swap" />
-  <link rel="stylesheet" href="styles.css?v=102" />
+  <link rel="stylesheet" href="styles.css?v=103" />
   <!-- Motores Oficiales para Renderizar (PDF.js) y Particionar/Editar PDFs Reales (pdf-lib) -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf-lib/1.17.1/pdf-lib.min.js"></script>
@@ -471,10 +471,12 @@
           </div>
 
           <div class="folio-staff-area" id="performerWrap">
-            <canvas id="performerPdfRenderCanvas" class="pdf-page-canvas hidden"></canvas>
-            <div id="performerSvg" class="svg-layer"></div>
-            <canvas id="performerCanvas" class="draw-layer"></canvas>
-            <div id="performerMoldLayer" class="mold-layer"></div>
+            <div class="folio-transform-layer" id="folioTransformLayer">
+              <canvas id="performerPdfRenderCanvas" class="pdf-page-canvas hidden"></canvas>
+              <div id="performerSvg" class="svg-layer"></div>
+              <canvas id="performerCanvas" class="draw-layer"></canvas>
+              <div id="performerMoldLayer" class="mold-layer"></div>
+            </div>
           </div>
 
           <div class="folio-footer" id="performerFolioFooter">
@@ -634,15 +636,32 @@
       </div>
     </div>
 
-    <!-- POPOVER DE SELLOS -->
-    <div class="concepts-popover hidden" id="stampPopover">
-      <div class="popover-segmented">
-        <button class="p-seg active" onclick="switchStampTab('guitar', this)">Guitarra</button>
-        <button class="p-seg" onclick="switchStampTab('strings', this)">Cuerdas</button>
-        <button class="p-seg" onclick="switchStampTab('piano', this)">Piano</button>
-        <button class="p-seg" onclick="switchStampTab('agogic', this)">Agógica</button>
+    <!-- PALETA FLOTANTE REUBICABLE DE SELLOS MUSICALES -->
+    <div class="concepts-popover stamp-floating-palette hidden" id="stampPopover" onclick="event.stopPropagation()">
+      <div class="stamp-palette-header" id="stampPaletteHeader">
+        <span class="stamp-drag-grip" aria-hidden="true">⋮⋮</span>
+        <span class="stamp-palette-title">Sellos</span>
+        <button type="button" class="stamp-palette-close" onclick="toggleStampPopover(false)" aria-label="Cerrar paleta de sellos">✕</button>
       </div>
-      <div class="stamp-tokens" id="stampGrid"></div>
+      <div class="popover-segmented stamp-tabs-carousel" id="stampTabsCarousel">
+        <button type="button" class="p-seg active" onclick="switchStampTab('dynamics', this)">Dinámicas</button>
+        <button type="button" class="p-seg" onclick="switchStampTab('agogic', this)">Agógica</button>
+        <button type="button" class="p-seg" onclick="switchStampTab('articulation', this)">Articulación</button>
+        <button type="button" class="p-seg" onclick="switchStampTab('strings', this)">Cuerdas</button>
+        <button type="button" class="p-seg" onclick="switchStampTab('guitar', this)">Guitarra</button>
+        <button type="button" class="p-seg" onclick="switchStampTab('piano', this)">Piano</button>
+        <button type="button" class="p-seg" onclick="switchStampTab('winds', this)">Vientos</button>
+      </div>
+      <div class="stamp-tokens stamp-grid-5col" id="stampGrid"></div>
+      <div class="stamp-ink-footer">
+        <span class="stamp-ink-label">Tinta:</span>
+        <div class="stamp-ink-dots">
+          <button type="button" class="stamp-ink-dot" style="background:#201c19" onclick="setStampInk('#201c19', this)" title="Grafito"></button>
+          <button type="button" class="stamp-ink-dot active" style="background:#23426e" onclick="setStampInk('#23426e', this)" title="Azul Prusia"></button>
+          <button type="button" class="stamp-ink-dot" style="background:#8c2f27" onclick="setStampInk('#8c2f27', this)" title="Carmín"></button>
+          <button type="button" class="stamp-ink-dot" style="background:#b8860b" onclick="setStampInk('#b8860b', this)" title="Ámbar"></button>
+        </div>
+      </div>
     </div>
 
     <!-- POPOVER COMPACTO DE METRÓNOMO -->
@@ -1018,6 +1037,6 @@
     <span class="pdf-loading-text">Cargando...</span>
   </div>
 
-  <script src="app.js?v=102"></script>
+  <script src="app.js?v=103"></script>
 </body>
 </html>

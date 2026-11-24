@@ -575,12 +575,13 @@ async function renderActiveScorePage() {
   if (typeof renderStudyPageScrubber === "function") renderStudyPageScrubber();
 }
 
-async function renderPdfPageToCanvas(pdfPage, canvas, containerEl) {
+async function renderPdfPageToCanvas(pdfPage, canvas, containerEl, zoomBoost = 1) {
   if (!pdfPage || !canvas || !containerEl) return;
   const cw = Math.max(320, containerEl.clientWidth || 760);
   const ch = Math.max(420, containerEl.clientHeight || 920);
   const unscaled = pdfPage.getViewport({ scale: 1 });
-  const scale = Math.min(cw / unscaled.width, ch / unscaled.height) * (window.devicePixelRatio || 1.5);
+  const boost = Math.max(1, Math.min(2.5, zoomBoost || 1));
+  const scale = Math.min(cw / unscaled.width, ch / unscaled.height) * (window.devicePixelRatio || 1.5) * boost;
   const viewport = pdfPage.getViewport({ scale });
 
   canvas.width = viewport.width;
@@ -3769,10 +3770,13 @@ function buildPortraitScoreSvg(activeSys = -1) {
 // 2. MODO ESTUDIO
 // ==========================================================================
 const stampProfiles = {
-  guitar: ["p", "i", "m", "a", "1", "2", "3", "4", "①", "②", "③", "④", "⑤", "⑥", "C.II", "C.V", "C.VII", "½C", "arm.12"],
-  strings: ["∏", "∨", "I Pos.", "III Pos.", "pizz.", "arco", "sul tasto", "0", "1", "2", "3", "4"],
-  piano: ["1", "2", "3", "4", "5", "Ped.", "✱", "m.d.", "m.s.", "8va"],
-  agogic: ["poco rit.", "a tempo", "dolce", "espress.", "pp", "mp", "mf", "f", "cresc. ───"]
+  dynamics: ["ppp", "pp", "p", "mp", "mf", "f", "ff", "fff", "sfz", "sfp", "<", ">", "dolce", "espress.", "cant.", "sub."],
+  agogic: ["rit.", "rall.", "accel.", "a tempo", "𝄐", "𝄑", "//", "’", "𝄋", "𝄌", "D.C.", "Fine"],
+  articulation: ["•", "▾", "—", "•—", ">", "⋀", "tr~", "𝆝", "𝆞", "gliss."],
+  strings: ["⨅", "⋁", "0", "1", "2", "3", "4", "I Pos.", "II Pos.", "III Pos.", "IV Pos.", "V Pos.", "pizz.", "arco", "con sord.", "◇"],
+  guitar: ["p", "i", "m", "a", "e", "1", "2", "3", "4", "0", "C.I", "C.II", "C.III", "C.IV", "C.V", "C.VI", "C.VII", "C.VIII", "C.IX", "½C", "①", "②", "③", "④", "⑤", "⑥", "rasg.", "apoy.", "tir.", "tamb."],
+  piano: ["Ped.", "^", "*", "u.c.", "t.c.", "m.d.", "m.s.", "1", "2", "3", "4", "5"],
+  winds: ["’", "O", "T-K", "frull.", "+", "○"]
 };
 
 let studyTool = "pen";
@@ -3800,27 +3804,77 @@ function setFingerDrawAllowed(allowed, btn) {
 }
 
 function switchStampTab(key, btn) {
-  document.querySelectorAll(".p-seg").forEach((t) => t.classList.remove("active"));
+  document.querySelectorAll("#stampTabsCarousel .p-seg").forEach((t) => t.classList.remove("active"));
   if (btn) btn.classList.add("active");
   const grid = document.getElementById("stampGrid");
+  if (!grid) return;
   grid.innerHTML = (stampProfiles[key] || [])
-    .map((st) => `<button class="stamp-btn" onclick="chooseStamp('${st}', this)">${st}</button>`)
+    .map((st) => {
+      const activeCls = selectedStamp === st && studyTool === "stamp" ? " active" : "";
+      const safe = st.replace(/'/g, "\\'");
+      return `<button type="button" class="stamp-btn${activeCls}" onclick="chooseStamp('${safe}', this)">${st}</button>`;
+    })
     .join("");
 }
 
-function toggleStampPopover() {
+function toggleStampPopover(forceState) {
   document.getElementById("brushPopover")?.classList.add("hidden");
   const pop = document.getElementById("stampPopover");
-  pop.classList.toggle("hidden");
-  document.getElementById("btnStamps").classList.toggle("active", !pop.classList.contains("hidden"));
+  if (!pop) return;
+  const show = typeof forceState === "boolean" ? forceState : pop.classList.contains("hidden");
+  pop.classList.toggle("hidden", !show);
+  document.getElementById("btnStamps")?.classList.toggle("active", show);
+  if (!show && studyTool === "stamp") {
+    setStudyTool("pen");
+  }
 }
 
 function chooseStamp(st, btn) {
   selectedStamp = st;
   studyTool = "stamp";
-  document.querySelectorAll(".stamp-btn").forEach((b) => b.classList.remove("active"));
-  btn.classList.add("active");
-  document.getElementById("stampPopover").classList.add("hidden");
+  document.querySelectorAll("#stampGrid .stamp-btn").forEach((b) => b.classList.remove("active"));
+  if (btn) btn.classList.add("active");
+  // Multi-Stamp: mantener la paleta abierta para estampar continuamente
+  resetToolRailInactivityTimer();
+}
+
+function setStampInk(color, btn) {
+  inkColor = color;
+  document.querySelectorAll(".stamp-ink-dot").forEach((d) => d.classList.toggle("active", d === btn));
+  const dot = document.getElementById("brushSwatchDot");
+  if (dot) dot.style.background = color;
+  resetToolRailInactivityTimer();
+}
+
+function initStampPaletteDrag() {
+  const pop = document.getElementById("stampPopover");
+  const header = document.getElementById("stampPaletteHeader");
+  if (!pop || !header) return;
+  let dragging = false;
+  let startX = 0;
+  let startY = 0;
+  let offsetX = 0;
+  let offsetY = 0;
+
+  header.addEventListener("pointerdown", (e) => {
+    if (e.target.closest("button")) return;
+    e.preventDefault();
+    header.setPointerCapture(e.pointerId);
+    dragging = true;
+    startX = e.clientX - offsetX;
+    startY = e.clientY - offsetY;
+  });
+
+  header.addEventListener("pointermove", (e) => {
+    if (!dragging) return;
+    offsetX = e.clientX - startX;
+    offsetY = e.clientY - startY;
+    pop.style.transform = `translate3d(${offsetX}px, ${offsetY}px, 0)`;
+  });
+
+  const endDrag = () => { dragging = false; };
+  header.addEventListener("pointerup", endDrag);
+  header.addEventListener("pointercancel", endDrag);
 }
 
 let brushWidth = 2.4;
@@ -4124,8 +4178,8 @@ function createEditorialMoldElement(item) {
 
   el.addEventListener("pointermove", (e) => {
     if (!dragging) return;
-    const dx = e.clientX - startX;
-    const dy = e.clientY - startY;
+    const dx = (e.clientX - startX) / (zoomScale || 1);
+    const dy = (e.clientY - startY) / (zoomScale || 1);
     if (Math.abs(dx) > 3 || Math.abs(dy) > 3) moved = true;
     item.x = origX + dx;
     item.y = origY + dy;
@@ -4794,6 +4848,143 @@ function tryApplyPenGesture(stroke) {
   return false;
 }
 
+// ==========================================================================
+// MOTOR DE ZOOM TÁCTIL A DOS DEDOS (PINCH-TO-ZOOM + PANEO + COORDENADAS DOC)
+// ==========================================================================
+let zoomScale = 1.0;
+let panX = 0;
+let panY = 0;
+const MIN_ZOOM = 1.0;
+const MAX_ZOOM = 3.5;
+let pdfZoomSharpTimer = null;
+
+function applyFolioTransform() {
+  const layer = document.getElementById("folioTransformLayer");
+  if (!layer) return;
+  layer.style.transform = `translate3d(${panX}px, ${panY}px, 0) scale(${zoomScale})`;
+}
+
+function resetFolioZoom() {
+  zoomScale = 1.0;
+  panX = 0;
+  panY = 0;
+  applyFolioTransform();
+}
+
+function getDocPtFromClient(clientX, clientY) {
+  const wrap = document.getElementById("performerWrap");
+  if (!wrap) return { x: 0, y: 0 };
+  const r = wrap.getBoundingClientRect();
+  return {
+    x: (clientX - r.left - panX) / (zoomScale || 1),
+    y: (clientY - r.top - panY) / (zoomScale || 1)
+  };
+}
+
+function scheduleAdaptivePdfSharpness() {
+  if (pdfZoomSharpTimer) clearTimeout(pdfZoomSharpTimer);
+  if (zoomScale <= 1.2 || !activeScore?.isRealPdf || !currentPdfDocInstance) return;
+  pdfZoomSharpTimer = setTimeout(async () => {
+    try {
+      const page = await currentPdfDocInstance.getPage(pageNum);
+      const pdfCanvas = document.getElementById("performerPdfRenderCanvas");
+      await renderPdfPageToCanvas(page, pdfCanvas, document.getElementById("performerWrap"), zoomScale);
+    } catch (_) {}
+  }, 250);
+}
+
+function initFolioZoomAndPan() {
+  const wrap = document.getElementById("performerWrap");
+  if (!wrap) return;
+  const activeTouches = new Map();
+  let lastDist = 0;
+  let lastMid = null;
+  let lastTwoFingerTapTime = 0;
+  let wasPinching = false;
+
+  const clampPan = () => {
+    if (zoomScale <= 1.01) {
+      zoomScale = 1.0;
+      panX = 0;
+      panY = 0;
+      return;
+    }
+    const maxPanX = 0;
+    const minPanX = wrap.clientWidth * (1 - zoomScale);
+    const maxPanY = 0;
+    const minPanY = wrap.clientHeight * (1 - zoomScale);
+    panX = Math.max(minPanX, Math.min(maxPanX, panX));
+    panY = Math.max(minPanY, Math.min(maxPanY, panY));
+  };
+
+  wrap.addEventListener("pointerdown", (e) => {
+    // 1 Stylus nunca activa zoom ni paneo
+    if (e.pointerType !== "touch") return;
+    activeTouches.set(e.pointerId, { x: e.clientX, y: e.clientY });
+
+    if (activeTouches.size === 2) {
+      wasPinching = true;
+      const pts = Array.from(activeTouches.values());
+      lastDist = Math.hypot(pts[1].x - pts[0].x, pts[1].y - pts[0].y);
+      lastMid = { x: (pts[0].x + pts[1].x) / 2, y: (pts[0].y + pts[1].y) / 2 };
+
+      const now = performance.now();
+      if (now - lastTwoFingerTapTime < 300) {
+        resetFolioZoom();
+        lastTwoFingerTapTime = 0;
+      } else {
+        lastTwoFingerTapTime = now;
+      }
+    }
+  });
+
+  wrap.addEventListener("pointermove", (e) => {
+    if (e.pointerType !== "touch" || !activeTouches.has(e.pointerId)) return;
+    activeTouches.set(e.pointerId, { x: e.clientX, y: e.clientY });
+
+    if (activeTouches.size === 2) {
+      e.preventDefault();
+      const pts = Array.from(activeTouches.values());
+      const dist = Math.hypot(pts[1].x - pts[0].x, pts[1].y - pts[0].y);
+      const mid = { x: (pts[0].x + pts[1].x) / 2, y: (pts[0].y + pts[1].y) / 2 };
+
+      if (lastDist > 0 && lastMid) {
+        const r = wrap.getBoundingClientRect();
+        const factor = dist / lastDist;
+        const nextScale = Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, zoomScale * factor));
+        const scaleRatio = nextScale / zoomScale;
+
+        // Mantener anclado el punto medio bajo los dedos
+        const anchorX = mid.x - r.left;
+        const anchorY = mid.y - r.top;
+        panX = anchorX - (anchorX - panX) * scaleRatio + (mid.x - lastMid.x);
+        panY = anchorY - (anchorY - panY) * scaleRatio + (mid.y - lastMid.y);
+        zoomScale = nextScale;
+        clampPan();
+        applyFolioTransform();
+      }
+      lastDist = dist;
+      lastMid = mid;
+    }
+  });
+
+  const endTouch = (e) => {
+    if (e.pointerType !== "touch") return;
+    activeTouches.delete(e.pointerId);
+    if (activeTouches.size < 2) {
+      lastDist = 0;
+      lastMid = null;
+      if (wasPinching) {
+        wasPinching = false;
+        scheduleAdaptivePdfSharpness();
+      }
+    }
+  };
+
+  wrap.addEventListener("pointerup", endTouch);
+  wrap.addEventListener("pointercancel", endTouch);
+}
+
 function initStudyInteraction() {
   const canvas = document.getElementById("performerCanvas");
   const stage = document.getElementById("performerStage");
@@ -4805,10 +4996,7 @@ function initStudyInteraction() {
   let lastPressure = 0.5;
   let rafDrawPending = false;
 
-  const getPt = (e) => {
-    const r = canvas.getBoundingClientRect();
-    return { x: e.clientX - r.left, y: e.clientY - r.top };
-  };
+  const getPt = (e) => getDocPtFromClient(e.clientX, e.clientY);
 
   const computePressure = (e, pt) => {
     if (e.pointerType === "pen" && typeof e.pressure === "number" && e.pressure > 0) {
@@ -5064,6 +5252,7 @@ function syncHalfPageVisual() {
 
 async function turnPage(dir) {
   saveStudyAnnotationsForCurrentPage();
+  resetFolioZoom();
   triggerPageTurnFlash(dir);
   const total = activeScore.pageCount || 10;
 
@@ -6768,7 +6957,13 @@ document.addEventListener("click", (e) => {
   }
 
   const stampPop = document.getElementById("stampPopover");
-  if (stampPop && !stampPop.classList.contains("hidden") && !e.target.closest("#stampPopover") && !e.target.closest("#btnStamps")) {
+  if (
+    stampPop &&
+    !stampPop.classList.contains("hidden") &&
+    studyTool !== "stamp" &&
+    !e.target.closest("#stampPopover") &&
+    !e.target.closest("#btnStamps")
+  ) {
     stampPop.classList.add("hidden");
   }
   const metroPop = document.getElementById("metronomePopover");
@@ -6791,7 +6986,9 @@ window.addEventListener("DOMContentLoaded", async () => {
   initBachGptWidget();
   renderLibrary();
   renderSetlistDrawer();
-  switchStampTab("guitar");
+  switchStampTab("dynamics");
+  initStampPaletteDrag();
+  initFolioZoomAndPan();
   const perfSvg = document.getElementById("performerSvg");
   if (perfSvg) perfSvg.innerHTML = buildPortraitScoreSvg(-1);
   initStudyInteraction();
