@@ -12092,3 +12092,160 @@ body.concert-immersion #mode-performer.is-concert-mode .concert-only-bar {
     right: 172px !important;
   }
 }
+
+
+/* ==========================================================================
+   V95 — OPTIMIZACIÓN RESPONSIVA TABLET Y TELÉFONO PARA EL VISOR (#mode-performer)
+   ========================================================================== */
+
+/* Tacto inmediato sin zoom accidental en todos los controles flotantes */
+#mode-performer button,
+#mode-performer .scrubber-range-input {
+  touch-action: manipulation;
+}
+
+/* Ajuste de altura segura del menú desplegable de pluma en pantallas cortas */
+#mode-performer .concepts-tool-rail {
+  max-height: calc(100vh - 196px);
+}
+
+/* Popover de trazo/sellos contenido dentro del viewport */
+#mode-performer .concepts-popover {
+  max-width: calc(100vw - 72px);
+  max-height: calc(100vh - 160px);
+  overflow-y: auto;
+}
+
+/* Tablet (601px - 1024px) */
+@media (min-width: 601px) and (max-width: 1024px) {
+  #mode-performer .performer-top-bar {
+    left: 14px;
+    right: 14px;
+    top: max(10px, env(safe-area-inset-top));
+  }
+  #mode-performer .perf-top-center {
+    display: flex !important;
+    max-width: calc(100vw - 320px);
+  }
+  #mode-performer .perf-top-title-line {
+    max-width: 100%;
+  }
+  #mode-performer .fountain-pen-anchor {
+    left: 14px;
+    top: calc(max(10px, env(safe-area-inset-top)) + 106px);
+  }
+  #mode-performer .perf-bottom-right-switch {
+    right: 14px;
+    bottom: max(12px, env(safe-area-inset-bottom));
+  }
+  #mode-performer .performer-scrubber-bar {
+    left: 14px !important;
+    right: 184px !important;
+    bottom: max(12px, env(safe-area-inset-bottom));
+    max-width: 440px !important;
+  }
+}
+
+/* Teléfono (<= 600px) */
+@media (max-width: 600px) {
+  #mode-performer .performer-top-bar {
+    left: 10px;
+    right: 10px;
+    top: max(8px, env(safe-area-inset-top));
+    gap: 4px;
+  }
+  #mode-performer .perf-top-left {
+    gap: 5px;
+  }
+  #mode-performer .perf-top-left-row {
+    gap: 5px;
+  }
+  #mode-performer .perf-back-btn {
+    width: 30px;
+    padding: 0;
+    justify-content: center;
+  }
+  #mode-performer .perf-quick-utils {
+    gap: 4px;
+  }
+  #mode-performer .fountain-pen-anchor {
+    left: 10px;
+    top: calc(max(8px, env(safe-area-inset-top)) + 106px);
+    width: 34px;
+  }
+  #mode-performer .rail-collapse-tab {
+    width: 34px !important;
+    height: 34px !important;
+  }
+  #mode-performer .concepts-tool-rail {
+    width: 34px !important;
+    min-width: 34px !important;
+    max-width: 34px !important;
+    max-height: calc(100vh - 178px);
+    padding: 5px 0 !important;
+  }
+  #mode-performer .concepts-tool-rail .rail-tool {
+    width: 28px !important;
+    height: 28px !important;
+  }
+  #mode-performer .concepts-popover {
+    left: 50px !important;
+    top: calc(max(8px, env(safe-area-inset-top)) + 106px) !important;
+    max-width: calc(100vw - 62px) !important;
+  }
+  #mode-performer .perf-utility-popover {
+    right: 10px;
+    top: calc(max(8px, env(safe-area-inset-top)) + 38px);
+    max-width: calc(100vw - 20px);
+  }
+  #mode-performer .perf-bottom-right-switch {
+    right: 10px;
+    bottom: max(10px, env(safe-area-inset-bottom));
+    height: 26px !important;
+  }
+  #mode-performer .perf-bottom-right-switch .perf-switch-btn {
+    height: 20px !important;
+    padding: 0 7px !important;
+    font-size: 10.5px !important;
+    gap: 3px !important;
+  }
+  #mode-performer .perf-bottom-right-switch .perf-switch-btn .v-ico {
+    width: 11px !important;
+    height: 11px !important;
+  }
+  #mode-performer .performer-scrubber-bar {
+    left: 10px !important;
+    right: 152px !important;
+    bottom: max(10px, env(safe-area-inset-bottom));
+    height: 26px !important;
+    padding: 0 6px !important;
+    gap: 4px !important;
+  }
+  #mode-performer .scrubber-page-pill {
+    min-width: 44px;
+    font-size: 10.5px;
+  }
+  #mode-performer .scrub-nav-btn {
+    width: 20px;
+    height: 20px;
+    font-size: 14px;
+  }
+  #mode-performer.is-concert-mode .concert-only-bar {
+    max-width: calc(100vw - 20px);
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+  #mode-performer.is-concert-mode .concert-only-bar::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+/* Orientación horizontal compacta (teléfono apaisado / tablet pequeña) */
+@media (max-height: 500px) {
+  #mode-performer .fountain-pen-anchor {
+    top: calc(max(6px, env(safe-area-inset-top)) + 100px);
+  }
+  #mode-performer .concepts-tool-rail {
+    max-height: calc(100vh - 152px);
+  }
+}
