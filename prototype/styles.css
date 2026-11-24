@@ -12010,3 +12010,85 @@ body.concert-immersion #mode-performer.is-concert-mode .concert-only-bar {
     top: max(124px, 20vh);
   }
 }
+
+
+/* ==========================================================================
+   V94 — CONMUTADOR EN ESQUINA INFERIOR DERECHA, METRÓNOMO/AFINADOR SUP. DER.,
+         LISTA VERTICAL IZQ. CON PLUMA FUENTE Y TRAZO LIBRE POR DEFECTO
+   ========================================================================== */
+
+/* Lista vertical izquierda: Regreso(+Editor) -> ★ -> Vista -> Pluma fuente */
+#mode-performer .fountain-pen-anchor {
+  left: 16px;
+  top: 116px;
+  width: 36px;
+}
+
+#mode-performer .rail-collapse-tab {
+  width: 36px !important;
+  height: 36px !important;
+}
+
+#mode-performer .concepts-tool-rail {
+  width: 36px !important;
+  min-width: 36px !important;
+  max-width: 36px !important;
+}
+
+/* Metrónomo y Afinador pegados a la esquina superior derecha */
+#mode-performer .perf-top-right {
+  margin-left: auto;
+  justify-content: flex-end;
+}
+
+/* Conmutador Ensayo ↔ Concierto en esquina inferior derecha */
+#mode-performer .perf-bottom-right-switch {
+  position: fixed;
+  right: 14px;
+  bottom: max(10px, env(safe-area-inset-bottom));
+  z-index: 84;
+  height: 28px !important;
+  padding: 2px !important;
+  border-radius: 18px !important;
+  background: color-mix(in srgb, var(--card-bg) 38%, transparent) !important;
+  backdrop-filter: blur(10px) saturate(135%);
+  -webkit-backdrop-filter: blur(10px) saturate(135%);
+  border: 1px solid color-mix(in srgb, var(--glass-border) 75%, transparent);
+  box-shadow: 0 3px 12px rgba(0, 0, 0, 0.1);
+}
+
+#mode-performer .perf-bottom-right-switch .perf-switch-btn {
+  height: 22px !important;
+  padding: 0 8px !important;
+  font-size: 11px !important;
+  gap: 4px !important;
+}
+
+#mode-performer .perf-bottom-right-switch .perf-switch-btn .v-ico {
+  width: 12px !important;
+  height: 12px !important;
+}
+
+/* Scrubber inferior con aire respecto al conmutador inferior derecho */
+#mode-performer .performer-scrubber-bar {
+  left: 16px !important;
+  right: 180px !important;
+  transform: none !important;
+  width: auto !important;
+  max-width: 460px !important;
+  margin: 0 auto !important;
+}
+
+@media (max-width: 900px) {
+  #mode-performer .fountain-pen-anchor {
+    left: 10px;
+    top: 116px;
+  }
+  #mode-performer .perf-bottom-right-switch {
+    right: 10px;
+  }
+  #mode-performer .performer-scrubber-bar {
+    left: 10px !important;
+    right: 172px !important;
+  }
+}

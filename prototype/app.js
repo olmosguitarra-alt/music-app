@@ -3777,7 +3777,7 @@ const stampProfiles = {
 
 let studyTool = "pen";
 let inkColor = "#23426e";
-let autoMold = true;
+let autoMold = false;
 let selectedStamp = null;
 let moldIndex = 0;
 const moldWords = ["poco rit.", "dolce", "C.VII ───", "p  i  m  a", "a tempo", "espress."];
