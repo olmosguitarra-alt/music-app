@@ -1961,6 +1961,38 @@ function forceClosePdfModalDiscard() {
 // ==========================================================================
 // NAVEGACIÓN GENERAL Y BIBLIOTECA
 // ==========================================================================
+function syncMonolithicBottomCapsule(active) {
+  const dock = document.getElementById("bottomNavDock");
+  const capsule = dock?.querySelector(".bottom-mode-capsule");
+  const scrubber = document.getElementById("performerScrubberBar");
+  const bachFab = document.getElementById("bachGptFab");
+  const performer = document.getElementById("mode-performer");
+  const penAnchor = document.getElementById("fountainPenAnchor");
+  const dockReveal = document.getElementById("dockRevealHandle");
+  if (!capsule || !scrubber || !bachFab) return;
+
+  capsule.classList.toggle("monolithic-capsule", Boolean(active));
+  if (active) {
+    if (scrubber.parentElement !== capsule) capsule.appendChild(scrubber);
+    if (bachFab.parentElement !== capsule) capsule.appendChild(bachFab);
+  } else {
+    if (performer && scrubber.parentElement !== performer) {
+      if (penAnchor && penAnchor.parentElement === performer) {
+        performer.insertBefore(scrubber, penAnchor);
+      } else {
+        performer.appendChild(scrubber);
+      }
+    }
+    if (bachFab.parentElement !== document.body) {
+      if (dockReveal && dockReveal.parentElement === document.body) {
+        document.body.insertBefore(bachFab, dockReveal);
+      } else {
+        document.body.appendChild(bachFab);
+      }
+    }
+  }
+}
+
 function switchMode(mode) {
   // Compatibilidad con llamadas legadas 'study' o 'concert' -> unificadas en 'performer'
   let targetView = mode;
@@ -1985,6 +2017,7 @@ function switchMode(mode) {
     setPerformanceMode(desired);
   } else {
     document.body.classList.remove("mode-concert-active", "concert-immersion");
+    syncMonolithicBottomCapsule(false);
   }
 
   if (targetView === "editor") setTimeout(setupEditorCanvas, 40);
@@ -2020,6 +2053,7 @@ function setPerformanceMode(modeState, opts = {}) {
 
   document.body.classList.toggle("mode-concert-active", nextState === "concert");
   document.body.classList.remove("writing-focus");
+  syncMonolithicBottomCapsule(nextState === "study");
 
   if (nextState === "concert") {
     // Zero-Chrome Start: iniciar Concierto directamente limpio
@@ -5360,7 +5394,9 @@ function updateLayoutButtonIcon() {
     "2 Págs": "Vista: Dos páginas"
   };
 
+  const concertIconEl = document.getElementById("concertLayoutIcon");
   if (iconEl) iconEl.innerHTML = svgs[mode] || svgs["1 Pág"];
+  if (concertIconEl) concertIconEl.innerHTML = svgs[mode] || svgs["1 Pág"];
   if (btnEl) {
     btnEl.title = titles[mode] || "Cambiar vista de página";
     btnEl.setAttribute("aria-label", btnEl.title);
