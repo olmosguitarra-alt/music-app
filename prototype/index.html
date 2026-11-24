@@ -11,7 +11,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:wght@600;700&display=swap" />
-  <link rel="stylesheet" href="styles.css?v=89" />
+  <link rel="stylesheet" href="styles.css?v=90" />
   <!-- Motores Oficiales para Renderizar (PDF.js) y Particionar/Editar PDFs Reales (pdf-lib) -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf-lib/1.17.1/pdf-lib.min.js"></script>
@@ -388,21 +388,27 @@
   </main>
 
   <!-- =================================================================== -->
-  <!-- 2. VISOR INTELIGENTE UNIFICADO (MODO ENSAYO ↔ MODO CONCIERTO)       -->
+  <!-- 2. VISOR INTELIGENTE UNIFICADO (V90: ENSAYO ↔ CONCIERTO)            -->
   <!-- =================================================================== -->
   <main id="mode-performer" class="canvas-view is-study-mode">
-    <!-- BARRA SUPERIOR SOBRIA (VISIBLE EN ENSAYO, FADE OUT EN CONCIERTO) -->
+    <!-- BARRA SUPERIOR SOBRIA (Única fuente de título + chips vivos) -->
     <header class="performer-top-bar study-tools" id="performerTopBar">
       <div class="perf-top-left">
         <button type="button" class="perf-back-btn" onclick="switchMode('library')" title="Volver a Biblioteca" aria-label="Volver a Biblioteca">
           <svg viewBox="0 0 24 24" class="v-ico" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
           <span>Biblioteca</span>
         </button>
+        <button type="button" class="perf-util-btn perf-editor-shortcut" onclick="switchMode('editor')" title="Abrir en Editor de Partitura" aria-label="Editor">
+          <svg viewBox="0 0 24 24" class="v-ico" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8h9M3 12h6M3 16h13M3 20h18"/><path d="M13.5 14.5L19.5 4.5l2.5 1.5-6 10-3 1.5z"/></svg>
+        </button>
       </div>
 
       <div class="perf-top-center">
-        <span class="perf-top-title" id="performerTopTitle">SONATE BWV 1034</span>
-        <span class="perf-top-composer" id="performerTopComposer">J. S. Bach</span>
+        <span class="perf-top-title-line">
+          <strong id="performerTopTitle">SONATE BWV 1034</strong>
+          <span class="perf-top-sep">—</span>
+          <span class="perf-top-composer" id="performerTopComposer">J. S. Bach</span>
+        </span>
       </div>
 
       <div class="perf-top-right">
@@ -418,16 +424,29 @@
         </div>
 
         <div class="perf-quick-utils">
-          <button type="button" class="perf-util-btn" id="btnPerformerMetronome" onclick="toggleMetronomePopover(event)" title="Metrónomo">
-            <svg viewBox="0 0 24 24" class="v-ico" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M6 20h12L14 4h-4L6 20Z"/><path d="M12 16l4-7"/></svg>
-            <span class="perf-util-label">Metrónomo</span>
-          </button>
-          <button type="button" class="perf-util-btn" id="btnPerformerTuner" onclick="toggleTunerPopover(event)" title="Afinador">
-            <svg viewBox="0 0 24 24" class="v-ico" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 3v8a3 3 0 0 0 6 0V3"/><path d="M12 14v7"/><path d="M9 21h6"/></svg>
-            <span class="perf-util-label">Afinador</span>
-          </button>
-          <button type="button" class="perf-util-btn perf-layout-btn" id="btnPerformerLayout" onclick="cyclePageLayout()" title="Alternar 1 Pág / 2 Págs">
+          <!-- Chip vivo de Metrónomo: tap = Play/Stop, flecha = ajustar BPM -->
+          <div class="perf-live-chip" id="metroLiveChip">
+            <button type="button" class="perf-chip-main" id="btnPerformerMetronome" onclick="toggleMetronomePlay()" title="Iniciar / Detener Metrónomo">
+              <span class="chip-beat-dot" id="metroTopDot"></span>
+              <span id="metroChipLabel">♩ 76</span>
+            </button>
+            <button type="button" class="perf-chip-caret" onclick="toggleMetronomePopover(event)" title="Ajustar BPM" aria-label="Ajustar BPM">▾</button>
+          </div>
+
+          <!-- Chip vivo de Afinador: tap = Emitir/Detener, flecha = cambiar Hz -->
+          <div class="perf-live-chip" id="tunerLiveChip">
+            <button type="button" class="perf-chip-main" id="btnPerformerTuner" onclick="toggleTunerPlay()" title="Emitir / Detener Diapasón">
+              <span id="tunerChipLabel">A 440</span>
+            </button>
+            <button type="button" class="perf-chip-caret" onclick="toggleTunerPopover(event)" title="Cambiar afinación Hz" aria-label="Cambiar Hz">▾</button>
+          </div>
+
+          <button type="button" class="perf-util-btn perf-layout-btn" id="btnPerformerLayout" onclick="cyclePageLayout()" title="Alternar 1 Pág / Media Pág / 2 Págs">
             <span id="performerLayoutLabel">1 Pág</span>
+          </button>
+
+          <button class="bookmark-star-btn perf-top-star" id="btnPerformerBookmark" onclick="togglePageBookmark()" title="Marcar página favorita" aria-label="Favorito de página">
+            ☆
           </button>
         </div>
       </div>
@@ -436,6 +455,8 @@
     <!-- LIENZO UNIFICADO DE PARTITURA (1 PÁGINA O 2 PÁGINAS) -->
     <div class="full-bleed-canvas performer-stage" id="performerStage">
       <button class="invisible-page-zone left" onclick="turnPage(-1)" aria-label="Página anterior">‹</button>
+      <div class="page-turn-flash left" id="pageTurnFlashLeft" aria-hidden="true"></div>
+      <div class="page-turn-flash right" id="pageTurnFlashRight" aria-hidden="true"></div>
 
       <div class="concert-spread-wrap performer-spread-wrap" id="performerSpreadWrap" onclick="handlePerformerStageTap(event)">
         <!-- FOLIO PRINCIPAL -->
@@ -447,9 +468,6 @@
               <span id="performerSubHeading">I. Adagio ma non tanto</span>
             </div>
             <div class="study-head-right">
-              <button class="bookmark-star-btn study-tools" id="btnPerformerBookmark" onclick="togglePageBookmark()" title="Marcar o desmarcar esta página como favorita" aria-label="Favorito de página">
-                ☆
-              </button>
               <span class="folio-meta" id="performerMetaRight">Pág. 1 / 10</span>
             </div>
           </div>
@@ -461,9 +479,8 @@
             <div id="performerMoldLayer" class="mold-layer"></div>
           </div>
 
-          <div class="folio-footer">
+          <div class="folio-footer" id="performerFolioFooter">
             <span id="performerFooterLeft">Modo Ensayo • Pluma Activa</span>
-            <div class="study-page-scrubber study-tools" id="performerPageScrubber"></div>
             <span id="performerFooterRight">Folio 1 / 10</span>
           </div>
         </div>
@@ -484,7 +501,7 @@
             <div id="performerSvgRight" class="svg-layer"></div>
           </div>
 
-          <div class="folio-footer">
+          <div class="folio-footer" id="performerFolioFooterRight">
             <span id="performerFooterLeftRight">Vista 2 Páginas</span>
             <span id="performerPageFooterRight">Folio 2</span>
           </div>
@@ -494,7 +511,24 @@
       <button class="invisible-page-zone right" onclick="turnPage(1)" aria-label="Siguiente página">›</button>
     </div>
 
-    <!-- RAIL DE HERRAMIENTAS DE ENSAYO (SE OCULTA SUAVEMENTE EN CONCIERTO) -->
+    <!-- MICRO-INDICADOR FUGAZ DE PÁGINA EN CONCIERTO -->
+    <div class="performer-page-toast hidden" id="performerPageToast" aria-live="polite">1 / 10</div>
+
+    <!-- SCRUBBER MÍNIMO TIPO FILMSTRIP (BARRA DE PROGRESO CON MARCADORES ★) -->
+    <div class="performer-scrubber-bar study-tools" id="performerScrubberBar">
+      <span class="scrubber-page-pill" id="scrubberPagePill">1 / 10</span>
+      <div class="scrubber-track" id="performerPageScrubber" onclick="handleScrubberClick(event)" title="Toca para saltar de página">
+        <div class="scrubber-fill" id="scrubberFill"></div>
+        <div class="scrubber-bookmarks" id="scrubberBookmarks"></div>
+      </div>
+    </div>
+
+    <!-- PESTAÑA PARA EXPANDIR/COLAPSAR EL RAIL DE HERRAMIENTAS -->
+    <button type="button" class="rail-collapse-tab study-tools" id="btnToggleToolRail" onclick="toggleToolRailCollapse()" title="Mostrar / ocultar herramientas de anotación" aria-label="Alternar herramientas">
+      <svg viewBox="0 0 24 24" class="v-ico" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
+    </button>
+
+    <!-- RAIL DE HERRAMIENTAS DE ENSAYO COLAPSABLE + PRESETS DIRECTOS DE TINTA -->
     <aside class="concepts-tool-rail study-tools" id="performerToolRail">
       <button class="rail-tool active" id="btnPen" onclick="setStudyTool('pen')" title="Pluma de trazo libre">
         <svg viewBox="0 0 24 24" class="v-ico"><path d="M12 19l7-7 3 3-7 7-3-3z"/><path d="M18 13l-1.5-7.5L2 2l3.5 14.5L13 18l5-5z"/><path d="M2 2l7.586 7.586"/></svg>
@@ -513,6 +547,21 @@
 
       <div class="rail-divider"></div>
 
+      <!-- Presets directos de tinta (1 toque) -->
+      <div class="rail-ink-presets" title="Acceso directo de tinta (toca para elegir, vuelve a tocar para grosor)">
+        <button type="button" class="ink-preset-dot active" style="background:#23426e" onclick="applyInkPreset('#23426e', 2.4, 'pen', this)" title="Azul Prusia (2.4px)"></button>
+        <button type="button" class="ink-preset-dot" style="background:#8c2f27" onclick="applyInkPreset('#8c2f27', 2.4, 'pen', this)" title="Carmín (2.4px)"></button>
+        <button type="button" class="ink-preset-dot" style="background:#201c19" onclick="applyInkPreset('#201c19', 1.8, 'pen', this)" title="Grafito fino (1.8px)"></button>
+        <button type="button" class="ink-preset-dot" style="background:#d4af37" onclick="applyInkPreset('#d4af37', 4.0, 'marker', this)" title="Marcador Ámbar"></button>
+      </div>
+
+      <button class="rail-tool" id="btnBrushStyle" onclick="toggleBrushPopover()" title="Ajuste fino de trazo y opacidad">
+        <span class="brush-swatch-dot" id="brushSwatchDot"></span>
+        <span class="rail-label">Grosor</span>
+      </button>
+
+      <div class="rail-divider"></div>
+
       <button class="rail-tool" id="btnUndoStudy" onclick="undoStudyAction()" title="Deshacer último trazo">
         <svg viewBox="0 0 24 24" class="v-ico"><path d="M9 14 4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 5.5 5.5v0a5.5 5.5 0 0 1-5.5 5.5H11"/></svg>
         <span class="rail-label">Deshacer</span>
@@ -521,13 +570,6 @@
       <button class="rail-tool" id="btnRedoStudy" onclick="redoStudyAction()" title="Rehacer trazo">
         <svg viewBox="0 0 24 24" class="v-ico"><path d="m15 14 5-5-5-5"/><path d="M20 9H9.5A5.5 5.5 0 0 0 4 14.5v0A5.5 5.5 0 0 0 9.5 20H13"/></svg>
         <span class="rail-label">Rehacer</span>
-      </button>
-
-      <div class="rail-divider"></div>
-
-      <button class="rail-tool" id="btnBrushStyle" onclick="toggleBrushPopover()" title="Color, grosor y transparencia">
-        <span class="brush-swatch-dot" id="brushSwatchDot"></span>
-        <span class="rail-label">Trazo</span>
       </button>
 
       <button class="rail-tool magic-active" id="btnMoldToggle" onclick="toggleAutoMold()" title="Demo: Convertir trazo manuscrito a texto de molde">
@@ -539,8 +581,6 @@
         <svg viewBox="0 0 24 24" class="v-ico"><path d="M5 22h14"/><path d="M19.27 13.73A2.5 2.5 0 0 0 17.5 13h-11A2.5 2.5 0 0 0 4 15.5V17a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-1.5c0-.66-.26-1.3-.73-1.77Z"/><path d="M14 13V8.5C14 7 15 7 15 5a3 3 0 0 0-3-3c-1.66 0-3 1-3 3s1 2 1 3.5V13"/></svg>
         <span class="rail-label">Sellos</span>
       </button>
-
-      <div class="rail-divider"></div>
 
       <button class="rail-tool" id="btnRailBachGpt" onclick="handleMainBachFabClick()" title="Consultar a BachGPT">
         <svg viewBox="0 0 24 24" class="v-ico"><path d="M12 3l1.8 4.2L18 9l-4.2 1.8L12 15l-1.8-4.2L6 9l4.2-1.8Z"/></svg>
@@ -957,6 +997,6 @@
     <span class="pdf-loading-text">Cargando...</span>
   </div>
 
-  <script src="app.js?v=89"></script>
+  <script src="app.js?v=90"></script>
 </body>
 </html>

@@ -10978,32 +10978,339 @@ body.mode-concert-active .bachgpt-widget-root {
   cursor: pointer;
 }
 
-/* Estado ENSAYO */
+/* Estado ENSAYO (Overlay flotante: cero salto de escala al alternar) */
+body.mode-performer-active #bottomNavDock,
+body.mode-performer-active .bottom-glass-cintillo,
+body.mode-performer-active #importPopoverWrap,
+body.mode-performer-active #bachGptFab {
+  opacity: 0 !important;
+  pointer-events: none !important;
+  transform: translateY(20px);
+}
+
+.perf-top-title-line {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 6px;
+  max-width: 100%;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.perf-top-title-line strong {
+  font-family: "Playfair Display", Georgia, serif;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.perf-top-sep {
+  color: var(--text-secondary);
+  opacity: 0.55;
+}
+
+.perf-editor-shortcut {
+  width: 34px;
+  padding: 0;
+  justify-content: center;
+}
+
+/* Chips vivos de Metrónomo y Afinador */
+.perf-live-chip {
+  display: inline-flex;
+  align-items: center;
+  height: 32px;
+  border-radius: 12px;
+  border: 1px solid var(--glass-border);
+  background: transparent;
+  overflow: hidden;
+  transition: border-color 0.18s ease, background 0.18s ease;
+}
+
+.perf-live-chip.active {
+  border-color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 14%, transparent);
+}
+
+.perf-chip-main {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  height: 100%;
+  padding: 0 8px 0 9px;
+  border: none;
+  background: transparent;
+  color: var(--text-primary);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.perf-live-chip.active .perf-chip-main {
+  color: var(--accent);
+}
+
+.perf-chip-caret {
+  height: 100%;
+  padding: 0 6px;
+  border: none;
+  border-left: 1px solid var(--glass-border);
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: 10px;
+  cursor: pointer;
+}
+
+.perf-chip-caret:hover {
+  color: var(--text-primary);
+}
+
+.chip-beat-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--text-secondary);
+  opacity: 0.45;
+  transition: transform 0.08s ease, background 0.08s ease, opacity 0.08s ease;
+}
+
+.chip-beat-dot.pulse {
+  background: var(--accent);
+  opacity: 1;
+  transform: scale(1.5);
+}
+
+.perf-top-star {
+  width: 32px;
+  height: 32px;
+  font-size: 16px;
+}
+
+/* Ocultar cabecera/pie del folio en PDFs reales o en Concierto (Full Bleed real) */
+#mode-performer .score-folio.folio-real-pdf-clean .folio-header,
+#mode-performer .score-folio.folio-real-pdf-clean .folio-footer,
+#mode-performer.is-concert-mode .folio-header,
+#mode-performer.is-concert-mode .folio-footer {
+  display: none !important;
+}
+
 #mode-performer.is-study-mode .performer-stage {
-  padding: 70px 24px 78px 92px;
+  padding: 64px 16px 32px 16px;
   transition: padding 0.25s ease;
 }
 
 #mode-performer.is-study-mode .invisible-page-zone.left {
-  left: 88px;
+  left: 8px;
+}
+
+/* Rail de herramientas flotante y colapsable */
+.rail-collapse-tab {
+  position: fixed;
+  left: 12px;
+  top: 72px;
+  width: 34px;
+  height: 34px;
+  border-radius: 12px;
+  border: 1px solid var(--glass-border);
+  background: color-mix(in srgb, var(--card-bg) 88%, transparent);
+  backdrop-filter: blur(12px);
+  color: var(--text-primary);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  z-index: 78;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.16);
+  transition: transform 0.2s ease, border-color 0.2s ease;
+}
+
+.rail-collapse-tab:hover {
+  border-color: var(--accent);
+}
+
+.rail-collapse-tab .v-ico {
+  width: 15px;
+  height: 15px;
 }
 
 #mode-performer.is-study-mode .concepts-tool-rail {
   position: fixed;
-  left: 16px;
-  top: 50%;
+  left: 12px;
+  top: 52%;
   transform: translateY(-50%);
   z-index: 75;
+  transition: transform 0.24s ease, opacity 0.24s ease;
+}
+
+#mode-performer.is-study-mode .concepts-tool-rail.rail-collapsed {
+  transform: translate(-130%, -50%);
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* Presets directos de tinta (1 toque) */
+.rail-ink-presets {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 2px 0;
+}
+
+.ink-preset-dot {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  border: 2px solid transparent;
+  cursor: pointer;
+  transition: transform 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.ink-preset-dot:hover {
+  transform: scale(1.15);
+}
+
+.ink-preset-dot.active {
+  border-color: var(--card-bg);
+  box-shadow: 0 0 0 2px var(--accent);
+  transform: scale(1.15);
+}
+
+/* Scrubber mínimo tipo filmstrip */
+.performer-scrubber-bar {
+  position: fixed;
+  bottom: max(10px, env(safe-area-inset-bottom));
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: min(460px, calc(100vw - 48px));
+  height: 28px;
+  padding: 0 12px;
+  border-radius: 14px;
+  background: color-mix(in srgb, var(--card-bg) 82%, transparent);
+  backdrop-filter: blur(12px);
+  border: 1px solid var(--glass-border);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.14);
+  z-index: 74;
+}
+
+.scrubber-page-pill {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  white-space: nowrap;
+  min-width: 44px;
+}
+
+.scrubber-track {
+  position: relative;
+  flex: 1;
+  height: 6px;
+  border-radius: 99px;
+  background: color-mix(in srgb, var(--text-secondary) 22%, transparent);
+  cursor: pointer;
+}
+
+.scrubber-fill {
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  border-radius: 99px;
+  background: var(--accent);
+  transition: width 0.2s ease;
+}
+
+.scrubber-bookmarks {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.scrubber-bm-tick {
+  position: absolute;
+  top: -2px;
+  width: 4px;
+  height: 10px;
+  border-radius: 2px;
+  background: #d4af37;
+  transform: translateX(-50%);
+}
+
+/* Destello sutil al pasar página + Media Página real */
+.page-turn-flash {
+  position: fixed;
+  top: 0;
+  bottom: 0;
+  width: 48px;
+  pointer-events: none;
+  opacity: 0;
+  z-index: 72;
+  transition: opacity 0.18s ease;
+}
+
+.page-turn-flash.left {
+  left: 0;
+  background: linear-gradient(to right, color-mix(in srgb, var(--accent) 26%, transparent), transparent);
+}
+
+.page-turn-flash.right {
+  right: 0;
+  background: linear-gradient(to left, color-mix(in srgb, var(--accent) 26%, transparent), transparent);
+}
+
+.page-turn-flash.active {
+  opacity: 1;
+}
+
+.folio-staff-area.half-page-bottom > canvas,
+.folio-staff-area.half-page-bottom > .svg-layer,
+.folio-staff-area.half-page-bottom > .mold-layer {
+  transform: translateY(-42%);
+  transition: transform 0.28s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.folio-staff-area > canvas,
+.folio-staff-area > .svg-layer,
+.folio-staff-area > .mold-layer {
+  transition: transform 0.28s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/* Micro-indicador fugaz de página en Concierto */
+.performer-page-toast {
+  position: fixed;
+  bottom: max(20px, env(safe-area-inset-bottom));
+  right: 20px;
+  padding: 5px 12px;
+  border-radius: 99px;
+  background: color-mix(in srgb, var(--card-bg) 78%, transparent);
+  backdrop-filter: blur(10px);
+  border: 1px solid var(--glass-border);
+  color: var(--text-primary);
+  font-size: 12px;
+  font-weight: 600;
+  z-index: 88;
+  pointer-events: none;
+  opacity: 1;
+  transition: opacity 0.28s ease;
+}
+
+.performer-page-toast.hidden {
+  opacity: 0;
 }
 
 #mode-performer.is-study-mode .concepts-popover {
-  left: 96px;
+  left: 84px;
   top: 50%;
   transform: translateY(-50%);
 }
 
 #mode-performer.is-study-mode .concert-exit-overlay,
-#mode-performer.is-study-mode .concert-only-bar {
+#mode-performer.is-study-mode .concert-only-bar,
+#mode-performer.is-study-mode .performer-page-toast {
   display: none !important;
 }
 
@@ -11016,7 +11323,7 @@ body.mode-concert-active .bachgpt-widget-root {
 #mode-performer.is-concert-mode .performer-stage {
   width: 100vw;
   height: 100vh;
-  padding: 10px 18px !important;
+  padding: 8px 14px !important;
   transition: padding 0.25s ease;
 }
 
@@ -11111,22 +11418,22 @@ body.concert-immersion #mode-performer.is-concert-mode .concert-only-bar {
     gap: 6px;
   }
   .perf-back-btn span,
-  .perf-util-label {
-    display: none;
-  }
   .perf-top-center {
     display: none;
   }
   #mode-performer.is-study-mode .performer-stage {
-    padding: 66px 12px 132px 12px !important;
+    padding: 64px 10px 92px 10px !important;
   }
   #mode-performer.is-study-mode .invisible-page-zone.left {
     left: 4px;
   }
+  .rail-collapse-tab {
+    display: none;
+  }
   #mode-performer.is-study-mode .concepts-tool-rail {
     left: 50%;
     top: auto;
-    bottom: 72px;
+    bottom: 42px;
     transform: translateX(-50%);
     flex-direction: row;
     width: auto;
@@ -11141,10 +11448,14 @@ body.concert-immersion #mode-performer.is-concert-mode .concert-only-bar {
     height: 20px;
     margin: 0 3px;
   }
+  .rail-ink-presets {
+    flex-direction: row;
+    padding: 0 4px;
+  }
   #mode-performer.is-study-mode .concepts-popover {
     left: 50%;
     top: auto;
-    bottom: 128px;
+    bottom: 98px;
     transform: translateX(-50%);
   }
 }

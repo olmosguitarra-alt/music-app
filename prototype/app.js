@@ -534,7 +534,12 @@ async function renderActiveScorePage() {
     }
   }
 
-  if (activeScore.isRealPdf && currentPdfDocInstance) {
+  const sheetEl = document.getElementById("performerSheet");
+  const isRealPdf = Boolean(activeScore.isRealPdf && currentPdfDocInstance);
+  if (sheetEl) sheetEl.classList.toggle("folio-real-pdf-clean", isRealPdf);
+  if (rightSheet) rightSheet.classList.toggle("folio-real-pdf-clean", isRealPdf);
+
+  if (isRealPdf) {
     if (svgEl) svgEl.classList.add("hidden");
     if (svgRightEl) svgRightEl.classList.add("hidden");
     if (pdfCanvas) pdfCanvas.classList.remove("hidden");
@@ -2013,14 +2018,26 @@ function setPerformanceMode(modeState, opts = {}) {
   }
 
   document.body.classList.toggle("mode-concert-active", nextState === "concert");
-  document.body.classList.remove("concert-immersion", "writing-focus");
+  document.body.classList.remove("writing-focus");
 
   if (nextState === "concert") {
+    // Zero-Chrome Start: iniciar Concierto directamente limpio
+    document.body.classList.add("concert-immersion");
+    if (concertAutoHideTimer) {
+      clearTimeout(concertAutoHideTimer);
+      concertAutoHideTimer = null;
+    }
     toggleBachGptChat(false);
     document.getElementById("brushPopover")?.classList.add("hidden");
     document.getElementById("stampPopover")?.classList.add("hidden");
     document.getElementById("metronomePopover")?.classList.add("hidden");
     document.getElementById("tunerPopover")?.classList.add("hidden");
+  } else {
+    document.body.classList.remove("concert-immersion");
+    if (concertAutoHideTimer) {
+      clearTimeout(concertAutoHideTimer);
+      concertAutoHideTimer = null;
+    }
   }
 
   // Actualizar pie del folio según el estado
@@ -3934,21 +3951,55 @@ function updateBookmarkButton() {
 }
 
 function renderStudyPageScrubber() {
-  const el = document.getElementById("performerPageScrubber");
-  if (!el) return;
-  const total = activeScore?.pageCount || 10;
-  const sId = activeScore ? activeScore.id : 1;
-  const bms = studyBookmarks[sId] || new Set();
-  let html = "";
-  for (let p = 1; p <= total; p++) {
-    const cls = [
-      "scrub-pg-btn",
-      p === pageNum ? "active" : "",
-      bms.has(p) ? "has-bookmark" : ""
-    ].filter(Boolean).join(" ");
-    html += `<button class="${cls}" onclick="jumpToPage(${p})">${p}</button>`;
+  const total = Math.max(1, activeScore?.pageCount || 10);
+  const pill = document.getElementById("scrubberPagePill");
+  const fill = document.getElementById("scrubberFill");
+  const bmContainer = document.getElementById("scrubberBookmarks");
+
+  if (pill) pill.textContent = `${pageNum} / ${total}`;
+  if (fill) {
+    const pct = total <= 1 ? 100 : ((pageNum - 1) / (total - 1)) * 100;
+    fill.style.width = `${Math.max(4, pct)}%`;
   }
-  el.innerHTML = html;
+  if (bmContainer) {
+    const sId = activeScore ? activeScore.id : 1;
+    const bms = studyBookmarks[sId] || new Set();
+    let ticks = "";
+    bms.forEach((p) => {
+      const pos = total <= 1 ? 50 : ((p - 1) / (total - 1)) * 100;
+      ticks += `<span class="scrubber-bm-tick" style="left:${pos}%"></span>`;
+    });
+    bmContainer.innerHTML = ticks;
+  }
+}
+
+function handleScrubberClick(e) {
+  const track = document.getElementById("performerPageScrubber");
+  if (!track) return;
+  const rect = track.getBoundingClientRect();
+  const ratio = Math.max(0, Math.min(1, (e.clientX - rect.left) / Math.max(1, rect.width)));
+  const total = Math.max(1, activeScore?.pageCount || 10);
+  const target = Math.round(1 + ratio * (total - 1));
+  jumpToPage(target);
+}
+
+function toggleToolRailCollapse() {
+  const rail = document.getElementById("performerToolRail");
+  if (!rail) return;
+  rail.classList.toggle("rail-collapsed");
+}
+
+function applyInkPreset(color, width, tool, btn) {
+  inkColor = color;
+  brushWidth = width;
+  setStudyTool(tool || "pen");
+  document.querySelectorAll(".ink-preset-dot").forEach((d) => d.classList.toggle("active", d === btn));
+  const dot = document.getElementById("brushSwatchDot");
+  if (dot) dot.style.background = color;
+  const lbl = document.getElementById("brushWidthLabel");
+  const rng = document.getElementById("brushWidthRange");
+  if (lbl) lbl.textContent = `${width.toFixed(1)} px`;
+  if (rng) rng.value = String(width);
 }
 
 async function jumpToPage(targetPage) {
@@ -4135,19 +4186,89 @@ function clearStudyLayer() {
 let audioTimer = null;
 let followedSys = 0;
 let layoutIdx = 0;
+let halfPagePhase = 0; // 0 = mitad superior, 1 = mitad inferior (Media Pág)
+let concertAutoHideTimer = null;
+let pageToastTimer = null;
 const layouts = ["1 Pág", "Media Pág", "2 Págs"];
+
+function triggerPageTurnFlash(dir) {
+  const el = document.getElementById(dir < 0 ? "pageTurnFlashLeft" : "pageTurnFlashRight");
+  if (!el) return;
+  el.classList.add("active");
+  setTimeout(() => el.classList.remove("active"), 180);
+}
+
+function showConcertPageToast() {
+  if (performanceMode !== "concert") return;
+  const toast = document.getElementById("performerPageToast");
+  if (!toast) return;
+  const total = activeScore?.pageCount || 10;
+  toast.textContent = `${pageNum} / ${total}`;
+  toast.classList.remove("hidden");
+  if (pageToastTimer) clearTimeout(pageToastTimer);
+  pageToastTimer = setTimeout(() => toast.classList.add("hidden"), 1300);
+}
+
+function syncHalfPageVisual() {
+  const wrap = document.getElementById("performerWrap");
+  if (!wrap) return;
+  const isHalfBottom = layouts[layoutIdx] === "Media Pág" && halfPagePhase === 1;
+  wrap.classList.toggle("half-page-bottom", isHalfBottom);
+}
 
 async function turnPage(dir) {
   saveStudyAnnotationsForCurrentPage();
+  triggerPageTurnFlash(dir);
   const total = activeScore.pageCount || 10;
+
+  // Media Pág real: avanza primero mitad superior -> mitad inferior -> siguiente página
+  if (layouts[layoutIdx] === "Media Pág") {
+    if (dir > 0) {
+      if (halfPagePhase === 0) {
+        halfPagePhase = 1;
+        syncHalfPageVisual();
+        showConcertPageToast();
+        return;
+      }
+      if (pageNum < total) {
+        halfPagePhase = 0;
+        pageNum += 1;
+        await renderActiveScorePage();
+        syncHalfPageVisual();
+        showConcertPageToast();
+      }
+      return;
+    } else {
+      if (halfPagePhase === 1) {
+        halfPagePhase = 0;
+        syncHalfPageVisual();
+        showConcertPageToast();
+        return;
+      }
+      if (pageNum > 1) {
+        halfPagePhase = 1;
+        pageNum -= 1;
+        await renderActiveScorePage();
+        syncHalfPageVisual();
+        showConcertPageToast();
+      }
+      return;
+    }
+  }
+
+  halfPagePhase = 0;
+  syncHalfPageVisual();
   const step = layouts[layoutIdx] === "2 Págs" ? 2 : 1;
   pageNum = Math.max(1, Math.min(total, pageNum + dir * step));
   await renderActiveScorePage();
+  showConcertPageToast();
 }
 
 async function cyclePageLayout() {
   saveStudyAnnotationsForCurrentPage();
   layoutIdx = (layoutIdx + 1) % layouts.length;
+  halfPagePhase = 0;
+  syncHalfPageVisual();
   const lbl = document.getElementById("pageModeLabel");
   const topLbl = document.getElementById("performerLayoutLabel");
   if (lbl) lbl.textContent = layouts[layoutIdx];
@@ -4155,10 +4276,30 @@ async function cyclePageLayout() {
   await renderActiveScorePage();
 }
 
+function scheduleConcertAutoHide() {
+  if (concertAutoHideTimer) clearTimeout(concertAutoHideTimer);
+  if (performanceMode !== "concert") return;
+  concertAutoHideTimer = setTimeout(() => {
+    if (performanceMode === "concert") {
+      document.body.classList.add("concert-immersion");
+    }
+  }, 3200);
+}
+
 function handlePerformerStageTap(e) {
   if (performanceMode !== "concert") return;
-  if (e.target.closest("button, .floating-bottom-bar, .concert-exit-overlay")) return;
-  document.body.classList.toggle("concert-immersion");
+  if (e.target.closest("button, .floating-bottom-bar, .concert-exit-overlay")) {
+    scheduleConcertAutoHide();
+    return;
+  }
+  const willShow = document.body.classList.contains("concert-immersion");
+  document.body.classList.toggle("concert-immersion", !willShow);
+  if (willShow) {
+    scheduleConcertAutoHide();
+  } else if (concertAutoHideTimer) {
+    clearTimeout(concertAutoHideTimer);
+    concertAutoHideTimer = null;
+  }
 }
 
 function toggleAudioFollow() {
@@ -5246,8 +5387,10 @@ function toggleMetronomePopover(e) {
 function setMetronomeBpm(val) {
   metroBpm = Math.max(40, Math.min(208, parseInt(val, 10) || 76));
   const lbl = document.getElementById("metroBpmValue");
+  const chipLbl = document.getElementById("metroChipLabel");
   const rng = document.getElementById("metroBpmRange");
   if (lbl) lbl.textContent = `${metroBpm} BPM`;
+  if (chipLbl) chipLbl.textContent = `♩ ${metroBpm}`;
   if (rng) rng.value = String(metroBpm);
   if (metroTimer) {
     clearInterval(metroTimer);
@@ -5262,9 +5405,14 @@ function stepMetronomeBpm(delta) {
 function playMetronomeTick() {
   const ctx = getPerformerAudioCtx();
   const dot = document.getElementById("metroBeatDot");
+  const topDot = document.getElementById("metroTopDot");
   if (dot) {
     dot.classList.add("pulse");
     setTimeout(() => dot.classList.remove("pulse"), 90);
+  }
+  if (topDot) {
+    topDot.classList.add("pulse");
+    setTimeout(() => topDot.classList.remove("pulse"), 90);
   }
   if (!ctx) return;
   const osc = ctx.createOscillator();
@@ -5281,18 +5429,18 @@ function playMetronomeTick() {
 
 function toggleMetronomePlay() {
   const btn = document.getElementById("btnMetroPlay");
-  const topBtn = document.getElementById("btnPerformerMetronome");
+  const chip = document.getElementById("metroLiveChip");
   if (metroTimer) {
     clearInterval(metroTimer);
     metroTimer = null;
     if (btn) btn.textContent = "Iniciar";
-    if (topBtn) topBtn.classList.remove("active");
+    if (chip) chip.classList.remove("active");
     return;
   }
   playMetronomeTick();
   metroTimer = setInterval(playMetronomeTick, Math.round(60000 / metroBpm));
   if (btn) btn.textContent = "Detener";
-  if (topBtn) topBtn.classList.add("active");
+  if (chip) chip.classList.add("active");
 }
 
 function toggleTunerPopover(e) {
@@ -5303,7 +5451,10 @@ function toggleTunerPopover(e) {
 
 function setTunerFreq(hz, btn) {
   tunerHz = hz;
-  document.getElementById("tunerHzLabel").textContent = `${hz} Hz`;
+  const hzLbl = document.getElementById("tunerHzLabel");
+  const chipLbl = document.getElementById("tunerChipLabel");
+  if (hzLbl) hzLbl.textContent = `${hz} Hz`;
+  if (chipLbl) chipLbl.textContent = `A ${hz}`;
   document.querySelectorAll(".tuner-hz-btn").forEach((b) => b.classList.toggle("active", b === btn));
   if (tunerOsc) {
     tunerOsc.frequency.setValueAtTime(tunerHz, getPerformerAudioCtx().currentTime);
@@ -5312,13 +5463,13 @@ function setTunerFreq(hz, btn) {
 
 function toggleTunerPlay() {
   const btn = document.getElementById("btnTunerPlay");
-  const topBtn = document.getElementById("btnPerformerTuner");
+  const chip = document.getElementById("tunerLiveChip");
   if (tunerOsc) {
     try { tunerOsc.stop(); } catch (_) {}
     tunerOsc.disconnect();
     tunerOsc = null;
     if (btn) btn.textContent = "Emitir La (A4)";
-    if (topBtn) topBtn.classList.remove("active");
+    if (chip) chip.classList.remove("active");
     return;
   }
   const ctx = getPerformerAudioCtx();
@@ -5333,7 +5484,7 @@ function toggleTunerPlay() {
   osc.start();
   tunerOsc = osc;
   if (btn) btn.textContent = "Detener Diapasón";
-  if (topBtn) topBtn.classList.add("active");
+  if (chip) chip.classList.add("active");
 }
 
 function toggleImportMenu(e) {
@@ -5753,12 +5904,12 @@ document.addEventListener("click", (e) => {
     stampPop.classList.add("hidden");
   }
   const metroPop = document.getElementById("metronomePopover");
-  if (metroPop && !metroPop.classList.contains("hidden") && !e.target.closest("#metronomePopover") && !e.target.closest("#btnPerformerMetronome")) {
+  if (metroPop && !metroPop.classList.contains("hidden") && !e.target.closest("#metronomePopover") && !e.target.closest("#metroLiveChip")) {
     metroPop.classList.add("hidden");
   }
 
   const tunerPop = document.getElementById("tunerPopover");
-  if (tunerPop && !tunerPop.classList.contains("hidden") && !e.target.closest("#tunerPopover") && !e.target.closest("#btnPerformerTuner")) {
+  if (tunerPop && !tunerPop.classList.contains("hidden") && !e.target.closest("#tunerPopover") && !e.target.closest("#tunerLiveChip")) {
     tunerPop.classList.add("hidden");
   }
 });
