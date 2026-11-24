@@ -1,0 +1,64 @@
+# PROMPT DE IMPLEMENTACIÓN: UNIFICACIÓN DEL VISOR INTELIGENTE (MODO ENSAYO / CONCIERTO) EN CADENZA
+
+Actúa como Ingeniero Senior Frontend y Diseñador UX/UI de Cadenza (`prototype/index.html`, `prototype/styles.css`, `prototype/app.js`).
+
+Tu objetivo es refactorizar la arquitectura del visor de partituras para **eliminar la duplicidad de modos (`#mode-study` y `#mode-concert`)** y consolidarlos en un **ÚNICO VISOR INTELIGENTE (`#mode-performer` o `#mode-score-viewer`)**, gobernado por un conmutador de estado (Switch) altamente intuitivo y elegante: **"Ensayo" ↔ "Concierto"**.
+
+---
+
+### 1. OBJETIVO ARQUITECTÓNICO Y TÉCNICO
+- **Un Solo Motor de Partitura:** Una sola instancia activa de lienzo/canvas para renderizar el PDF (`pdf.js`) y una sola capa de anotaciones y dibujo vectorial.
+- **Persistencia Total:** Cualquier anotación, marca o sello agregado durante el "Modo Ensayo" se mantiene y visualiza exactamente igual en el "Modo Concierto" sin recargar páginas ni transferir datos entre lienzos.
+- **Optimización de Memoria (Tablets Android):** Reducir drásticamente la huella de memoria RAM al no tener dos jerarquías DOM activas simultáneas en pantalla completa.
+- **Soporte 1 Pág / 2 Págs:** La lógica de visualización (1 página en vertical o 2 páginas en horizontal) funciona de forma unificada bajo el mismo contenedor.
+
+---
+
+### 2. EXPERIENCIA DE USUARIO Y LÍNEA EDITORIAL (MINIMALISTA, FRIENDLY, SOBRIO)
+El visor opera bajo una única vista con dos estados de experiencia visual:
+
+#### A. ESTADO "ENSAYO" (Workspace Completo de Estudio)
+- **Barra Superior Sobria:**
+  * Izquierda: Botón sutil `[ ← Biblioteca ]`.
+  * Centro: Título de la obra y compositor con tipografía limpia.
+  * Derecha: Switch elegante tipo pastilla/píldora con dos segmentos:
+    `[ ✏️ Ensayo | 🎭 Concierto ]` (con transición suave de acento).
+  * Accesos rápidos compactos: `[ Metrónomo ]` y `[ Afinador ]`.
+- **Barra Lateral de Herramientas (Tool Rail):**
+  * Visible a la izquierda o derecha: herramientas de lápiz, pluma, goma, sellos musicales, grosor, color y acceso a BachGPT.
+- **Zonas de Pasar Página:** Flechas discretas o zonas laterales táctiles activas.
+
+#### B. ESTADO "CONCIERTO" (Zen Stage / Pantalla Completa Limpia)
+Al pulsar en el switch **`[ 🎭 Concierto ]`**:
+- **Desvanecimiento Instantáneo (Fade Out):** Desaparecen suavemente la barra superior, la barra de herramientas, los afinadores, el metrónomo y BachGPT.
+- **Pantalla Completa Real (Full Bleed):** La partitura se expande al 100% de la pantalla sin márgenes muertos.
+- **Blindaje en Vivo (Performance Shield):**
+  * Se desactiva la interacción de dibujo (para evitar rayones accidentales con la mano o atril).
+  * Todo el lateral derecho e izquierdo se convierten en zonas amplias de cambio de página táctil (toque o swipe).
+- **Control Flotante Mínimo para Salir del Modo Concierto:**
+  * En una esquina superior o al tocar el centro de la pantalla, se revela un control transparente y no invasivo:
+    `[ ✏️ Volver a Ensayo ]` para alternar rápidamente sin interrumpir la ejecución.
+
+---
+
+### 3. TAREAS CONCRETAS DE REFACTORIZACIÓN
+
+1. **Estructura HTML (`prototype/index.html`):**
+   - Fusionar las secciones `<main id="mode-study">` y `<main id="mode-concert">` en una única sección: `<main id="mode-performer" class="canvas-view">`.
+   - Incluir el header superior estilizado con el switch `[ Ensayo | Concierto ]`.
+   - Incluir el contenedor unificado de folios (`#performerSheet` y opcional `#performerSheetRight`).
+   - El contenedor de herramientas (`.concepts-tool-rail` y widgets) tendrá la clase de estado `.study-tools` que se oculta dinámicamente con transiciones CSS cuando el modo sea `state-concert`.
+
+2. **Estilos CSS (`prototype/styles.css`):**
+   - Definir clases de estado sobre `#mode-performer`:
+     * `.is-study-mode`: Muestra herramientas y barras con espaciado ergonómico.
+     * `.is-concert-mode`: Oculta barras con `opacity: 0; pointer-events: none;` y expande el folio a `width: 100vw; height: 100vh;`.
+   - Diseñar el switch pastilla con botones redondeados suaves (`border-radius: 20px`), trazos de 1px sutiles, micro-sombras e iconos lineales sobrios (trazo 1.5px).
+
+3. **Lógica JavaScript (`prototype/app.js`):**
+   - Reemplazar las funciones separadas de navegación `enterStudyMode()` y `enterConcertMode()` por una función unificada:
+     `setPerformanceMode(modeState)` donde `modeState` es `'study'` o `'concert'`.
+   - Consolidar los eventos de paso de página (`turnPage()`), renderizado de PDF (`pdf.js`) y capas de anotaciones sobre una única estructura de variables y canvas.
+   - Sincronizar el estado con el botón de "Iniciar Concierto" desde la vista de Programas/Setlists (al tocar "Iniciar Concierto", abre directamente el visor en estado `'concert'`).
+
+Por favor, revisa el código de `prototype/` y ejecuta esta unificación manteniendo intactos los datos de la biblioteca y garantizando una experiencia táctil impecable en tabletas.

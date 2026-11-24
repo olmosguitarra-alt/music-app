@@ -10692,3 +10692,459 @@ body.mode-library-active .floating-import-fab-wrap {
     font-weight: 600 !important;
   }
 }
+
+
+/* ==========================================================================
+   V89 — VISOR INTELIGENTE UNIFICADO (#mode-performer: ENSAYO ↔ CONCIERTO)
+   ========================================================================== */
+body.mode-performer-active .floating-hud-top,
+body.mode-performer-active .top-glass-cintillo {
+  display: none !important;
+}
+
+body.mode-concert-active #bottomNavDock,
+body.mode-concert-active .bottom-glass-cintillo,
+body.mode-concert-active #importPopoverWrap,
+body.mode-concert-active #bachGptFab,
+body.mode-concert-active .bachgpt-widget-root {
+  opacity: 0 !important;
+  pointer-events: none !important;
+  transform: translateY(20px);
+}
+
+#bottomNavDock,
+#importPopoverWrap,
+#bachGptFab {
+  transition: opacity 0.24s ease, transform 0.24s ease;
+}
+
+#mode-performer {
+  position: relative;
+  width: 100%;
+  height: 100%;
+}
+
+#mode-performer .study-tools {
+  transition: opacity 0.24s ease, transform 0.24s ease;
+}
+
+/* Barra Superior Sobria (Modo Ensayo) */
+.performer-top-bar {
+  position: fixed;
+  top: max(10px, env(safe-area-inset-top));
+  left: 16px;
+  right: 16px;
+  height: 50px;
+  padding: 0 12px;
+  border-radius: 16px;
+  background: color-mix(in srgb, var(--card-bg) 88%, transparent);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid var(--glass-border);
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.14);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  z-index: 80;
+}
+
+.perf-top-left,
+.perf-top-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.perf-back-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  height: 34px;
+  padding: 0 11px 0 8px;
+  border-radius: 12px;
+  border: 1px solid var(--glass-border);
+  background: transparent;
+  color: var(--text-primary);
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.18s ease, border-color 0.18s ease;
+}
+
+.perf-back-btn:hover {
+  background: color-mix(in srgb, var(--accent) 12%, transparent);
+  border-color: var(--accent);
+}
+
+.perf-back-btn .v-ico {
+  width: 16px;
+  height: 16px;
+}
+
+.perf-top-center {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-width: 0;
+  flex: 1 1 auto;
+  text-align: center;
+}
+
+.perf-top-title {
+  font-family: "Playfair Display", Georgia, serif;
+  font-size: 14.5px;
+  font-weight: 700;
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+  line-height: 1.15;
+}
+
+.perf-top-composer {
+  font-size: 11.5px;
+  color: var(--text-secondary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+}
+
+/* Switch Pastilla Ensayo ↔ Concierto */
+.perf-mode-switch {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px;
+  border-radius: 20px;
+  background: color-mix(in srgb, var(--bg-canvas) 70%, transparent);
+  border: 1px solid var(--glass-border);
+  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.12);
+  gap: 2px;
+}
+
+.perf-switch-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 30px;
+  padding: 0 12px;
+  border-radius: 18px;
+  border: none;
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: 12.5px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.22s ease, color 0.22s ease, box-shadow 0.22s ease;
+}
+
+.perf-switch-btn .v-ico {
+  width: 14px;
+  height: 14px;
+  stroke-width: 1.5;
+}
+
+.perf-switch-btn.active {
+  background: var(--accent);
+  color: var(--accent-ink);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+.perf-quick-utils {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.perf-util-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  height: 34px;
+  padding: 0 10px;
+  border-radius: 12px;
+  border: 1px solid var(--glass-border);
+  background: transparent;
+  color: var(--text-primary);
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.18s ease, border-color 0.18s ease, color 0.18s ease;
+}
+
+.perf-util-btn .v-ico {
+  width: 15px;
+  height: 15px;
+}
+
+.perf-util-btn:hover,
+.perf-util-btn.active {
+  border-color: var(--accent);
+  color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 10%, transparent);
+}
+
+/* Popovers de Metrónomo y Afinador */
+.perf-utility-popover {
+  position: fixed;
+  top: 68px;
+  right: 20px;
+  width: 224px;
+  padding: 12px 14px;
+  border-radius: 16px;
+  background: var(--card-bg);
+  border: 1px solid var(--glass-border);
+  box-shadow: 0 14px 36px rgba(0, 0, 0, 0.28);
+  z-index: 95;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.perf-utility-popover.hidden {
+  display: none !important;
+}
+
+.perf-pop-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.metro-beat-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--glass-border);
+  transition: transform 0.08s ease, background 0.08s ease;
+}
+
+.metro-beat-dot.pulse {
+  background: var(--accent);
+  transform: scale(1.35);
+}
+
+.metro-bpm-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 14px;
+  color: var(--text-primary);
+}
+
+.metro-step-btn,
+.tuner-hz-btn {
+  height: 28px;
+  padding: 0 10px;
+  border-radius: 8px;
+  border: 1px solid var(--glass-border);
+  background: transparent;
+  color: var(--text-primary);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.tuner-freq-pills {
+  display: flex;
+  gap: 6px;
+  justify-content: space-between;
+}
+
+.tuner-hz-btn {
+  flex: 1;
+}
+
+.tuner-hz-btn.active {
+  background: var(--accent);
+  color: var(--accent-ink);
+  border-color: var(--accent);
+}
+
+.perf-pop-primary-btn {
+  height: 34px;
+  border-radius: 10px;
+  border: none;
+  background: var(--accent);
+  color: var(--accent-ink);
+  font-size: 12.5px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+/* Estado ENSAYO */
+#mode-performer.is-study-mode .performer-stage {
+  padding: 70px 24px 78px 92px;
+  transition: padding 0.25s ease;
+}
+
+#mode-performer.is-study-mode .invisible-page-zone.left {
+  left: 88px;
+}
+
+#mode-performer.is-study-mode .concepts-tool-rail {
+  position: fixed;
+  left: 16px;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 75;
+}
+
+#mode-performer.is-study-mode .concepts-popover {
+  left: 96px;
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+#mode-performer.is-study-mode .concert-exit-overlay,
+#mode-performer.is-study-mode .concert-only-bar {
+  display: none !important;
+}
+
+/* Estado CONCIERTO (Zen Stage / Full Bleed) */
+#mode-performer.is-concert-mode .study-tools {
+  opacity: 0 !important;
+  pointer-events: none !important;
+}
+
+#mode-performer.is-concert-mode .performer-stage {
+  width: 100vw;
+  height: 100vh;
+  padding: 10px 18px !important;
+  transition: padding 0.25s ease;
+}
+
+#mode-performer.is-concert-mode .performer-folio {
+  height: 100%;
+  max-height: 100%;
+}
+
+/* Blindaje en Vivo (Performance Shield): sin dibujo accidental */
+#mode-performer.is-concert-mode .draw-layer {
+  pointer-events: none !important;
+}
+
+/* Zonas táctiles laterales amplias en Concierto */
+#mode-performer.is-concert-mode .invisible-page-zone {
+  width: 15vw;
+  min-width: 72px;
+}
+
+#mode-performer.is-concert-mode .invisible-page-zone.left {
+  left: 0;
+}
+
+#mode-performer.is-concert-mode .invisible-page-zone.right {
+  right: 0;
+}
+
+/* Control flotante mínimo para salir del Modo Concierto */
+.concert-exit-overlay {
+  position: fixed;
+  top: max(14px, env(safe-area-inset-top));
+  right: 18px;
+  z-index: 90;
+  transition: opacity 0.24s ease, transform 0.24s ease;
+}
+
+.concert-return-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 36px;
+  padding: 0 14px;
+  border-radius: 20px;
+  border: 1px solid var(--glass-border);
+  background: color-mix(in srgb, var(--card-bg) 76%, transparent);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  color: var(--text-primary);
+  font-size: 12.5px;
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.22);
+  transition: background 0.18s ease, border-color 0.18s ease;
+}
+
+.concert-return-btn:hover {
+  border-color: var(--accent);
+  background: var(--card-bg);
+}
+
+.concert-return-btn .v-ico {
+  width: 14px;
+  height: 14px;
+}
+
+#mode-performer.is-concert-mode .concert-only-bar {
+  bottom: max(16px, env(safe-area-inset-bottom));
+  top: auto;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 85;
+  transition: opacity 0.24s ease, transform 0.24s ease;
+}
+
+body.concert-immersion #mode-performer.is-concert-mode .concert-exit-overlay {
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(-12px);
+}
+
+body.concert-immersion #mode-performer.is-concert-mode .concert-only-bar {
+  opacity: 0;
+  pointer-events: none;
+  transform: translate(-50%, 18px);
+}
+
+@media (max-width: 900px) {
+  .performer-top-bar {
+    left: 10px;
+    right: 10px;
+    padding: 0 8px;
+    gap: 6px;
+  }
+  .perf-back-btn span,
+  .perf-util-label {
+    display: none;
+  }
+  .perf-top-center {
+    display: none;
+  }
+  #mode-performer.is-study-mode .performer-stage {
+    padding: 66px 12px 132px 12px !important;
+  }
+  #mode-performer.is-study-mode .invisible-page-zone.left {
+    left: 4px;
+  }
+  #mode-performer.is-study-mode .concepts-tool-rail {
+    left: 50%;
+    top: auto;
+    bottom: 72px;
+    transform: translateX(-50%);
+    flex-direction: row;
+    width: auto;
+    max-width: calc(100vw - 20px);
+    overflow-x: auto;
+  }
+  #mode-performer.is-study-mode .concepts-tool-rail .rail-label {
+    display: none;
+  }
+  #mode-performer.is-study-mode .concepts-tool-rail .rail-divider {
+    width: 1px;
+    height: 20px;
+    margin: 0 3px;
+  }
+  #mode-performer.is-study-mode .concepts-popover {
+    left: 50%;
+    top: auto;
+    bottom: 128px;
+    transform: translateX(-50%);
+  }
+}

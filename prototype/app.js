@@ -460,8 +460,10 @@ function showPilotBanner(msg) {
 }
 
 // ==========================================================================
-// RENDERIZADO DE PÁGINAS DE TU PDF REAL EN MODO ESTUDIO Y MODO CONCIERTO
+// RENDERIZADO DE PÁGINAS EN EL VISOR INTELIGENTE UNIFICADO (ENSAYO / CONCIERTO)
 // ==========================================================================
+let performanceMode = "study"; // 'study' | 'concert'
+
 async function openScoreById(scoreId, targetMode = "study") {
   const found = scores.find((s) => s.id === Number(scoreId));
   if (!found) return;
@@ -469,15 +471,22 @@ async function openScoreById(scoreId, targetMode = "study") {
   pageNum = 1;
   markScoreRecent(found.id);
 
-  document.getElementById("hudPieceTitle").textContent = `${found.composer.split("(")[0].trim()} — ${found.clean || found.title}`;
+  const displayTitle = found.clean || found.title;
+  const shortComp = (found.composer || "").split("(")[0].trim();
+  const hudTitle = document.getElementById("hudPieceTitle");
+  if (hudTitle) hudTitle.textContent = `${shortComp} — ${displayTitle}`;
 
-  // Actualizar encabezados
-  document.getElementById("studyTitleHeading").textContent = found.clean || found.title;
-  document.getElementById("studySubHeading").textContent = found.composer;
-  document.getElementById("concertTitleHeading").textContent = found.clean || found.title;
-  document.getElementById("concertSub").textContent = found.composer;
+  const topTitle = document.getElementById("performerTopTitle");
+  const topComp = document.getElementById("performerTopComposer");
+  const headTitle = document.getElementById("performerTitleHeading");
+  const headSub = document.getElementById("performerSubHeading");
+  if (topTitle) topTitle.textContent = displayTitle;
+  if (topComp) topComp.textContent = shortComp || found.composer || "";
+  if (headTitle) headTitle.textContent = displayTitle;
+  if (headSub) headSub.textContent = found.composer || "";
 
-  switchMode(targetMode);
+  switchMode("performer");
+  setPerformanceMode(targetMode === "concert" ? "concert" : "study", { skipRender: true });
 
   if (found.isRealPdf && found.pdfBytes && window.pdfjsLib) {
     const loadingTask = window.pdfjsLib.getDocument({ data: found.pdfBytes.slice(0) });
@@ -494,77 +503,71 @@ async function renderActiveScorePage() {
   const total = activeScore.pageCount || 10;
   pageNum = Math.max(1, Math.min(total, pageNum));
 
-  document.getElementById("studyMetaRight").textContent = `Pág. ${pageNum} / ${total}`;
-  document.getElementById("studyFooterRight").textContent = `Folio ${pageNum} / ${total}`;
-  document.getElementById("concertPageNum").textContent = `Pág. ${pageNum} / ${total}`;
+  const metaRight = document.getElementById("performerMetaRight");
+  const footerRight = document.getElementById("performerFooterRight");
+  if (metaRight) metaRight.textContent = `Pág. ${pageNum} / ${total}`;
+  if (footerRight) footerRight.textContent = `Folio ${pageNum} / ${total}`;
 
-  const studyPdfCanvas = document.getElementById("studyPdfRenderCanvas");
-  const concertPdfCanvas = document.getElementById("concertPdfRenderCanvas");
-  const concertPdfCanvasRight = document.getElementById("concertPdfRenderCanvasRight");
-  const studySvgEl = document.getElementById("studySvg");
-  const concertSvgEl = document.getElementById("concertSvg");
-  const concertSvgRightEl = document.getElementById("concertSvgRight");
-  const studyHead = document.getElementById("studyFolioHeader");
-  const concertHead = document.getElementById("concertFolioHeader");
+  const pdfCanvas = document.getElementById("performerPdfRenderCanvas");
+  const pdfCanvasRight = document.getElementById("performerPdfRenderCanvasRight");
+  const svgEl = document.getElementById("performerSvg");
+  const svgRightEl = document.getElementById("performerSvgRight");
+  const headEl = document.getElementById("performerFolioHeader");
 
   const isTwoPages = layouts[layoutIdx] === "2 Págs";
-  const spreadWrap = document.getElementById("concertSpreadWrap");
-  const rightSheet = document.getElementById("concertSheetRight");
+  const spreadWrap = document.getElementById("performerSpreadWrap");
+  const rightSheet = document.getElementById("performerSheetRight");
   const hasSecondPage = isTwoPages && pageNum + 1 <= total;
 
   if (spreadWrap && rightSheet) {
     spreadWrap.classList.toggle("two-pages", hasSecondPage);
     rightSheet.classList.toggle("hidden", !hasSecondPage);
     if (hasSecondPage) {
-      document.getElementById("concertTitleHeadingRight").textContent = activeScore.clean || activeScore.title;
-      document.getElementById("concertSubRight").textContent = activeScore.composer;
-      document.getElementById("concertPageNumRight").textContent = `Pág. ${pageNum + 1} / ${total}`;
-      document.getElementById("concertPageFooterRight").textContent = `Folio ${pageNum + 1} / ${total}`;
+      const rTitle = document.getElementById("performerTitleHeadingRight");
+      const rSub = document.getElementById("performerSubRight");
+      const rNum = document.getElementById("performerPageNumRight");
+      const rFoot = document.getElementById("performerPageFooterRight");
+      if (rTitle) rTitle.textContent = activeScore.clean || activeScore.title;
+      if (rSub) rSub.textContent = activeScore.composer;
+      if (rNum) rNum.textContent = `Pág. ${pageNum + 1} / ${total}`;
+      if (rFoot) rFoot.textContent = `Folio ${pageNum + 1} / ${total}`;
     }
   }
 
   if (activeScore.isRealPdf && currentPdfDocInstance) {
-    studySvgEl.classList.add("hidden");
-    concertSvgEl.classList.add("hidden");
-    if (concertSvgRightEl) concertSvgRightEl.classList.add("hidden");
-    studyPdfCanvas.classList.remove("hidden");
-    concertPdfCanvas.classList.remove("hidden");
-    studyHead.classList.add("compact-pdf-head");
-    concertHead.classList.add("compact-pdf-head");
+    if (svgEl) svgEl.classList.add("hidden");
+    if (svgRightEl) svgRightEl.classList.add("hidden");
+    if (pdfCanvas) pdfCanvas.classList.remove("hidden");
+    if (headEl) headEl.classList.add("compact-pdf-head");
 
     const page = await currentPdfDocInstance.getPage(pageNum);
-    await renderPdfPageToCanvas(page, studyPdfCanvas, document.getElementById("studyWrap"));
-    await renderPdfPageToCanvas(page, concertPdfCanvas, document.getElementById("concertWrap"));
+    await renderPdfPageToCanvas(page, pdfCanvas, document.getElementById("performerWrap"));
 
-    if (hasSecondPage && concertPdfCanvasRight) {
-      concertPdfCanvasRight.classList.remove("hidden");
+    if (hasSecondPage && pdfCanvasRight) {
+      pdfCanvasRight.classList.remove("hidden");
       const page2 = await currentPdfDocInstance.getPage(pageNum + 1);
-      await renderPdfPageToCanvas(page2, concertPdfCanvasRight, document.getElementById("concertWrapRight"));
-    } else if (concertPdfCanvasRight) {
-      concertPdfCanvasRight.classList.add("hidden");
+      await renderPdfPageToCanvas(page2, pdfCanvasRight, document.getElementById("performerWrapRight"));
+    } else if (pdfCanvasRight) {
+      pdfCanvasRight.classList.add("hidden");
     }
   } else {
-    studyPdfCanvas.classList.add("hidden");
-    concertPdfCanvas.classList.add("hidden");
-    if (concertPdfCanvasRight) concertPdfCanvasRight.classList.add("hidden");
-    studySvgEl.classList.remove("hidden");
-    concertSvgEl.classList.remove("hidden");
-    if (concertSvgRightEl) concertSvgRightEl.classList.remove("hidden");
-    studyHead.classList.remove("compact-pdf-head");
-    concertHead.classList.remove("compact-pdf-head");
-
-    studySvgEl.innerHTML = buildPortraitScoreSvg(-1);
-    concertSvgEl.innerHTML = buildPortraitScoreSvg(-1);
-    if (hasSecondPage && concertSvgRightEl) {
-      concertSvgRightEl.innerHTML = buildPortraitScoreSvg(-1);
+    if (pdfCanvas) pdfCanvas.classList.add("hidden");
+    if (pdfCanvasRight) pdfCanvasRight.classList.add("hidden");
+    if (svgEl) {
+      svgEl.classList.remove("hidden");
+      svgEl.innerHTML = buildPortraitScoreSvg(-1);
     }
+    if (svgRightEl) {
+      svgRightEl.classList.remove("hidden");
+      if (hasSecondPage) svgRightEl.innerHTML = buildPortraitScoreSvg(-1);
+    }
+    if (headEl) headEl.classList.remove("compact-pdf-head");
   }
 
   setupStudyCanvas();
   restoreStudyAnnotationsForCurrentPage();
   if (typeof updateBookmarkButton === "function") updateBookmarkButton();
   if (typeof renderStudyPageScrubber === "function") renderStudyPageScrubber();
-  if (typeof setupConcertQuickCanvas === "function") setupConcertQuickCanvas();
 }
 
 async function renderPdfPageToCanvas(pdfPage, canvas, containerEl) {
@@ -926,15 +929,15 @@ function syncActiveReaderHeadersForScore(s) {
   const displayTitle = s.clean || s.title;
   const shortComp = (s.composer || "").split("(")[0].trim();
   const hudTitle = document.getElementById("hudPieceTitle");
-  const studyHead = document.getElementById("studyTitleHeading");
-  const studySub = document.getElementById("studySubHeading");
-  const concertHead = document.getElementById("concertTitleHeading");
-  const concertSub = document.getElementById("concertSub");
+  const topTitle = document.getElementById("performerTopTitle");
+  const topComp = document.getElementById("performerTopComposer");
+  const perfHead = document.getElementById("performerTitleHeading");
+  const perfSub = document.getElementById("performerSubHeading");
   if (hudTitle) hudTitle.textContent = shortComp ? `${shortComp} — ${displayTitle}` : displayTitle;
-  if (studyHead) studyHead.textContent = displayTitle;
-  if (studySub) studySub.textContent = s.composer || "";
-  if (concertHead) concertHead.textContent = displayTitle;
-  if (concertSub) concertSub.textContent = s.composer || "";
+  if (topTitle) topTitle.textContent = displayTitle;
+  if (topComp) topComp.textContent = shortComp || s.composer || "";
+  if (perfHead) perfHead.textContent = displayTitle;
+  if (perfSub) perfSub.textContent = s.composer || "";
 }
 
 function openPdfMetadataModal(e) {
@@ -1953,26 +1956,88 @@ function forceClosePdfModalDiscard() {
 // NAVEGACIÓN GENERAL Y BIBLIOTECA
 // ==========================================================================
 function switchMode(mode) {
-  document.querySelectorAll(".seg-btn").forEach((b) => b.classList.toggle("active", b.dataset.mode === mode));
+  // Compatibilidad con llamadas legadas 'study' o 'concert' -> unificadas en 'performer'
+  let targetView = mode;
+  let targetPerfState = null;
+  if (mode === "study" || mode === "concert") {
+    targetView = "performer";
+    targetPerfState = mode;
+  }
+
+  document.querySelectorAll(".seg-btn").forEach((b) => b.classList.toggle("active", b.dataset.mode === targetView));
   document.querySelectorAll(".canvas-view").forEach((v) => v.classList.remove("active"));
-  document.getElementById(`mode-${mode}`).classList.add("active");
+  document.getElementById(`mode-${targetView}`)?.classList.add("active");
 
   document.body.classList.remove("writing-focus");
   document.getElementById("dockRevealHandle")?.classList.add("hidden");
 
-  document.body.classList.toggle("mode-library-active", mode === "library");
-  document.body.classList.toggle("mode-concert-active", mode === "concert");
-  if (mode === "concert") {
-    toggleBachGptChat(false);
-    document.body.classList.remove("concert-immersion");
+  document.body.classList.toggle("mode-library-active", targetView === "library");
+  document.body.classList.toggle("mode-performer-active", targetView === "performer");
+
+  if (targetView === "performer") {
+    const desired = targetPerfState || performanceMode || "study";
+    setPerformanceMode(desired);
   } else {
-    document.body.classList.remove("concert-immersion");
+    document.body.classList.remove("mode-concert-active", "concert-immersion");
   }
 
-  if (mode === "study" || mode === "concert") {
-    setTimeout(() => renderActiveScorePage(), 40);
+  if (targetView === "editor") setTimeout(setupEditorCanvas, 40);
+}
+
+function setPerformanceMode(modeState, opts = {}) {
+  const nextState = modeState === "concert" ? "concert" : "study";
+  const prevState = performanceMode;
+
+  // Guardar anotaciones actuales antes de redimensionar el lienzo unificado
+  if (typeof saveStudyAnnotationsForCurrentPage === "function" && prevState !== nextState) {
+    saveStudyAnnotationsForCurrentPage();
   }
-  if (mode === "editor") setTimeout(setupEditorCanvas, 40);
+
+  performanceMode = nextState;
+
+  const performerEl = document.getElementById("mode-performer");
+  if (performerEl) {
+    performerEl.classList.toggle("is-study-mode", nextState === "study");
+    performerEl.classList.toggle("is-concert-mode", nextState === "concert");
+  }
+
+  const btnStudy = document.getElementById("perfSwitchStudy");
+  const btnConcert = document.getElementById("perfSwitchConcert");
+  if (btnStudy) {
+    btnStudy.classList.toggle("active", nextState === "study");
+    btnStudy.setAttribute("aria-selected", nextState === "study" ? "true" : "false");
+  }
+  if (btnConcert) {
+    btnConcert.classList.toggle("active", nextState === "concert");
+    btnConcert.setAttribute("aria-selected", nextState === "concert" ? "true" : "false");
+  }
+
+  document.body.classList.toggle("mode-concert-active", nextState === "concert");
+  document.body.classList.remove("concert-immersion", "writing-focus");
+
+  if (nextState === "concert") {
+    toggleBachGptChat(false);
+    document.getElementById("brushPopover")?.classList.add("hidden");
+    document.getElementById("stampPopover")?.classList.add("hidden");
+    document.getElementById("metronomePopover")?.classList.add("hidden");
+    document.getElementById("tunerPopover")?.classList.add("hidden");
+  }
+
+  // Actualizar pie del folio según el estado
+  const footerLeft = document.getElementById("performerFooterLeft");
+  if (footerLeft) {
+    if (nextState === "concert") {
+      const prog = typeof getActiveProgram === "function" ? getActiveProgram() : null;
+      footerLeft.textContent = prog ? `Programa: ${prog.name}` : "Modo Concierto • Toca el centro para ocultar controles";
+    } else {
+      const names = { pen: "Pluma Activa", marker: "Marcador Activo", eraser: "Borrador Activo" };
+      footerLeft.textContent = `Modo Ensayo • ${names[studyTool] || "Pluma Activa"}`;
+    }
+  }
+
+  if (!opts.skipRender) {
+    setTimeout(() => renderActiveScorePage(), 60);
+  }
 }
 
 function togglePaletteMenu(e) {
@@ -3736,8 +3801,8 @@ function getStudyPageKey() {
 }
 
 function saveStudyAnnotationsForCurrentPage() {
-  const canvas = document.getElementById("studyCanvas");
-  const moldLayer = document.getElementById("studyMoldLayer");
+  const canvas = document.getElementById("performerCanvas");
+  const moldLayer = document.getElementById("performerMoldLayer");
   if (!canvas || !moldLayer) return;
   const key = getStudyPageKey();
   studyPageAnnotations[key] = {
@@ -3747,8 +3812,8 @@ function saveStudyAnnotationsForCurrentPage() {
 }
 
 function restoreStudyAnnotationsForCurrentPage() {
-  const canvas = document.getElementById("studyCanvas");
-  const moldLayer = document.getElementById("studyMoldLayer");
+  const canvas = document.getElementById("performerCanvas");
+  const moldLayer = document.getElementById("performerMoldLayer");
   if (!canvas || !moldLayer) return;
   const ctx = canvas.getContext("2d");
   ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -3767,8 +3832,8 @@ function restoreStudyAnnotationsForCurrentPage() {
 }
 
 function pushStudyUndoSnapshot() {
-  const canvas = document.getElementById("studyCanvas");
-  const moldLayer = document.getElementById("studyMoldLayer");
+  const canvas = document.getElementById("performerCanvas");
+  const moldLayer = document.getElementById("performerMoldLayer");
   if (!canvas || !moldLayer) return;
   const key = getStudyPageKey();
   if (!studyUndoStacks[key]) studyUndoStacks[key] = [];
@@ -3781,8 +3846,8 @@ function pushStudyUndoSnapshot() {
 }
 
 function applyStudySnapshot(snap) {
-  const canvas = document.getElementById("studyCanvas");
-  const moldLayer = document.getElementById("studyMoldLayer");
+  const canvas = document.getElementById("performerCanvas");
+  const moldLayer = document.getElementById("performerMoldLayer");
   if (!canvas || !moldLayer || !snap) return;
   const ctx = canvas.getContext("2d");
   ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -3803,8 +3868,8 @@ function undoStudyAction() {
   const key = getStudyPageKey();
   const stack = studyUndoStacks[key];
   if (!stack || stack.length === 0) return;
-  const canvas = document.getElementById("studyCanvas");
-  const moldLayer = document.getElementById("studyMoldLayer");
+  const canvas = document.getElementById("performerCanvas");
+  const moldLayer = document.getElementById("performerMoldLayer");
   if (!studyRedoStacks[key]) studyRedoStacks[key] = [];
   studyRedoStacks[key].push({
     dataUrl: canvas ? canvas.toDataURL("image/png") : "",
@@ -3818,8 +3883,8 @@ function redoStudyAction() {
   const key = getStudyPageKey();
   const rStack = studyRedoStacks[key];
   if (!rStack || rStack.length === 0) return;
-  const canvas = document.getElementById("studyCanvas");
-  const moldLayer = document.getElementById("studyMoldLayer");
+  const canvas = document.getElementById("performerCanvas");
+  const moldLayer = document.getElementById("performerMoldLayer");
   if (!studyUndoStacks[key]) studyUndoStacks[key] = [];
   studyUndoStacks[key].push({
     dataUrl: canvas ? canvas.toDataURL("image/png") : "",
@@ -3860,7 +3925,7 @@ function togglePageBookmark() {
 }
 
 function updateBookmarkButton() {
-  const btn = document.getElementById("btnStudyBookmark");
+  const btn = document.getElementById("btnPerformerBookmark");
   if (!btn) return;
   const sId = activeScore ? activeScore.id : 1;
   const isBm = studyBookmarks[sId]?.has(pageNum);
@@ -3869,7 +3934,7 @@ function updateBookmarkButton() {
 }
 
 function renderStudyPageScrubber() {
-  const el = document.getElementById("studyPageScrubber");
+  const el = document.getElementById("performerPageScrubber");
   if (!el) return;
   const total = activeScore?.pageCount || 10;
   const sId = activeScore ? activeScore.id : 1;
@@ -3896,23 +3961,23 @@ async function jumpToPage(targetPage) {
 function setStudyTool(tool) {
   studyTool = tool;
   selectedStamp = null;
-  document.getElementById("btnPen").classList.toggle("active", tool === "pen");
-  document.getElementById("btnMarker").classList.toggle("active", tool === "marker");
-  document.getElementById("btnEraser").classList.toggle("active", tool === "eraser");
+  document.getElementById("btnPen")?.classList.toggle("active", tool === "pen");
+  document.getElementById("btnMarker")?.classList.toggle("active", tool === "marker");
+  document.getElementById("btnEraser")?.classList.toggle("active", tool === "eraser");
   document.getElementById("btnStamps")?.classList.remove("active");
   document.getElementById("btnBrushStyle")?.classList.remove("active");
   document.getElementById("stampPopover")?.classList.add("hidden");
   document.getElementById("brushPopover")?.classList.add("hidden");
-  const fl = document.getElementById("studyFooterLeft");
-  if (fl) {
+  const fl = document.getElementById("performerFooterLeft");
+  if (fl && performanceMode === "study") {
     const names = { pen: "Pluma Activa", marker: "Marcador Activo", eraser: "Borrador Activo" };
-    fl.textContent = `Modo Estudio • ${names[tool] || "Pluma"}`;
+    fl.textContent = `Modo Ensayo • ${names[tool] || "Pluma"}`;
   }
 }
 
 function toggleAutoMold() {
   autoMold = !autoMold;
-  document.getElementById("btnMoldToggle").classList.toggle("magic-active", autoMold);
+  document.getElementById("btnMoldToggle")?.classList.toggle("magic-active", autoMold);
 }
 
 function setInk(color, btn) {
@@ -3924,15 +3989,18 @@ function setInk(color, btn) {
 }
 
 function setupStudyCanvas() {
-  const canvas = document.getElementById("studyCanvas");
-  const wrap = document.getElementById("studyWrap");
+  const canvas = document.getElementById("performerCanvas");
+  const wrap = document.getElementById("performerWrap");
   if (!canvas || !wrap) return;
-  canvas.width = wrap.clientWidth;
-  canvas.height = wrap.clientHeight;
+  if (wrap.clientWidth > 0 && wrap.clientHeight > 0) {
+    canvas.width = wrap.clientWidth;
+    canvas.height = wrap.clientHeight;
+  }
 }
 
 function initStudyInteraction() {
-  const canvas = document.getElementById("studyCanvas");
+  const canvas = document.getElementById("performerCanvas");
+  const stage = document.getElementById("performerStage");
   if (!canvas) return;
   let drawing = false;
   let last = { x: 0, y: 0 };
@@ -3945,6 +4013,8 @@ function initStudyInteraction() {
   };
 
   const down = (e) => {
+    // Blindaje en Vivo: bloquear dibujo accidental en Modo Concierto
+    if (performanceMode === "concert") return;
     e.preventDefault();
     document.body.classList.add("writing-focus");
     document.getElementById("dockRevealHandle")?.classList.remove("hidden");
@@ -3961,7 +4031,7 @@ function initStudyInteraction() {
   };
 
   const move = (e) => {
-    if (!drawing) return;
+    if (!drawing || performanceMode === "concert") return;
     e.preventDefault();
     const pt = getPt(e);
     const ctx = canvas.getContext("2d");
@@ -4011,10 +4081,30 @@ function initStudyInteraction() {
   canvas.addEventListener("touchstart", down, { passive: false });
   canvas.addEventListener("touchmove", move, { passive: false });
   window.addEventListener("touchend", up);
+
+  // Gestos táctiles de swipe para pasar página en Modo Concierto
+  if (stage) {
+    let swipeStartX = 0;
+    let swipeStartY = 0;
+    stage.addEventListener("touchstart", (e) => {
+      if (performanceMode !== "concert" || e.touches.length !== 1) return;
+      swipeStartX = e.touches[0].clientX;
+      swipeStartY = e.touches[0].clientY;
+    }, { passive: true });
+    stage.addEventListener("touchend", (e) => {
+      if (performanceMode !== "concert" || e.changedTouches.length !== 1) return;
+      const dx = e.changedTouches[0].clientX - swipeStartX;
+      const dy = e.changedTouches[0].clientY - swipeStartY;
+      if (Math.abs(dx) > 55 && Math.abs(dx) > Math.abs(dy) * 1.4) {
+        turnPage(dx < 0 ? 1 : -1);
+      }
+    }, { passive: true });
+  }
 }
 
 function addMoldBadge(x, y, text, color) {
-  const layer = document.getElementById("studyMoldLayer");
+  const layer = document.getElementById("performerMoldLayer");
+  if (!layer) return;
   const el = document.createElement("div");
   el.className = "mold-item";
   el.style.left = `${x}px`;
@@ -4033,14 +4123,14 @@ function confirmClearStudyLayer() {
 }
 
 function clearStudyLayer() {
-  const canvas = document.getElementById("studyCanvas");
+  const canvas = document.getElementById("performerCanvas");
   if (canvas) canvas.getContext("2d").clearRect(0, 0, canvas.width, canvas.height);
-  const ml = document.getElementById("studyMoldLayer");
+  const ml = document.getElementById("performerMoldLayer");
   if (ml) ml.innerHTML = "";
 }
 
 // ==========================================================================
-// 3. MODO CONCIERTO (Pantalla completa real al tocar + 2 Págs + Quick-Pen)
+// 3. CONTROLES DE ESCENARIO, LAYOUT (1/2 PÁGS) Y UTILIDADES DE ENSAYO
 // ==========================================================================
 let audioTimer = null;
 let followedSys = 0;
@@ -4056,45 +4146,49 @@ async function turnPage(dir) {
 }
 
 async function cyclePageLayout() {
+  saveStudyAnnotationsForCurrentPage();
   layoutIdx = (layoutIdx + 1) % layouts.length;
-  document.getElementById("pageModeLabel").textContent = layouts[layoutIdx];
-  document.getElementById("concertTransitionTag").textContent = `${layouts[layoutIdx]} • Toca el centro para ocultar controles`;
+  const lbl = document.getElementById("pageModeLabel");
+  const topLbl = document.getElementById("performerLayoutLabel");
+  if (lbl) lbl.textContent = layouts[layoutIdx];
+  if (topLbl) topLbl.textContent = layouts[layoutIdx];
   await renderActiveScorePage();
 }
 
-function handleConcertCanvasTap(e) {
-  if (concertQuickToolActive) return;
-  if (e.target.closest("button, .concert-stage-pills, .concert-quick-palette, .floating-bottom-bar")) return;
+function handlePerformerStageTap(e) {
+  if (performanceMode !== "concert") return;
+  if (e.target.closest("button, .floating-bottom-bar, .concert-exit-overlay")) return;
   document.body.classList.toggle("concert-immersion");
 }
 
 function toggleAudioFollow() {
   const btn = document.getElementById("btnAudioFollow");
   const lbl = document.getElementById("audioFollowLabel");
+  const svgEl = document.getElementById("performerSvg");
 
   if (audioTimer) {
     clearInterval(audioTimer);
     audioTimer = null;
-    btn.classList.remove("listening");
-    lbl.textContent = "Escucha Activa (Demo)";
-    if (!activeScore.isRealPdf) {
-      document.getElementById("concertSvg").innerHTML = buildPortraitScoreSvg(-1);
+    if (btn) btn.classList.remove("listening");
+    if (lbl) lbl.textContent = "Escucha";
+    if (!activeScore.isRealPdf && svgEl) {
+      svgEl.innerHTML = buildPortraitScoreSvg(-1);
     }
     return;
   }
 
-  btn.classList.add("listening");
+  if (btn) btn.classList.add("listening");
   followedSys = 0;
-  lbl.textContent = "Compás 1 • Demo";
-  if (!activeScore.isRealPdf) {
-    document.getElementById("concertSvg").innerHTML = buildPortraitScoreSvg(followedSys);
+  if (lbl) lbl.textContent = "Compás 1";
+  if (!activeScore.isRealPdf && svgEl) {
+    svgEl.innerHTML = buildPortraitScoreSvg(followedSys);
   }
 
   audioTimer = setInterval(() => {
     followedSys = (followedSys + 1) % 6;
-    lbl.textContent = `Compás ${followedSys * 3 + 1} • Auto`;
-    if (!activeScore.isRealPdf) {
-      document.getElementById("concertSvg").innerHTML = buildPortraitScoreSvg(followedSys);
+    if (lbl) lbl.textContent = `Compás ${followedSys * 3 + 1}`;
+    if (!activeScore.isRealPdf && svgEl) {
+      svgEl.innerHTML = buildPortraitScoreSvg(followedSys);
     }
     if (followedSys === 5) {
       setTimeout(() => {
@@ -4669,9 +4763,9 @@ function renderSetlistDrawer() {
   if (launchBtn) launchBtn.disabled = false;
   if (startConcertBtn) startConcertBtn.disabled = validScores.length === 0;
 
-  const concertFooterLeft = document.getElementById("concertFooterLeft");
-  if (concertFooterLeft && prog) {
-    concertFooterLeft.textContent = `Programa: ${prog.name}`;
+  const perfFooterLeft = document.getElementById("performerFooterLeft");
+  if (perfFooterLeft && prog && performanceMode === "concert") {
+    perfFooterLeft.textContent = `Programa: ${prog.name}`;
   }
 
   if (validScores.length === 0) {
@@ -5123,96 +5217,123 @@ async function stepProgramPiece(dir) {
   if (nextId) await openScoreById(nextId, "concert");
 }
 
-// Quick-Pen en Modo Concierto
-let concertQuickToolActive = false;
-let concertQuickTool = "pen";
+// ==========================================================================
+// UTILIDADES DE ENSAYO: METRÓNOMO Y AFINADOR (WEB AUDIO API)
+// ==========================================================================
+let performerAudioCtx = null;
+let metroBpm = 76;
+let metroTimer = null;
+let tunerOsc = null;
+let tunerHz = 440;
 
-function toggleConcertQuickTools(forceState) {
-  const pal = document.getElementById("concertQuickPalette");
-  const btn = document.getElementById("btnConcertQuickPen");
-  const drawLayer = document.getElementById("concertQuickCanvas");
-  if (!pal || !drawLayer) return;
-
-  concertQuickToolActive = typeof forceState === "boolean" ? forceState : pal.classList.contains("hidden");
-  pal.classList.toggle("hidden", !concertQuickToolActive);
-  if (btn) btn.classList.toggle("active", concertQuickToolActive);
-  drawLayer.classList.toggle("active-drawing", concertQuickToolActive);
-  if (concertQuickToolActive) setupConcertQuickCanvas();
+function getPerformerAudioCtx() {
+  if (!performerAudioCtx) {
+    const Ctx = window.AudioContext || window.webkitAudioContext;
+    if (Ctx) performerAudioCtx = new Ctx();
+  }
+  if (performerAudioCtx && performerAudioCtx.state === "suspended") {
+    performerAudioCtx.resume();
+  }
+  return performerAudioCtx;
 }
 
-function setConcertQuickTool(tool) {
-  concertQuickTool = tool;
-  document.getElementById("cqPenBtn")?.classList.toggle("active", tool === "pen");
-  document.getElementById("cqMarkerBtn")?.classList.toggle("active", tool === "marker");
-  document.getElementById("cqEraserBtn")?.classList.toggle("active", tool === "eraser");
+function toggleMetronomePopover(e) {
+  if (e) e.stopPropagation();
+  document.getElementById("tunerPopover")?.classList.add("hidden");
+  document.getElementById("metronomePopover")?.classList.toggle("hidden");
 }
 
-function setupConcertQuickCanvas() {
-  const canvas = document.getElementById("concertQuickCanvas");
-  const wrap = document.getElementById("concertWrap");
-  if (!canvas || !wrap) return;
-  if (canvas.width !== wrap.clientWidth || canvas.height !== wrap.clientHeight) {
-    canvas.width = wrap.clientWidth;
-    canvas.height = wrap.clientHeight;
+function setMetronomeBpm(val) {
+  metroBpm = Math.max(40, Math.min(208, parseInt(val, 10) || 76));
+  const lbl = document.getElementById("metroBpmValue");
+  const rng = document.getElementById("metroBpmRange");
+  if (lbl) lbl.textContent = `${metroBpm} BPM`;
+  if (rng) rng.value = String(metroBpm);
+  if (metroTimer) {
+    clearInterval(metroTimer);
+    metroTimer = setInterval(playMetronomeTick, Math.round(60000 / metroBpm));
   }
 }
 
-function initConcertQuickInteraction() {
-  const canvas = document.getElementById("concertQuickCanvas");
-  if (!canvas) return;
-  let drawing = false;
-  let last = { x: 0, y: 0 };
+function stepMetronomeBpm(delta) {
+  setMetronomeBpm(metroBpm + delta);
+}
 
-  const getPt = (e) => {
-    const r = canvas.getBoundingClientRect();
-    const cx = e.touches ? e.touches[0].clientX : e.clientX;
-    const cy = e.touches ? e.touches[0].clientY : e.clientY;
-    return { x: cx - r.left, y: cy - r.top };
-  };
+function playMetronomeTick() {
+  const ctx = getPerformerAudioCtx();
+  const dot = document.getElementById("metroBeatDot");
+  if (dot) {
+    dot.classList.add("pulse");
+    setTimeout(() => dot.classList.remove("pulse"), 90);
+  }
+  if (!ctx) return;
+  const osc = ctx.createOscillator();
+  const gain = ctx.createGain();
+  osc.type = "triangle";
+  osc.frequency.value = 980;
+  gain.gain.setValueAtTime(0.18, ctx.currentTime);
+  gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.045);
+  osc.connect(gain);
+  gain.connect(ctx.destination);
+  osc.start();
+  osc.stop(ctx.currentTime + 0.05);
+}
 
-  const down = (e) => {
-    if (!concertQuickToolActive) return;
-    e.preventDefault();
-    e.stopPropagation();
-    drawing = true;
-    last = getPt(e);
-  };
+function toggleMetronomePlay() {
+  const btn = document.getElementById("btnMetroPlay");
+  const topBtn = document.getElementById("btnPerformerMetronome");
+  if (metroTimer) {
+    clearInterval(metroTimer);
+    metroTimer = null;
+    if (btn) btn.textContent = "Iniciar";
+    if (topBtn) topBtn.classList.remove("active");
+    return;
+  }
+  playMetronomeTick();
+  metroTimer = setInterval(playMetronomeTick, Math.round(60000 / metroBpm));
+  if (btn) btn.textContent = "Detener";
+  if (topBtn) topBtn.classList.add("active");
+}
 
-  const move = (e) => {
-    if (!drawing || !concertQuickToolActive) return;
-    e.preventDefault();
-    const pt = getPt(e);
-    const ctx = canvas.getContext("2d");
-    ctx.beginPath();
-    ctx.moveTo(last.x, last.y);
-    ctx.lineTo(pt.x, pt.y);
-    if (concertQuickTool === "marker") {
-      ctx.strokeStyle = "rgba(212, 175, 55, 0.34)";
-      ctx.lineWidth = 18;
-    } else if (concertQuickTool === "eraser") {
-      ctx.globalCompositeOperation = "destination-out";
-      ctx.lineWidth = 26;
-    } else {
-      ctx.globalCompositeOperation = "source-over";
-      ctx.strokeStyle = "#23426e";
-      ctx.lineWidth = 2.4;
-    }
-    ctx.lineCap = "round";
-    ctx.stroke();
-    ctx.globalCompositeOperation = "source-over";
-    last = pt;
-  };
+function toggleTunerPopover(e) {
+  if (e) e.stopPropagation();
+  document.getElementById("metronomePopover")?.classList.add("hidden");
+  document.getElementById("tunerPopover")?.classList.toggle("hidden");
+}
 
-  const up = () => {
-    drawing = false;
-  };
+function setTunerFreq(hz, btn) {
+  tunerHz = hz;
+  document.getElementById("tunerHzLabel").textContent = `${hz} Hz`;
+  document.querySelectorAll(".tuner-hz-btn").forEach((b) => b.classList.toggle("active", b === btn));
+  if (tunerOsc) {
+    tunerOsc.frequency.setValueAtTime(tunerHz, getPerformerAudioCtx().currentTime);
+  }
+}
 
-  canvas.addEventListener("mousedown", down);
-  canvas.addEventListener("mousemove", move);
-  window.addEventListener("mouseup", up);
-  canvas.addEventListener("touchstart", down, { passive: false });
-  canvas.addEventListener("touchmove", move, { passive: false });
-  window.addEventListener("touchend", up);
+function toggleTunerPlay() {
+  const btn = document.getElementById("btnTunerPlay");
+  const topBtn = document.getElementById("btnPerformerTuner");
+  if (tunerOsc) {
+    try { tunerOsc.stop(); } catch (_) {}
+    tunerOsc.disconnect();
+    tunerOsc = null;
+    if (btn) btn.textContent = "Emitir La (A4)";
+    if (topBtn) topBtn.classList.remove("active");
+    return;
+  }
+  const ctx = getPerformerAudioCtx();
+  if (!ctx) return;
+  const osc = ctx.createOscillator();
+  const gain = ctx.createGain();
+  osc.type = "sine";
+  osc.frequency.value = tunerHz;
+  gain.gain.value = 0.14;
+  osc.connect(gain);
+  gain.connect(ctx.destination);
+  osc.start();
+  tunerOsc = osc;
+  if (btn) btn.textContent = "Detener Diapasón";
+  if (topBtn) topBtn.classList.add("active");
 }
 
 function toggleImportMenu(e) {
@@ -5631,6 +5752,15 @@ document.addEventListener("click", (e) => {
   if (stampPop && !stampPop.classList.contains("hidden") && !e.target.closest("#stampPopover") && !e.target.closest("#btnStamps")) {
     stampPop.classList.add("hidden");
   }
+  const metroPop = document.getElementById("metronomePopover");
+  if (metroPop && !metroPop.classList.contains("hidden") && !e.target.closest("#metronomePopover") && !e.target.closest("#btnPerformerMetronome")) {
+    metroPop.classList.add("hidden");
+  }
+
+  const tunerPop = document.getElementById("tunerPopover");
+  if (tunerPop && !tunerPop.classList.contains("hidden") && !e.target.closest("#tunerPopover") && !e.target.closest("#btnPerformerTuner")) {
+    tunerPop.classList.add("hidden");
+  }
 });
 
 window.addEventListener("DOMContentLoaded", async () => {
@@ -5642,20 +5772,19 @@ window.addEventListener("DOMContentLoaded", async () => {
   renderLibrary();
   renderSetlistDrawer();
   switchStampTab("guitar");
-  document.getElementById("studySvg").innerHTML = buildPortraitScoreSvg(-1);
-  document.getElementById("concertSvg").innerHTML = buildPortraitScoreSvg(-1);
+  const perfSvg = document.getElementById("performerSvg");
+  if (perfSvg) perfSvg.innerHTML = buildPortraitScoreSvg(-1);
   initStudyInteraction();
-  initConcertQuickInteraction();
   initEditorInteraction();
   setupStudyCanvas();
-  setupConcertQuickCanvas();
   setupEditorCanvas();
   renderStudyPageScrubber();
   updateBookmarkButton();
 });
 
 window.addEventListener("resize", () => {
+  saveStudyAnnotationsForCurrentPage();
   setupStudyCanvas();
-  setupConcertQuickCanvas();
+  restoreStudyAnnotationsForCurrentPage();
   setupEditorCanvas();
 });
