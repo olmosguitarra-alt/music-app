@@ -11,7 +11,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:wght@600;700&display=swap" />
-  <link rel="stylesheet" href="styles.css?v=91" />
+  <link rel="stylesheet" href="styles.css?v=92" />
   <!-- Motores Oficiales para Renderizar (PDF.js) y Particionar/Editar PDFs Reales (pdf-lib) -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf-lib/1.17.1/pdf-lib.min.js"></script>
@@ -534,13 +534,14 @@
       <button type="button" class="scrub-nav-btn" onclick="turnPage(1)" title="Siguiente página" aria-label="Siguiente página">›</button>
     </div>
 
-    <!-- BOTÓN FLOTANTE DE PLUMA FUENTE EN MARGEN IZQUIERDO (DISPONIBLE EN ESTUDIO Y CONCIERTO) -->
-    <button type="button" class="rail-collapse-tab" id="btnToggleToolRail" onclick="toggleToolRailCollapse()" title="Herramientas de anotación (se pliega tras 30s)" aria-label="Abrir herramientas de pluma">
-      <svg viewBox="0 0 24 24" class="v-ico" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19l7-7 3 3-7 7-3-3z"/><path d="M18 13l-1.5-7.5L2 2l3.5 14.5L13 18l5-5z"/><path d="M2 2l7.586 7.586"/><circle cx="11" cy="11" r="1.5"/></svg>
-    </button>
+    <!-- ANCLA FLOTANTE DE PLUMA FUENTE (BOTÓN + MENÚ DESPLEGABLE VERTICAL DEL MISMO ANCHO) -->
+    <div class="fountain-pen-anchor" id="fountainPenAnchor">
+      <button type="button" class="rail-collapse-tab" id="btnToggleToolRail" onclick="toggleToolRailCollapse()" title="Herramientas de anotación (se pliega tras 30s)" aria-label="Abrir herramientas de pluma">
+        <svg viewBox="0 0 24 24" class="v-ico" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19l7-7 3 3-7 7-3-3z"/><path d="M18 13l-1.5-7.5L2 2l3.5 14.5L13 18l5-5z"/><path d="M2 2l7.586 7.586"/><circle cx="11" cy="11" r="1.5"/></svg>
+      </button>
 
-    <!-- RAIL DE HERRAMIENTAS PLEGABLE (-20% TAMAÑO, AUTO-PLIEGUE 30s) -->
-    <aside class="concepts-tool-rail rail-collapsed" id="performerToolRail">
+      <!-- RAIL DE HERRAMIENTAS PLEGABLE (MISMO ANCHO QUE EL BOTÓN, LISTA VERTICAL, AUTO-PLIEGUE 30s) -->
+      <aside class="concepts-tool-rail rail-collapsed" id="performerToolRail">
       <button class="rail-tool active" id="btnPen" onclick="setStudyTool('pen')" title="Pluma de trazo libre">
         <svg viewBox="0 0 24 24" class="v-ico"><path d="M12 19l7-7 3 3-7 7-3-3z"/><path d="M18 13l-1.5-7.5L2 2l3.5 14.5L13 18l5-5z"/><path d="M2 2l7.586 7.586"/></svg>
         <span class="rail-label">Pluma</span>
@@ -602,6 +603,7 @@
         <svg viewBox="0 0 24 24" class="v-ico"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
       </button>
     </aside>
+    </div>
 
     <!-- POPOVER DE ESTILO DE TRAZO -->
     <div class="concepts-popover brush-popover hidden" id="brushPopover">
@@ -1008,6 +1010,6 @@
     <span class="pdf-loading-text">Cargando...</span>
   </div>
 
-  <script src="app.js?v=91"></script>
+  <script src="app.js?v=92"></script>
 </body>
 </html>
