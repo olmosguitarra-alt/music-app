@@ -4026,17 +4026,82 @@ function renderMoldLayer() {
   });
 }
 
+let selectedMoldId = null;
+
+function selectMoldItem(moldId) {
+  selectedMoldId = moldId;
+  document.querySelectorAll("#performerMoldLayer .mold-item").forEach((el) => {
+    el.classList.toggle("selected-mold", el.dataset.moldId === moldId);
+  });
+}
+
 function createEditorialMoldElement(item) {
   const el = document.createElement("div");
   el.className = "mold-item editorial-note";
+  if (selectedMoldId === item.id) el.classList.add("selected-mold");
   el.dataset.moldId = item.id;
   el.style.left = `${item.x}px`;
   el.style.top = `${item.y}px`;
   el.style.color = item.color || inkColor;
-  if (item.fontSize) el.style.fontSize = `${item.fontSize}px`;
-  el.textContent = item.text;
+  el.style.fontSize = `${item.fontSize || 17.5}px`;
 
-  // Arrastrar nota editorial con precisión milimétrica
+  const textSpan = document.createElement("span");
+  textSpan.className = "mold-text-span";
+  textSpan.textContent = item.text;
+  el.appendChild(textSpan);
+
+  const delBtn = document.createElement("button");
+  delBtn.type = "button";
+  delBtn.className = "mold-delete-btn";
+  delBtn.title = "Eliminar texto";
+  delBtn.setAttribute("aria-label", "Eliminar texto");
+  delBtn.textContent = "✕";
+  delBtn.addEventListener("pointerdown", (e) => e.stopPropagation());
+  delBtn.addEventListener("click", (e) => {
+    e.stopPropagation();
+    pushStudyUndoSnapshot();
+    const key = getStudyPageKey();
+    studyPageMoldItems[key] = (studyPageMoldItems[key] || []).filter((m) => m.id !== item.id);
+    if (selectedMoldId === item.id) selectedMoldId = null;
+    renderMoldLayer();
+    saveStudyAnnotationsForCurrentPage();
+  });
+  el.appendChild(delBtn);
+
+  const resizeHandle = document.createElement("span");
+  resizeHandle.className = "mold-resize-handle";
+  resizeHandle.title = "Redimensionar texto";
+  resizeHandle.textContent = "⤡";
+  let resizing = false;
+  let resizeStartY = 0;
+  let origFontSize = item.fontSize || 17.5;
+
+  resizeHandle.addEventListener("pointerdown", (e) => {
+    if (!isWritingAllowed()) return;
+    e.stopPropagation();
+    resetToolRailInactivityTimer();
+    resizeHandle.setPointerCapture(e.pointerId);
+    resizing = true;
+    resizeStartY = e.clientY;
+    origFontSize = item.fontSize || 17.5;
+  });
+
+  resizeHandle.addEventListener("pointermove", (e) => {
+    if (!resizing) return;
+    const dy = e.clientY - resizeStartY;
+    const nextSize = Math.max(11, Math.min(44, Math.round((origFontSize + dy * 0.25) * 2) / 2));
+    item.fontSize = nextSize;
+    el.style.fontSize = `${nextSize}px`;
+  });
+
+  resizeHandle.addEventListener("pointerup", () => {
+    if (!resizing) return;
+    resizing = false;
+    saveStudyAnnotationsForCurrentPage();
+  });
+  el.appendChild(resizeHandle);
+
+  // Arrastrar nota editorial con precisión y seleccionar caja al tocar
   let dragging = false;
   let moved = false;
   let startX = 0;
@@ -4046,8 +4111,10 @@ function createEditorialMoldElement(item) {
 
   el.addEventListener("pointerdown", (e) => {
     if (!isWritingAllowed()) return;
+    if (textSpan.isContentEditable) return;
     e.stopPropagation();
     resetToolRailInactivityTimer();
+    selectMoldItem(item.id);
     el.setPointerCapture(e.pointerId);
     dragging = true;
     moved = false;
@@ -4068,18 +4135,43 @@ function createEditorialMoldElement(item) {
     el.style.top = `${item.y}px`;
   });
 
-  el.addEventListener("pointerup", (e) => {
+  el.addEventListener("pointerup", () => {
     if (!dragging) return;
     dragging = false;
     if (moved) saveStudyAnnotationsForCurrentPage();
   });
 
-  // Doble toque / doble clic para editar rápidamente sin rehacer
+  // Doble toque / doble clic: edición inline directa (cero ventanas/modales)
   el.addEventListener("dblclick", (e) => {
     if (!isWritingAllowed()) return;
     e.stopPropagation();
     resetToolRailInactivityTimer();
-    openSmartInkCardForEdit(item);
+    selectMoldItem(item.id);
+    textSpan.contentEditable = "true";
+    textSpan.focus();
+    const range = document.createRange();
+    range.selectNodeContents(textSpan);
+    const sel = window.getSelection();
+    sel.removeAllRanges();
+    sel.addRange(range);
+  });
+
+  textSpan.addEventListener("keydown", (e) => {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      textSpan.blur();
+    }
+  });
+
+  textSpan.addEventListener("blur", () => {
+    textSpan.contentEditable = "false";
+    const updated = textSpan.textContent.trim();
+    if (updated) {
+      item.text = updated;
+      saveStudyAnnotationsForCurrentPage();
+    } else {
+      textSpan.textContent = item.text;
+    }
   });
 
   return el;
@@ -4389,18 +4481,19 @@ function eraseAtPoint(pt) {
 function scheduleSmartInkBox() {
   if (smartInkTimer) clearTimeout(smartInkTimer);
   smartInkTimer = setTimeout(() => {
-    showSmartInkBoxForBatch();
+    convertSmartBatchDirectly();
   }, 700);
 }
 
-function showSmartInkBoxForBatch() {
+function convertSmartBatchDirectly() {
   if (!smartBatchId) return;
   const key = getStudyPageKey();
-  const strokes = (studyPageStrokes[key] || []).filter((s) => s.smartBatchId === smartBatchId);
-  if (strokes.length === 0) return;
+  const allStrokes = studyPageStrokes[key] || [];
+  const batchStrokes = allStrokes.filter((s) => s.smartBatchId === smartBatchId);
+  if (batchStrokes.length === 0) return;
 
   let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
-  strokes.forEach((s) => {
+  batchStrokes.forEach((s) => {
     (s.points || []).forEach((p) => {
       if (p.x < minX) minX = p.x;
       if (p.y < minY) minY = p.y;
@@ -4409,21 +4502,30 @@ function showSmartInkBoxForBatch() {
     });
   });
 
-  const pad = 12;
-  smartInkBBox = {
-    x: Math.max(8, minX - pad),
-    y: Math.max(38, minY - pad),
-    w: Math.max(96, maxX - minX + pad * 2),
-    h: Math.max(36, maxY - minY + pad * 2)
-  };
+  const cx = (minX + maxX) / 2;
+  const cy = (minY + maxY) / 2;
+  const estSize = Math.max(14, Math.min(28, Math.round((maxY - minY) * 0.52) || 18));
+  const color = batchStrokes[0]?.color || inkColor;
+  const text = moldWords[moldIndex++ % moldWords.length];
 
-  const boxEl = document.getElementById("smartInkBoxOverlay");
-  if (!boxEl) return;
-  boxEl.style.left = `${smartInkBBox.x}px`;
-  boxEl.style.top = `${smartInkBBox.y}px`;
-  boxEl.style.width = `${smartInkBBox.w}px`;
-  boxEl.style.height = `${smartInkBBox.h}px`;
-  boxEl.classList.remove("hidden");
+  pushStudyUndoSnapshot();
+  studyPageStrokes[key] = allStrokes.filter((s) => s.smartBatchId !== smartBatchId);
+  smartBatchId = null;
+  redrawStudyCanvas();
+
+  if (!studyPageMoldItems[key]) studyPageMoldItems[key] = [];
+  const newItem = {
+    id: `m-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+    x: cx,
+    y: cy,
+    text,
+    color,
+    fontSize: estSize
+  };
+  studyPageMoldItems[key].push(newItem);
+  selectedMoldId = newItem.id;
+  renderMoldLayer();
+  saveStudyAnnotationsForCurrentPage();
 }
 
 function dismissSmartInkBox() {
@@ -4433,79 +4535,6 @@ function dismissSmartInkBox() {
   }
   smartBatchId = null;
   smartInkBBox = null;
-  document.getElementById("smartInkBoxOverlay")?.classList.add("hidden");
-  document.getElementById("smartInkCard")?.classList.add("hidden");
-}
-
-function openSmartInkCard() {
-  editingMoldItem = null;
-  const card = document.getElementById("smartInkCard");
-  const input = document.getElementById("smartInkInput");
-  const wrap = document.getElementById("performerWrap");
-  if (!card || !input || !wrap) return;
-
-  const left = smartInkBBox ? Math.min(smartInkBBox.x, Math.max(12, wrap.clientWidth - 304)) : 24;
-  const top = smartInkBBox ? Math.min(smartInkBBox.y + smartInkBBox.h + 10, Math.max(20, wrap.clientHeight - 190)) : 80;
-  card.style.left = `${Math.max(12, left)}px`;
-  card.style.top = `${Math.max(12, top)}px`;
-  input.value = "";
-  card.classList.remove("hidden");
-  setTimeout(() => input.focus(), 40);
-}
-
-function openSmartInkCardForEdit(item) {
-  editingMoldItem = item;
-  const card = document.getElementById("smartInkCard");
-  const input = document.getElementById("smartInkInput");
-  const wrap = document.getElementById("performerWrap");
-  if (!card || !input || !wrap) return;
-  card.style.left = `${Math.max(12, Math.min(item.x - 100, wrap.clientWidth - 304))}px`;
-  card.style.top = `${Math.max(12, Math.min(item.y + 24, wrap.clientHeight - 190))}px`;
-  input.value = item.text || "";
-  card.classList.remove("hidden");
-  setTimeout(() => input.focus(), 40);
-}
-
-function closeSmartInkCard() {
-  editingMoldItem = null;
-  document.getElementById("smartInkCard")?.classList.add("hidden");
-}
-
-function pickSmartInkSuggestion(word) {
-  const input = document.getElementById("smartInkInput");
-  if (!input) return;
-  input.value = word;
-  confirmSmartInkText();
-}
-
-function confirmSmartInkText() {
-  const input = document.getElementById("smartInkInput");
-  const text = (input?.value || "").trim();
-  if (!text) {
-    closeSmartInkCard();
-    return;
-  }
-  pushStudyUndoSnapshot();
-  const key = getStudyPageKey();
-
-  if (editingMoldItem) {
-    editingMoldItem.text = text;
-    renderMoldLayer();
-    saveStudyAnnotationsForCurrentPage();
-    closeSmartInkCard();
-    return;
-  }
-
-  // Borrar trazos manuscritos de la caja e insertar tipografía editorial
-  if (smartBatchId && studyPageStrokes[key]) {
-    studyPageStrokes[key] = studyPageStrokes[key].filter((s) => s.smartBatchId !== smartBatchId);
-    redrawStudyCanvas();
-  }
-  const cx = smartInkBBox ? smartInkBBox.x + smartInkBBox.w / 2 : 160;
-  const cy = smartInkBBox ? smartInkBBox.y + smartInkBBox.h / 2 : 160;
-  addMoldBadge(cx, cy, text, inkColor);
-  saveStudyAnnotationsForCurrentPage();
-  dismissSmartInkBox();
 }
 
 function initStudyInteraction() {
@@ -4558,6 +4587,8 @@ function initStudyInteraction() {
     // Rechazo de Palma Nativo (Palm Rejection)
     if (e.pointerType === "pen") strictPenMode = true;
     if (strictPenMode && !fingerDrawAllowed && e.pointerType === "touch") return;
+
+    if (selectedMoldId) selectMoldItem(null);
 
     resetToolRailInactivityTimer();
     if (smartInkTimer) {

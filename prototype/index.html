@@ -11,7 +11,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:wght@600;700&display=swap" />
-  <link rel="stylesheet" href="styles.css?v=99" />
+  <link rel="stylesheet" href="styles.css?v=100" />
   <!-- Motores Oficiales para Renderizar (PDF.js) y Particionar/Editar PDFs Reales (pdf-lib) -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf-lib/1.17.1/pdf-lib.min.js"></script>
@@ -475,35 +475,6 @@
             <div id="performerSvg" class="svg-layer"></div>
             <canvas id="performerCanvas" class="draw-layer"></canvas>
             <div id="performerMoldLayer" class="mold-layer"></div>
-
-            <!-- SMART INK BOX (CAJA DELIMITADORA + ACCIÓN CONVERTIR) -->
-            <div class="smart-ink-box hidden" id="smartInkBoxOverlay">
-              <button type="button" class="smart-ink-convert-btn" onclick="openSmartInkCard()" title="Convertir escritura a texto editorial">
-                <span>✨ Convertir</span>
-              </button>
-              <button type="button" class="smart-ink-dismiss-btn" onclick="dismissSmartInkBox()" title="Descartar caja" aria-label="Cerrar">✕</button>
-            </div>
-
-            <!-- TARJETA FLOTANTE SMART INK (INPUT NATIVO + SUGERENCIAS MUSICALES) -->
-            <div class="smart-ink-card hidden" id="smartInkCard" onclick="event.stopPropagation()">
-              <div class="smart-ink-card-head">
-                <span>Texto editorial</span>
-                <button type="button" class="smart-ink-close-x" onclick="closeSmartInkCard()" aria-label="Cerrar">✕</button>
-              </div>
-              <input type="text" id="smartInkInput" class="smart-ink-input" inputmode="text" placeholder="Escribe o usa teclado manuscrito..." autocomplete="off" onkeydown="if(event.key==='Enter') confirmSmartInkText()" />
-              <div class="smart-ink-suggestions" id="smartInkSuggestions">
-                <button type="button" class="smart-sugg-chip" onclick="pickSmartInkSuggestion('Ritardando')">Ritardando</button>
-                <button type="button" class="smart-sugg-chip" onclick="pickSmartInkSuggestion('A tempo')">A tempo</button>
-                <button type="button" class="smart-sugg-chip" onclick="pickSmartInkSuggestion('Crescendo')">Crescendo</button>
-                <button type="button" class="smart-sugg-chip" onclick="pickSmartInkSuggestion('Diminuendo')">Diminuendo</button>
-                <button type="button" class="smart-sugg-chip" onclick="pickSmartInkSuggestion('Dolce')">Dolce</button>
-                <button type="button" class="smart-sugg-chip" onclick="pickSmartInkSuggestion('Espressivo')">Espressivo</button>
-              </div>
-              <div class="smart-ink-card-actions">
-                <button type="button" class="smart-ink-cancel-btn" onclick="closeSmartInkCard()">Cancelar</button>
-                <button type="button" class="smart-ink-apply-btn" onclick="confirmSmartInkText()">Insertar texto</button>
-              </div>
-            </div>
           </div>
 
           <div class="folio-footer" id="performerFolioFooter">
@@ -617,19 +588,9 @@
         <span class="rail-label">Rehacer</span>
       </button>
 
-      <button class="rail-tool" id="btnMoldToggle" onclick="toggleAutoMold()" title="Demo: Convertir trazo manuscrito a texto de molde">
-        <svg viewBox="0 0 24 24" class="v-ico"><path d="m12 3-1.9 5.8a2 2 0 0 1-1.3 1.3L3 12l5.8 1.9a2 2 0 0 1 1.3 1.3L12 21l1.9-5.8a2 2 0 0 1 1.3-1.3L21 12l-5.8-1.9a2 2 0 0 1-1.3-1.3Z"/></svg>
-        <span class="rail-label">A Molde</span>
-      </button>
-
       <button class="rail-tool" id="btnStamps" onclick="toggleStampPopover()" title="Sellos de digitación y agógica">
         <svg viewBox="0 0 24 24" class="v-ico"><path d="M5 22h14"/><path d="M19.27 13.73A2.5 2.5 0 0 0 17.5 13h-11A2.5 2.5 0 0 0 4 15.5V17a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-1.5c0-.66-.26-1.3-.73-1.77Z"/><path d="M14 13V8.5C14 7 15 7 15 5a3 3 0 0 0-3-3c-1.66 0-3 1-3 3s1 2 1 3.5V13"/></svg>
         <span class="rail-label">Sellos</span>
-      </button>
-
-      <button class="rail-tool" id="btnRailBachGpt" onclick="handleMainBachFabClick()" title="Consultar a BachGPT">
-        <svg viewBox="0 0 24 24" class="v-ico"><path d="M12 3l1.8 4.2L18 9l-4.2 1.8L12 15l-1.8-4.2L6 9l4.2-1.8Z"/></svg>
-        <span class="rail-label">BachGPT</span>
       </button>
 
       <button class="rail-tool subtle" id="btnClearStudy" onclick="confirmClearStudyLayer()" title="Limpiar anotaciones de esta página">
@@ -1057,6 +1018,6 @@
     <span class="pdf-loading-text">Cargando...</span>
   </div>
 
-  <script src="app.js?v=99"></script>
+  <script src="app.js?v=100"></script>
 </body>
 </html>

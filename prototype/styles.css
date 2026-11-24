@@ -12683,3 +12683,79 @@ body.mode-performer-active:not(.mode-concert-active) #mode-performer.is-study-mo
   pointer-events: auto !important;
   z-index: 22;
 }
+
+
+/* ==========================================================================
+   V100 — CAJA INTERACTIVA DE SELECCIÓN PARA TEXTO EN LETRA DE MOLDE
+          (MOVER, REDIMENSIONAR Y BORRAR)
+   ========================================================================== */
+.mold-item.editorial-note {
+  padding: 4px 10px;
+  border: 1.5px solid transparent;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.35);
+  transition: border-color 0.16s ease, box-shadow 0.16s ease, background 0.16s ease;
+}
+
+.mold-item.editorial-note.selected-mold {
+  border: 1.5px dashed var(--accent);
+  background: color-mix(in srgb, var(--card-bg) 78%, transparent);
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.18);
+  z-index: 28;
+}
+
+.mold-text-span {
+  outline: none;
+  display: inline-block;
+  min-width: 18px;
+}
+
+.mold-text-span[contenteditable="true"] {
+  cursor: text;
+  user-select: text;
+  background: rgba(255, 255, 255, 0.72);
+  padding: 0 4px;
+  border-radius: 4px;
+}
+
+.mold-delete-btn,
+.mold-resize-handle {
+  display: none;
+  position: absolute;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
+  z-index: 30;
+}
+
+.mold-item.selected-mold .mold-delete-btn,
+.mold-item.selected-mold .mold-resize-handle {
+  display: inline-flex;
+}
+
+.mold-delete-btn {
+  top: -10px;
+  right: -10px;
+  border: 1px solid var(--glass-border);
+  background: #8c2f27;
+  color: #fff;
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+  padding: 0;
+  line-height: 1;
+}
+
+.mold-resize-handle {
+  bottom: -10px;
+  right: -10px;
+  border: 1.5px solid var(--accent-ink);
+  background: var(--accent);
+  color: var(--accent-ink);
+  font-size: 10px;
+  cursor: nwse-resize;
+  touch-action: none;
+}
