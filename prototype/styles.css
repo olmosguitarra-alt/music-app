@@ -12955,3 +12955,65 @@ body.mode-performer-active:not(.mode-concert-active) #mode-performer.is-study-mo
   box-shadow: 0 0 0 2px var(--accent);
   transform: scale(1.12);
 }
+
+
+/* ==========================================================================
+   V104 — FIX ALINEACIÓN Y ANCHO DE TARJETAS EN BIBLIOTECA (VISTA CELULAR)
+   ========================================================================== */
+@media (max-width: 600px) {
+  body.mode-library-active .library-workspace {
+    width: 100% !important;
+    max-width: 100vw !important;
+    padding: 0 12px !important;
+    margin: 0 !important;
+    box-sizing: border-box !important;
+  }
+
+  body.mode-library-active .library-stage,
+  body.mode-library-active .library-slides-viewport,
+  body.mode-library-active .catalog-slide,
+  #libraryCatalogContainer {
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+    margin: 0 !important;
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+    box-sizing: border-box !important;
+  }
+
+  .folio-grid {
+    display: grid !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 10px !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    margin: 0 0 12px 0 !important;
+    padding: 0 !important;
+    justify-items: stretch !important;
+    align-items: stretch !important;
+    box-sizing: border-box !important;
+  }
+
+  .folio-card {
+    width: 100% !important;
+    min-width: 0 !important;
+    max-width: 100% !important;
+    margin: 0 !important;
+    box-sizing: border-box !important;
+    overflow: hidden !important;
+  }
+
+  .folio-preview-sheet,
+  .folio-card-title,
+  .folio-card-sub {
+    min-width: 0 !important;
+    max-width: 100% !important;
+  }
+
+  .folio-card-foot {
+    flex-wrap: wrap !important;
+    gap: 4px !important;
+    min-width: 0 !important;
+  }
+}
