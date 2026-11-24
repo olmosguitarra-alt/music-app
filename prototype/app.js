@@ -3857,21 +3857,26 @@ function persistStudyAnnotationsToStorage() {
   } catch (_) {}
 }
 
+function isWritingAllowed() {
+  if (performanceMode === "study") return true;
+  const performer = document.getElementById("mode-performer");
+  return Boolean(performer && performer.classList.contains("rail-open-drawing"));
+}
+
+let committedLayerCanvas = null;
+
+function ensureCommittedLayer(width, height) {
+  if (!committedLayerCanvas) committedLayerCanvas = document.createElement("canvas");
+  if (committedLayerCanvas.width !== width || committedLayerCanvas.height !== height) {
+    committedLayerCanvas.width = width;
+    committedLayerCanvas.height = height;
+  }
+  return committedLayerCanvas;
+}
+
 function calcDynamicWidth(baseWidth, pressure) {
   const p = Math.max(0.05, Math.min(1.0, pressure || 0.5));
   return baseWidth * (0.25 + 1.5 * p);
-}
-
-function drawQuadraticSegment(ctx, p0, p1, p2, baseWidth) {
-  const m1x = (p0.x + p1.x) / 2;
-  const m1y = (p0.y + p1.y) / 2;
-  const m2x = (p1.x + p2.x) / 2;
-  const m2y = (p1.y + p2.y) / 2;
-  ctx.lineWidth = calcDynamicWidth(baseWidth, p1.p);
-  ctx.beginPath();
-  ctx.moveTo(m1x, m1y);
-  ctx.quadraticCurveTo(p1.x, p1.y, m2x, m2y);
-  ctx.stroke();
 }
 
 function applyStrokeContextStyle(ctx, stroke) {
@@ -3880,19 +3885,52 @@ function applyStrokeContextStyle(ctx, stroke) {
   if (stroke.tool === "marker") {
     ctx.globalCompositeOperation = "multiply";
     ctx.globalAlpha = 0.35;
+    ctx.fillStyle = stroke.color || "#d4af37";
     ctx.strokeStyle = stroke.color || "#d4af37";
     return Math.max(14, (stroke.baseWidth || 2.4) * 5.5);
   }
   if (stroke.tool === "pencil") {
     ctx.globalCompositeOperation = "source-over";
     ctx.globalAlpha = Math.min(0.7, (stroke.opacity ?? 1) * 0.7);
+    ctx.fillStyle = stroke.color || "#201c19";
     ctx.strokeStyle = stroke.color || "#201c19";
     return (stroke.baseWidth || 2.0) * 0.85;
   }
   ctx.globalCompositeOperation = "source-over";
   ctx.globalAlpha = stroke.opacity ?? 1;
+  ctx.fillStyle = stroke.color || "#23426e";
   ctx.strokeStyle = stroke.color || "#23426e";
   return stroke.baseWidth || 2.4;
+}
+
+function subdivideStrokeSpine(pts) {
+  if (pts.length <= 2) return pts;
+  const spine = [pts[0]];
+  for (let i = 1; i < pts.length - 1; i++) {
+    const p0 = pts[i - 1];
+    const p1 = pts[i];
+    const p2 = pts[i + 1];
+    const m1x = (p0.x + p1.x) / 2;
+    const m1y = (p0.y + p1.y) / 2;
+    const m1p = (p0.p + p1.p) / 2;
+    const m2x = (p1.x + p2.x) / 2;
+    const m2y = (p1.y + p2.y) / 2;
+    const m2p = (p1.p + p2.p) / 2;
+
+    const dist = Math.hypot(m2x - m1x, m2y - m1y);
+    const steps = Math.max(2, Math.min(12, Math.ceil(dist / 2.5)));
+    for (let s = 1; s <= steps; s++) {
+      const t = s / steps;
+      const it = 1 - t;
+      spine.push({
+        x: it * it * m1x + 2 * it * t * p1.x + t * t * m2x,
+        y: it * it * m1y + 2 * it * t * p1.y + t * t * m2y,
+        p: it * it * m1p + 2 * it * t * p1.p + t * t * m2p
+      });
+    }
+  }
+  spine.push(pts[pts.length - 1]);
+  return spine;
 }
 
 function renderStrokeToCtx(ctx, stroke) {
@@ -3901,21 +3939,59 @@ function renderStrokeToCtx(ctx, stroke) {
   const baseW = applyStrokeContextStyle(ctx, stroke);
 
   if (pts.length === 1) {
+    const r = calcDynamicWidth(baseW, pts[0].p) / 2;
     ctx.beginPath();
-    ctx.arc(pts[0].x, pts[0].y, calcDynamicWidth(baseW, pts[0].p) / 2, 0, Math.PI * 2);
-    ctx.fillStyle = ctx.strokeStyle;
+    ctx.arc(pts[0].x, pts[0].y, r, 0, Math.PI * 2);
     ctx.fill();
-  } else if (pts.length === 2) {
-    ctx.lineWidth = calcDynamicWidth(baseW, (pts[0].p + pts[1].p) / 2);
-    ctx.beginPath();
-    ctx.moveTo(pts[0].x, pts[0].y);
-    ctx.lineTo(pts[1].x, pts[1].y);
-    ctx.stroke();
-  } else {
-    for (let i = 1; i < pts.length - 1; i++) {
-      drawQuadraticSegment(ctx, pts[i - 1], pts[i], pts[i + 1], baseW);
-    }
+    ctx.globalAlpha = 1;
+    ctx.globalCompositeOperation = "source-over";
+    return;
   }
+
+  // Subdividir en espina Bézier continua y dibujar cinta poligonal única (cero círculos)
+  const spine = subdivideStrokeSpine(pts);
+  const leftPts = [];
+  const rightPts = [];
+
+  for (let i = 0; i < spine.length; i++) {
+    const cur = spine[i];
+    const prev = spine[Math.max(0, i - 1)];
+    const next = spine[Math.min(spine.length - 1, i + 1)];
+    let dx = next.x - prev.x;
+    let dy = next.y - prev.y;
+    const len = Math.hypot(dx, dy) || 1;
+    dx /= len;
+    dy /= len;
+    const nx = -dy;
+    const ny = dx;
+    const hw = calcDynamicWidth(baseW, cur.p) / 2;
+    leftPts.push({ x: cur.x + nx * hw, y: cur.y + ny * hw });
+    rightPts.push({ x: cur.x - nx * hw, y: cur.y - ny * hw });
+  }
+
+  ctx.beginPath();
+  ctx.moveTo(leftPts[0].x, leftPts[0].y);
+  for (let i = 1; i < leftPts.length; i++) {
+    ctx.lineTo(leftPts[i].x, leftPts[i].y);
+  }
+  const endCur = spine[spine.length - 1];
+  const endR = calcDynamicWidth(baseW, endCur.p) / 2;
+  const endAngle = Math.atan2(
+    rightPts[rightPts.length - 1].y - endCur.y,
+    rightPts[rightPts.length - 1].x - endCur.x
+  );
+  ctx.arc(endCur.x, endCur.y, endR, endAngle + Math.PI, endAngle, false);
+
+  for (let i = rightPts.length - 1; i >= 0; i--) {
+    ctx.lineTo(rightPts[i].x, rightPts[i].y);
+  }
+  const startCur = spine[0];
+  const startR = calcDynamicWidth(baseW, startCur.p) / 2;
+  const startAngle = Math.atan2(leftPts[0].y - startCur.y, leftPts[0].x - startCur.x);
+  ctx.arc(startCur.x, startCur.y, startR, startAngle + Math.PI, startAngle, false);
+
+  ctx.closePath();
+  ctx.fill();
   ctx.globalAlpha = 1;
   ctx.globalCompositeOperation = "source-over";
 }
@@ -3924,12 +4000,18 @@ function redrawStudyCanvas() {
   const canvas = document.getElementById("performerCanvas");
   if (!canvas) return;
   const ctx = canvas.getContext("2d");
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  const cache = ensureCommittedLayer(canvas.width, canvas.height);
+  const cCtx = cache.getContext("2d");
+  cCtx.clearRect(0, 0, cache.width, cache.height);
+
   const key = getStudyPageKey();
   const list = studyPageStrokes[key] || [];
   for (let i = 0; i < list.length; i++) {
-    renderStrokeToCtx(ctx, list[i]);
+    renderStrokeToCtx(cCtx, list[i]);
   }
+
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  ctx.drawImage(cache, 0, 0);
 }
 
 function renderMoldLayer() {
@@ -3963,8 +4045,9 @@ function createEditorialMoldElement(item) {
   let origY = item.y;
 
   el.addEventListener("pointerdown", (e) => {
-    if (performanceMode === "concert") return;
+    if (!isWritingAllowed()) return;
     e.stopPropagation();
+    resetToolRailInactivityTimer();
     el.setPointerCapture(e.pointerId);
     dragging = true;
     moved = false;
@@ -3993,8 +4076,9 @@ function createEditorialMoldElement(item) {
 
   // Doble toque / doble clic para editar rápidamente sin rehacer
   el.addEventListener("dblclick", (e) => {
-    if (performanceMode === "concert") return;
+    if (!isWritingAllowed()) return;
     e.stopPropagation();
+    resetToolRailInactivityTimer();
     openSmartInkCardForEdit(item);
   });
 
@@ -4433,6 +4517,7 @@ function initStudyInteraction() {
   let activePointerId = null;
   let lastPt = null;
   let lastPressure = 0.5;
+  let rafDrawPending = false;
 
   const getPt = (e) => {
     const r = canvas.getBoundingClientRect();
@@ -4457,11 +4542,18 @@ function initStudyInteraction() {
     return lastPressure;
   };
 
+  const flushActiveStrokeFrame = () => {
+    rafDrawPending = false;
+    if (!activeStroke) return;
+    const ctx = canvas.getContext("2d");
+    const cache = ensureCommittedLayer(canvas.width, canvas.height);
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.drawImage(cache, 0, 0);
+    renderStrokeToCtx(ctx, activeStroke);
+  };
+
   const down = (e) => {
-    // Blindaje en Vivo: bloquear dibujo en Concierto salvo si el usuario abrió la pluma
-    const rail = document.getElementById("performerToolRail");
-    const railOpen = rail && !rail.classList.contains("rail-collapsed");
-    if (performanceMode === "concert" && !railOpen) return;
+    if (!isWritingAllowed()) return;
 
     // Rechazo de Palma Nativo (Palm Rejection)
     if (e.pointerType === "pen") strictPenMode = true;
@@ -4511,65 +4603,59 @@ function initStudyInteraction() {
       points: [{ x: pt.x, y: pt.y, p }]
     };
 
-    const key = getStudyPageKey();
-    if (!studyPageStrokes[key]) studyPageStrokes[key] = [];
-    studyPageStrokes[key].push(activeStroke);
-
-    const ctx = canvas.getContext("2d");
-    const baseW = applyStrokeContextStyle(ctx, activeStroke);
-    ctx.beginPath();
-    ctx.arc(pt.x, pt.y, calcDynamicWidth(baseW, p) / 2, 0, Math.PI * 2);
-    ctx.fillStyle = ctx.strokeStyle;
-    ctx.fill();
-    ctx.globalAlpha = 1;
-    ctx.globalCompositeOperation = "source-over";
+    ensureCommittedLayer(canvas.width, canvas.height);
     drawing = true;
+    flushActiveStrokeFrame();
   };
 
   const move = (e) => {
     if (!drawing || e.pointerId !== activePointerId) return;
-    const rail = document.getElementById("performerToolRail");
-    const railOpen = rail && !rail.classList.contains("rail-collapsed");
-    if (performanceMode === "concert" && !railOpen) return;
+    if (!isWritingAllowed()) return;
     if (strictPenMode && !fingerDrawAllowed && e.pointerType === "touch") return;
 
     e.preventDefault();
-    const pt = getPt(e);
 
     if (studyTool === "eraser") {
-      eraseAtPoint(pt);
+      eraseAtPoint(getPt(e));
       return;
     }
     if (!activeStroke) return;
 
-    const p = computePressure(e, pt);
-    const nextPt = { x: pt.x, y: pt.y, p };
-    lastPt = { x: pt.x, y: pt.y, p, t: performance.now() };
-    activeStroke.points.push(nextPt);
-
-    // Renderizado incremental Bézier cuadrático (60-120 FPS sin redibujar PDF)
-    const pts = activeStroke.points;
-    const ctx = canvas.getContext("2d");
-    const baseW = applyStrokeContextStyle(ctx, activeStroke);
-    if (pts.length >= 3) {
-      const n = pts.length;
-      drawQuadraticSegment(ctx, pts[n - 3], pts[n - 2], pts[n - 1], baseW);
-    } else if (pts.length === 2) {
-      ctx.lineWidth = calcDynamicWidth(baseW, (pts[0].p + pts[1].p) / 2);
-      ctx.beginPath();
-      ctx.moveTo(pts[0].x, pts[0].y);
-      ctx.lineTo(pts[1].x, pts[1].y);
-      ctx.stroke();
+    const events = typeof e.getCoalescedEvents === "function" ? e.getCoalescedEvents() : [e];
+    let added = false;
+    for (const ev of events) {
+      const pt = getPt(ev);
+      if (lastPt && Math.hypot(pt.x - lastPt.x, pt.y - lastPt.y) < 2.0) continue;
+      const p = computePressure(ev, pt);
+      lastPt = { x: pt.x, y: pt.y, p, t: performance.now() };
+      activeStroke.points.push({ x: pt.x, y: pt.y, p });
+      added = true;
     }
-    ctx.globalAlpha = 1;
-    ctx.globalCompositeOperation = "source-over";
+
+    if (added && !rafDrawPending) {
+      rafDrawPending = true;
+      requestAnimationFrame(flushActiveStrokeFrame);
+    }
   };
 
   const up = (e) => {
     if (!drawing || (activePointerId !== null && e.pointerId !== activePointerId)) return;
     drawing = false;
     activePointerId = null;
-    activeStroke = null;
+
+    if (activeStroke) {
+      const key = getStudyPageKey();
+      if (!studyPageStrokes[key]) studyPageStrokes[key] = [];
+      studyPageStrokes[key].push(activeStroke);
+
+      const cache = ensureCommittedLayer(canvas.width, canvas.height);
+      renderStrokeToCtx(cache.getContext("2d"), activeStroke);
+      const ctx = canvas.getContext("2d");
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.drawImage(cache, 0, 0);
+      activeStroke = null;
+    }
+
     lastPt = null;
     resetToolRailInactivityTimer();
 
@@ -4584,17 +4670,17 @@ function initStudyInteraction() {
   canvas.addEventListener("pointerup", up);
   canvas.addEventListener("pointercancel", up);
 
-  // Gestos táctiles de swipe para pasar página en Modo Concierto
+  // Gestos táctiles de swipe para pasar página en Modo Concierto (cuando no está escribiendo)
   if (stage) {
     let swipeStartX = 0;
     let swipeStartY = 0;
     stage.addEventListener("touchstart", (e) => {
-      if (performanceMode !== "concert" || e.touches.length !== 1) return;
+      if (performanceMode !== "concert" || isWritingAllowed() || e.touches.length !== 1) return;
       swipeStartX = e.touches[0].clientX;
       swipeStartY = e.touches[0].clientY;
     }, { passive: true });
     stage.addEventListener("touchend", (e) => {
-      if (performanceMode !== "concert" || e.changedTouches.length !== 1) return;
+      if (performanceMode !== "concert" || isWritingAllowed() || e.changedTouches.length !== 1) return;
       const dx = e.changedTouches[0].clientX - swipeStartX;
       const dy = e.changedTouches[0].clientY - swipeStartY;
       if (Math.abs(dx) > 55 && Math.abs(dx) > Math.abs(dy) * 1.4) {
@@ -4764,7 +4850,7 @@ function scheduleConcertAutoHide() {
 }
 
 function handlePerformerStageTap(e) {
-  if (performanceMode !== "concert") return;
+  if (performanceMode !== "concert" || isWritingAllowed()) return;
   if (e.target.closest("button, .floating-bottom-bar, .concert-exit-overlay")) {
     scheduleConcertAutoHide();
     return;

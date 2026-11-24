@@ -12663,3 +12663,23 @@ body.mode-performer-active:not(.mode-concert-active) #mode-performer.is-study-mo
 #mode-performer.is-concert-mode .mold-item {
   pointer-events: none !important;
 }
+
+
+/* ==========================================================================
+   V99 — PARIDAD TOTAL DE ESCRITURA EN MODO CONCIERTO Y ESTUDIO
+   ========================================================================== */
+#mode-performer.is-concert-mode.rail-open-drawing .invisible-page-zone {
+  pointer-events: none !important;
+}
+
+#mode-performer.is-concert-mode.rail-open-drawing .mold-item {
+  pointer-events: auto !important;
+  cursor: grab;
+  user-select: none;
+  touch-action: none;
+}
+
+#mode-performer.is-concert-mode.rail-open-drawing .draw-layer {
+  pointer-events: auto !important;
+  z-index: 22;
+}
