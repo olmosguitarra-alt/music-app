@@ -10978,11 +10978,9 @@ body.mode-concert-active .bachgpt-widget-root {
   cursor: pointer;
 }
 
-/* Estado ENSAYO (Overlay flotante: cero salto de escala al alternar) */
-body.mode-performer-active #bottomNavDock,
+/* En Modo Ensayo solo ocultamos el cintillo y el botón de importar; Dock y BachGPT conviven */
 body.mode-performer-active .bottom-glass-cintillo,
-body.mode-performer-active #importPopoverWrap,
-body.mode-performer-active #bachGptFab {
+body.mode-performer-active #importPopoverWrap {
   opacity: 0 !important;
   pointer-events: none !important;
   transform: translateY(20px);
@@ -12247,5 +12245,143 @@ body.concert-immersion #mode-performer.is-concert-mode .concert-only-bar {
   }
   #mode-performer .concepts-tool-rail {
     max-height: calc(100vh - 152px);
+  }
+}
+
+
+/* ==========================================================================
+   V96 — CONVIVENCIA ARMÓNICA EN MODO ENSAYO: 3 BLOQUES HORIZONTALES INFERIORES
+         (Sin alterar en absoluto el Modo Concierto)
+   ========================================================================== */
+
+/* Bloque Izquierdo: Modos Principales (#bottomNavDock) */
+body.mode-performer-active:not(.mode-concert-active) #bottomNavDock.bottom-nav-dock {
+  left: 14px !important;
+  right: auto !important;
+  bottom: max(12px, env(safe-area-inset-bottom)) !important;
+  transform: none !important;
+  opacity: 1 !important;
+  pointer-events: auto !important;
+  z-index: 84;
+}
+
+body.mode-performer-active:not(.mode-concert-active) #bottomNavDock .bottom-mode-capsule {
+  height: 34px !important;
+  padding: 3px !important;
+  gap: 3px !important;
+  background: color-mix(in srgb, var(--card-bg) 38%, transparent) !important;
+  backdrop-filter: blur(10px) saturate(135%);
+  -webkit-backdrop-filter: blur(10px) saturate(135%);
+  border: 1px solid color-mix(in srgb, var(--glass-border) 75%, transparent);
+}
+
+body.mode-performer-active:not(.mode-concert-active) #bottomNavDock .seg-btn {
+  height: 26px !important;
+  min-width: 34px !important;
+  padding: 0 10px !important;
+}
+
+body.mode-performer-active:not(.mode-concert-active) #bottomNavDock .seg-btn .v-ico {
+  width: 15px;
+  height: 15px;
+}
+
+/* Bloque Derecho: BachGPT (#bachGptFab) + Switch Ensayo/Concierto al lado */
+body.mode-performer-active:not(.mode-concert-active) #bachGptFab.bachgpt-fab {
+  right: 14px !important;
+  bottom: max(12px, env(safe-area-inset-bottom)) !important;
+  height: 34px !important;
+  min-height: 34px !important;
+  padding: 0 11px 0 6px !important;
+  background: color-mix(in srgb, var(--card-bg) 42%, transparent) !important;
+  backdrop-filter: blur(10px) saturate(135%);
+  -webkit-backdrop-filter: blur(10px) saturate(135%);
+  opacity: 1 !important;
+  pointer-events: auto !important;
+  transform: none !important;
+  z-index: 84;
+}
+
+body.mode-performer-active:not(.mode-concert-active) #bachGptFab .bach-8bit-icon {
+  width: 22px;
+  height: 22px;
+}
+
+body.mode-performer-active:not(.mode-concert-active) #bachGptFab .bach-fab-label {
+  font-size: 11.5px;
+}
+
+body.mode-performer-active:not(.mode-concert-active) #mode-performer.is-study-mode .perf-bottom-right-switch {
+  right: 132px !important;
+  bottom: max(12px, env(safe-area-inset-bottom)) !important;
+  height: 34px !important;
+  padding: 3px !important;
+}
+
+body.mode-performer-active:not(.mode-concert-active) #mode-performer.is-study-mode .perf-bottom-right-switch .perf-switch-btn {
+  height: 26px !important;
+}
+
+/* Bloque Central: Barra de Páginas (.performer-scrubber-bar) entre Izquierda y Derecha */
+body.mode-performer-active:not(.mode-concert-active) #mode-performer.is-study-mode .performer-scrubber-bar {
+  left: 152px !important;
+  right: 300px !important;
+  bottom: max(12px, env(safe-area-inset-bottom)) !important;
+  height: 34px !important;
+  max-width: 420px !important;
+  margin: 0 auto !important;
+  transform: none !important;
+}
+
+/* Tablet (601px - 1024px) */
+@media (min-width: 601px) and (max-width: 1024px) {
+  body.mode-performer-active:not(.mode-concert-active) #mode-performer.is-study-mode .performer-scrubber-bar {
+    left: 146px !important;
+    right: 294px !important;
+  }
+}
+
+/* Teléfono (<= 600px): Dock + Switch + BachGPT en la línea base, Scrubber limpio arriba */
+@media (max-width: 600px) {
+  body.mode-performer-active:not(.mode-concert-active) #bottomNavDock.bottom-nav-dock {
+    left: 10px !important;
+    bottom: max(10px, env(safe-area-inset-bottom)) !important;
+    height: 32px !important;
+  }
+  body.mode-performer-active:not(.mode-concert-active) #bottomNavDock .bottom-mode-capsule {
+    height: 32px !important;
+    padding: 2px !important;
+  }
+  body.mode-performer-active:not(.mode-concert-active) #bottomNavDock .seg-btn {
+    width: 30px !important;
+    min-width: 30px !important;
+    height: 26px !important;
+    padding: 0 !important;
+  }
+  body.mode-performer-active:not(.mode-concert-active) #bachGptFab.bachgpt-fab {
+    right: 10px !important;
+    bottom: max(10px, env(safe-area-inset-bottom)) !important;
+    height: 32px !important;
+    min-height: 32px !important;
+    padding: 0 6px !important;
+  }
+  body.mode-performer-active:not(.mode-concert-active) #bachGptFab .bach-fab-label,
+  body.mode-performer-active:not(.mode-concert-active) #bachGptFab .bach-fab-sparkle {
+    display: none !important;
+  }
+  body.mode-performer-active:not(.mode-concert-active) #mode-performer.is-study-mode .perf-bottom-right-switch {
+    right: 52px !important;
+    bottom: max(10px, env(safe-area-inset-bottom)) !important;
+    height: 32px !important;
+  }
+  body.mode-performer-active:not(.mode-concert-active) #mode-performer.is-study-mode .perf-bottom-right-switch .perf-switch-btn {
+    height: 24px !important;
+  }
+  body.mode-performer-active:not(.mode-concert-active) #mode-performer.is-study-mode .performer-scrubber-bar {
+    left: 10px !important;
+    right: 10px !important;
+    bottom: calc(max(10px, env(safe-area-inset-bottom)) + 38px) !important;
+    height: 26px !important;
+    max-width: none !important;
   }
 }
