@@ -11,7 +11,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:wght@600;700&display=swap" />
-  <link rel="stylesheet" href="styles.css?v=96" />
+  <link rel="stylesheet" href="styles.css?v=97" />
   <!-- Motores Oficiales para Renderizar (PDF.js) y Particionar/Editar PDFs Reales (pdf-lib) -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf-lib/1.17.1/pdf-lib.min.js"></script>
@@ -416,15 +416,18 @@
         </button>
       </div>
 
-      <div class="perf-top-center">
-        <span class="perf-top-title-line">
-          <strong id="performerTopTitle">SONATE BWV 1034</strong>
-          <span class="perf-top-sep">—</span>
-          <span class="perf-top-composer" id="performerTopComposer">J. S. Bach</span>
-        </span>
-      </div>
-
       <div class="perf-top-right">
+        <div class="perf-mode-switch" role="tablist" aria-label="Modo del visor">
+          <button type="button" class="perf-switch-btn active" id="perfSwitchStudy" onclick="setPerformanceMode('study')" role="tab" aria-selected="true">
+            <svg viewBox="0 0 24 24" class="v-ico" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
+            <span>Ensayo</span>
+          </button>
+          <button type="button" class="perf-switch-btn" id="perfSwitchConcert" onclick="setPerformanceMode('concert')" role="tab" aria-selected="false">
+            <svg viewBox="0 0 24 24" class="v-ico" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>
+            <span>Concierto</span>
+          </button>
+        </div>
+
         <div class="perf-quick-utils">
           <!-- Chip vivo de Metrónomo: icono lineal que parpadea al ritmo -->
           <div class="perf-live-chip" id="metroLiveChip">
@@ -446,18 +449,6 @@
         </div>
       </div>
     </header>
-
-    <!-- CONMUTADOR ENSAYO ↔ CONCIERTO EN ESQUINA INFERIOR DERECHA -->
-    <div class="perf-mode-switch perf-bottom-right-switch study-tools" role="tablist" aria-label="Modo del visor">
-      <button type="button" class="perf-switch-btn active" id="perfSwitchStudy" onclick="setPerformanceMode('study')" role="tab" aria-selected="true">
-        <svg viewBox="0 0 24 24" class="v-ico" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
-        <span>Ensayo</span>
-      </button>
-      <button type="button" class="perf-switch-btn" id="perfSwitchConcert" onclick="setPerformanceMode('concert')" role="tab" aria-selected="false">
-        <svg viewBox="0 0 24 24" class="v-ico" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>
-        <span>Concierto</span>
-      </button>
-    </div>
 
     <!-- LIENZO UNIFICADO DE PARTITURA (1 PÁGINA O 2 PÁGINAS) -->
     <div class="full-bleed-canvas performer-stage" id="performerStage">
@@ -1013,6 +1004,6 @@
     <span class="pdf-loading-text">Cargando...</span>
   </div>
 
-  <script src="app.js?v=96"></script>
+  <script src="app.js?v=97"></script>
 </body>
 </html>
