@@ -3782,6 +3782,25 @@ let selectedStamp = null;
 let moldIndex = 0;
 const moldWords = ["poco rit.", "dolce", "C.VII ───", "p  i  m  a", "a tempo", "espress."];
 
+let eraserMode = "stroke"; // 'stroke' | 'pixel'
+let strictPenMode = false;
+let fingerDrawAllowed = false;
+
+function setEraserMode(mode, btn) {
+  eraserMode = mode === "pixel" ? "pixel" : "stroke";
+  document.getElementById("btnEraserStroke")?.classList.toggle("active", eraserMode === "stroke");
+  document.getElementById("btnEraserPixel")?.classList.toggle("active", eraserMode === "pixel");
+  if (btn) btn.classList.add("active");
+}
+
+function setFingerDrawAllowed(allowed, btn) {
+  fingerDrawAllowed = Boolean(allowed);
+  if (allowed) strictPenMode = false;
+  document.getElementById("btnPalmAuto")?.classList.toggle("active", !fingerDrawAllowed);
+  document.getElementById("btnPalmFinger")?.classList.toggle("active", fingerDrawAllowed);
+  if (btn) btn.classList.add("active");
+}
+
 function switchStampTab(key, btn) {
   document.querySelectorAll(".p-seg").forEach((t) => t.classList.remove("active"));
   if (btn) btn.classList.add("active");
@@ -3808,7 +3827,9 @@ function chooseStamp(st, btn) {
 
 let brushWidth = 2.4;
 let brushOpacity = 1.0;
-const studyPageAnnotations = {};
+const ANNOTATIONS_STORAGE_KEY = "cadenza_annotations_v1";
+const studyPageStrokes = {};
+const studyPageMoldItems = {};
 const studyUndoStacks = {};
 const studyRedoStacks = {};
 const studyBookmarks = {};
@@ -3817,81 +3838,210 @@ function getStudyPageKey() {
   return `${activeScore ? activeScore.id : 1}:${pageNum}`;
 }
 
-function saveStudyAnnotationsForCurrentPage() {
-  const canvas = document.getElementById("performerCanvas");
-  const moldLayer = document.getElementById("performerMoldLayer");
-  if (!canvas || !moldLayer) return;
-  const key = getStudyPageKey();
-  studyPageAnnotations[key] = {
-    dataUrl: canvas.toDataURL("image/png"),
-    moldHtml: moldLayer.innerHTML
-  };
+function loadStudyAnnotationsFromStorage() {
+  try {
+    const raw = localStorage.getItem(ANNOTATIONS_STORAGE_KEY);
+    if (!raw) return;
+    const parsed = JSON.parse(raw);
+    if (parsed && parsed.strokes) Object.assign(studyPageStrokes, parsed.strokes);
+    if (parsed && parsed.molds) Object.assign(studyPageMoldItems, parsed.molds);
+  } catch (_) {}
 }
 
-function restoreStudyAnnotationsForCurrentPage() {
+function persistStudyAnnotationsToStorage() {
+  try {
+    localStorage.setItem(
+      ANNOTATIONS_STORAGE_KEY,
+      JSON.stringify({ strokes: studyPageStrokes, molds: studyPageMoldItems })
+    );
+  } catch (_) {}
+}
+
+function calcDynamicWidth(baseWidth, pressure) {
+  const p = Math.max(0.05, Math.min(1.0, pressure || 0.5));
+  return baseWidth * (0.25 + 1.5 * p);
+}
+
+function drawQuadraticSegment(ctx, p0, p1, p2, baseWidth) {
+  const m1x = (p0.x + p1.x) / 2;
+  const m1y = (p0.y + p1.y) / 2;
+  const m2x = (p1.x + p2.x) / 2;
+  const m2y = (p1.y + p2.y) / 2;
+  ctx.lineWidth = calcDynamicWidth(baseWidth, p1.p);
+  ctx.beginPath();
+  ctx.moveTo(m1x, m1y);
+  ctx.quadraticCurveTo(p1.x, p1.y, m2x, m2y);
+  ctx.stroke();
+}
+
+function applyStrokeContextStyle(ctx, stroke) {
+  ctx.lineCap = "round";
+  ctx.lineJoin = "round";
+  if (stroke.tool === "marker") {
+    ctx.globalCompositeOperation = "multiply";
+    ctx.globalAlpha = 0.35;
+    ctx.strokeStyle = stroke.color || "#d4af37";
+    return Math.max(14, (stroke.baseWidth || 2.4) * 5.5);
+  }
+  if (stroke.tool === "pencil") {
+    ctx.globalCompositeOperation = "source-over";
+    ctx.globalAlpha = Math.min(0.7, (stroke.opacity ?? 1) * 0.7);
+    ctx.strokeStyle = stroke.color || "#201c19";
+    return (stroke.baseWidth || 2.0) * 0.85;
+  }
+  ctx.globalCompositeOperation = "source-over";
+  ctx.globalAlpha = stroke.opacity ?? 1;
+  ctx.strokeStyle = stroke.color || "#23426e";
+  return stroke.baseWidth || 2.4;
+}
+
+function renderStrokeToCtx(ctx, stroke) {
+  const pts = stroke.points;
+  if (!pts || pts.length === 0) return;
+  const baseW = applyStrokeContextStyle(ctx, stroke);
+
+  if (pts.length === 1) {
+    ctx.beginPath();
+    ctx.arc(pts[0].x, pts[0].y, calcDynamicWidth(baseW, pts[0].p) / 2, 0, Math.PI * 2);
+    ctx.fillStyle = ctx.strokeStyle;
+    ctx.fill();
+  } else if (pts.length === 2) {
+    ctx.lineWidth = calcDynamicWidth(baseW, (pts[0].p + pts[1].p) / 2);
+    ctx.beginPath();
+    ctx.moveTo(pts[0].x, pts[0].y);
+    ctx.lineTo(pts[1].x, pts[1].y);
+    ctx.stroke();
+  } else {
+    for (let i = 1; i < pts.length - 1; i++) {
+      drawQuadraticSegment(ctx, pts[i - 1], pts[i], pts[i + 1], baseW);
+    }
+  }
+  ctx.globalAlpha = 1;
+  ctx.globalCompositeOperation = "source-over";
+}
+
+function redrawStudyCanvas() {
   const canvas = document.getElementById("performerCanvas");
-  const moldLayer = document.getElementById("performerMoldLayer");
-  if (!canvas || !moldLayer) return;
+  if (!canvas) return;
   const ctx = canvas.getContext("2d");
   ctx.clearRect(0, 0, canvas.width, canvas.height);
   const key = getStudyPageKey();
-  const saved = studyPageAnnotations[key];
-  if (saved) {
-    moldLayer.innerHTML = saved.moldHtml || "";
-    if (saved.dataUrl) {
-      const img = new Image();
-      img.onload = () => ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-      img.src = saved.dataUrl;
-    }
-  } else {
-    moldLayer.innerHTML = "";
+  const list = studyPageStrokes[key] || [];
+  for (let i = 0; i < list.length; i++) {
+    renderStrokeToCtx(ctx, list[i]);
   }
 }
 
+function renderMoldLayer() {
+  const layer = document.getElementById("performerMoldLayer");
+  if (!layer) return;
+  layer.innerHTML = "";
+  const key = getStudyPageKey();
+  const items = studyPageMoldItems[key] || [];
+  items.forEach((item) => {
+    const el = createEditorialMoldElement(item);
+    layer.appendChild(el);
+  });
+}
+
+function createEditorialMoldElement(item) {
+  const el = document.createElement("div");
+  el.className = "mold-item editorial-note";
+  el.dataset.moldId = item.id;
+  el.style.left = `${item.x}px`;
+  el.style.top = `${item.y}px`;
+  el.style.color = item.color || inkColor;
+  if (item.fontSize) el.style.fontSize = `${item.fontSize}px`;
+  el.textContent = item.text;
+
+  // Arrastrar nota editorial con precisión milimétrica
+  let dragging = false;
+  let moved = false;
+  let startX = 0;
+  let startY = 0;
+  let origX = item.x;
+  let origY = item.y;
+
+  el.addEventListener("pointerdown", (e) => {
+    if (performanceMode === "concert") return;
+    e.stopPropagation();
+    el.setPointerCapture(e.pointerId);
+    dragging = true;
+    moved = false;
+    startX = e.clientX;
+    startY = e.clientY;
+    origX = item.x;
+    origY = item.y;
+  });
+
+  el.addEventListener("pointermove", (e) => {
+    if (!dragging) return;
+    const dx = e.clientX - startX;
+    const dy = e.clientY - startY;
+    if (Math.abs(dx) > 3 || Math.abs(dy) > 3) moved = true;
+    item.x = origX + dx;
+    item.y = origY + dy;
+    el.style.left = `${item.x}px`;
+    el.style.top = `${item.y}px`;
+  });
+
+  el.addEventListener("pointerup", (e) => {
+    if (!dragging) return;
+    dragging = false;
+    if (moved) saveStudyAnnotationsForCurrentPage();
+  });
+
+  // Doble toque / doble clic para editar rápidamente sin rehacer
+  el.addEventListener("dblclick", (e) => {
+    if (performanceMode === "concert") return;
+    e.stopPropagation();
+    openSmartInkCardForEdit(item);
+  });
+
+  return el;
+}
+
+function saveStudyAnnotationsForCurrentPage() {
+  persistStudyAnnotationsToStorage();
+}
+
+function restoreStudyAnnotationsForCurrentPage() {
+  redrawStudyCanvas();
+  renderMoldLayer();
+}
+
+function clonePageSnapshot() {
+  const key = getStudyPageKey();
+  return {
+    strokes: JSON.parse(JSON.stringify(studyPageStrokes[key] || [])),
+    molds: JSON.parse(JSON.stringify(studyPageMoldItems[key] || []))
+  };
+}
+
 function pushStudyUndoSnapshot() {
-  const canvas = document.getElementById("performerCanvas");
-  const moldLayer = document.getElementById("performerMoldLayer");
-  if (!canvas || !moldLayer) return;
   const key = getStudyPageKey();
   if (!studyUndoStacks[key]) studyUndoStacks[key] = [];
-  studyUndoStacks[key].push({
-    dataUrl: canvas.toDataURL("image/png"),
-    moldHtml: moldLayer.innerHTML
-  });
-  if (studyUndoStacks[key].length > 25) studyUndoStacks[key].shift();
+  studyUndoStacks[key].push(clonePageSnapshot());
+  if (studyUndoStacks[key].length > 30) studyUndoStacks[key].shift();
   studyRedoStacks[key] = [];
 }
 
 function applyStudySnapshot(snap) {
-  const canvas = document.getElementById("performerCanvas");
-  const moldLayer = document.getElementById("performerMoldLayer");
-  if (!canvas || !moldLayer || !snap) return;
-  const ctx = canvas.getContext("2d");
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
-  moldLayer.innerHTML = snap.moldHtml || "";
-  if (snap.dataUrl) {
-    const img = new Image();
-    img.onload = () => {
-      ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-      saveStudyAnnotationsForCurrentPage();
-    };
-    img.src = snap.dataUrl;
-  } else {
-    saveStudyAnnotationsForCurrentPage();
-  }
+  if (!snap) return;
+  const key = getStudyPageKey();
+  studyPageStrokes[key] = JSON.parse(JSON.stringify(snap.strokes || []));
+  studyPageMoldItems[key] = JSON.parse(JSON.stringify(snap.molds || []));
+  redrawStudyCanvas();
+  renderMoldLayer();
+  saveStudyAnnotationsForCurrentPage();
 }
 
 function undoStudyAction() {
   const key = getStudyPageKey();
   const stack = studyUndoStacks[key];
   if (!stack || stack.length === 0) return;
-  const canvas = document.getElementById("performerCanvas");
-  const moldLayer = document.getElementById("performerMoldLayer");
   if (!studyRedoStacks[key]) studyRedoStacks[key] = [];
-  studyRedoStacks[key].push({
-    dataUrl: canvas ? canvas.toDataURL("image/png") : "",
-    moldHtml: moldLayer ? moldLayer.innerHTML : ""
-  });
+  studyRedoStacks[key].push(clonePageSnapshot());
   const prev = stack.pop();
   applyStudySnapshot(prev);
 }
@@ -3900,13 +4050,8 @@ function redoStudyAction() {
   const key = getStudyPageKey();
   const rStack = studyRedoStacks[key];
   if (!rStack || rStack.length === 0) return;
-  const canvas = document.getElementById("performerCanvas");
-  const moldLayer = document.getElementById("performerMoldLayer");
   if (!studyUndoStacks[key]) studyUndoStacks[key] = [];
-  studyUndoStacks[key].push({
-    dataUrl: canvas ? canvas.toDataURL("image/png") : "",
-    moldHtml: moldLayer ? moldLayer.innerHTML : ""
-  });
+  studyUndoStacks[key].push(clonePageSnapshot());
   const next = rStack.pop();
   applyStudySnapshot(next);
 }
@@ -4059,16 +4204,25 @@ async function jumpToPage(targetPage) {
 function setStudyTool(tool) {
   studyTool = tool;
   selectedStamp = null;
+  if (tool !== "smarttext") dismissSmartInkBox();
   document.getElementById("btnPen")?.classList.toggle("active", tool === "pen");
+  document.getElementById("btnPencil")?.classList.toggle("active", tool === "pencil");
   document.getElementById("btnMarker")?.classList.toggle("active", tool === "marker");
   document.getElementById("btnEraser")?.classList.toggle("active", tool === "eraser");
+  document.getElementById("btnSmartText")?.classList.toggle("active", tool === "smarttext");
   document.getElementById("btnStamps")?.classList.remove("active");
   document.getElementById("btnBrushStyle")?.classList.remove("active");
   document.getElementById("stampPopover")?.classList.add("hidden");
   document.getElementById("brushPopover")?.classList.add("hidden");
   const fl = document.getElementById("performerFooterLeft");
   if (fl && performanceMode === "study") {
-    const names = { pen: "Pluma Activa", marker: "Marcador Activo", eraser: "Borrador Activo" };
+    const names = {
+      pen: "Pluma Activa",
+      pencil: "Lápiz Activo",
+      marker: "Resaltador Activo",
+      eraser: "Borrador Activo",
+      smarttext: "Texto / Tinta Activo"
+    };
     fl.textContent = `Modo Ensayo • ${names[tool] || "Pluma"}`;
   }
 }
@@ -4096,18 +4250,211 @@ function setupStudyCanvas() {
   }
 }
 
+// Smart Ink Box state
+let smartBatchId = null;
+let smartInkTimer = null;
+let smartInkBBox = null;
+let editingMoldItem = null;
+
+function eraseAtPoint(pt) {
+  const key = getStudyPageKey();
+  const list = studyPageStrokes[key];
+  if (!list || list.length === 0) return false;
+  const radius = 16;
+  let changed = false;
+
+  if (eraserMode === "stroke") {
+    const filtered = list.filter((stroke) => {
+      const hit = (stroke.points || []).some(
+        (p) => Math.hypot(p.x - pt.x, p.y - pt.y) <= radius
+      );
+      if (hit) changed = true;
+      return !hit;
+    });
+    if (changed) studyPageStrokes[key] = filtered;
+  } else {
+    const nextList = [];
+    for (const stroke of list) {
+      let currentSeg = [];
+      let strokeTouched = false;
+      for (const p of stroke.points || []) {
+        if (Math.hypot(p.x - pt.x, p.y - pt.y) <= radius) {
+          strokeTouched = true;
+          changed = true;
+          if (currentSeg.length > 1) {
+            nextList.push({ ...stroke, id: `${stroke.id}-${nextList.length}`, points: currentSeg });
+          }
+          currentSeg = [];
+        } else {
+          currentSeg.push(p);
+        }
+      }
+      if (!strokeTouched) {
+        nextList.push(stroke);
+      } else if (currentSeg.length > 1) {
+        nextList.push({ ...stroke, id: `${stroke.id}-${nextList.length}`, points: currentSeg });
+      }
+    }
+    if (changed) studyPageStrokes[key] = nextList;
+  }
+
+  if (changed) redrawStudyCanvas();
+  return changed;
+}
+
+function scheduleSmartInkBox() {
+  if (smartInkTimer) clearTimeout(smartInkTimer);
+  smartInkTimer = setTimeout(() => {
+    showSmartInkBoxForBatch();
+  }, 700);
+}
+
+function showSmartInkBoxForBatch() {
+  if (!smartBatchId) return;
+  const key = getStudyPageKey();
+  const strokes = (studyPageStrokes[key] || []).filter((s) => s.smartBatchId === smartBatchId);
+  if (strokes.length === 0) return;
+
+  let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+  strokes.forEach((s) => {
+    (s.points || []).forEach((p) => {
+      if (p.x < minX) minX = p.x;
+      if (p.y < minY) minY = p.y;
+      if (p.x > maxX) maxX = p.x;
+      if (p.y > maxY) maxY = p.y;
+    });
+  });
+
+  const pad = 12;
+  smartInkBBox = {
+    x: Math.max(8, minX - pad),
+    y: Math.max(38, minY - pad),
+    w: Math.max(96, maxX - minX + pad * 2),
+    h: Math.max(36, maxY - minY + pad * 2)
+  };
+
+  const boxEl = document.getElementById("smartInkBoxOverlay");
+  if (!boxEl) return;
+  boxEl.style.left = `${smartInkBBox.x}px`;
+  boxEl.style.top = `${smartInkBBox.y}px`;
+  boxEl.style.width = `${smartInkBBox.w}px`;
+  boxEl.style.height = `${smartInkBBox.h}px`;
+  boxEl.classList.remove("hidden");
+}
+
+function dismissSmartInkBox() {
+  if (smartInkTimer) {
+    clearTimeout(smartInkTimer);
+    smartInkTimer = null;
+  }
+  smartBatchId = null;
+  smartInkBBox = null;
+  document.getElementById("smartInkBoxOverlay")?.classList.add("hidden");
+  document.getElementById("smartInkCard")?.classList.add("hidden");
+}
+
+function openSmartInkCard() {
+  editingMoldItem = null;
+  const card = document.getElementById("smartInkCard");
+  const input = document.getElementById("smartInkInput");
+  const wrap = document.getElementById("performerWrap");
+  if (!card || !input || !wrap) return;
+
+  const left = smartInkBBox ? Math.min(smartInkBBox.x, Math.max(12, wrap.clientWidth - 304)) : 24;
+  const top = smartInkBBox ? Math.min(smartInkBBox.y + smartInkBBox.h + 10, Math.max(20, wrap.clientHeight - 190)) : 80;
+  card.style.left = `${Math.max(12, left)}px`;
+  card.style.top = `${Math.max(12, top)}px`;
+  input.value = "";
+  card.classList.remove("hidden");
+  setTimeout(() => input.focus(), 40);
+}
+
+function openSmartInkCardForEdit(item) {
+  editingMoldItem = item;
+  const card = document.getElementById("smartInkCard");
+  const input = document.getElementById("smartInkInput");
+  const wrap = document.getElementById("performerWrap");
+  if (!card || !input || !wrap) return;
+  card.style.left = `${Math.max(12, Math.min(item.x - 100, wrap.clientWidth - 304))}px`;
+  card.style.top = `${Math.max(12, Math.min(item.y + 24, wrap.clientHeight - 190))}px`;
+  input.value = item.text || "";
+  card.classList.remove("hidden");
+  setTimeout(() => input.focus(), 40);
+}
+
+function closeSmartInkCard() {
+  editingMoldItem = null;
+  document.getElementById("smartInkCard")?.classList.add("hidden");
+}
+
+function pickSmartInkSuggestion(word) {
+  const input = document.getElementById("smartInkInput");
+  if (!input) return;
+  input.value = word;
+  confirmSmartInkText();
+}
+
+function confirmSmartInkText() {
+  const input = document.getElementById("smartInkInput");
+  const text = (input?.value || "").trim();
+  if (!text) {
+    closeSmartInkCard();
+    return;
+  }
+  pushStudyUndoSnapshot();
+  const key = getStudyPageKey();
+
+  if (editingMoldItem) {
+    editingMoldItem.text = text;
+    renderMoldLayer();
+    saveStudyAnnotationsForCurrentPage();
+    closeSmartInkCard();
+    return;
+  }
+
+  // Borrar trazos manuscritos de la caja e insertar tipografía editorial
+  if (smartBatchId && studyPageStrokes[key]) {
+    studyPageStrokes[key] = studyPageStrokes[key].filter((s) => s.smartBatchId !== smartBatchId);
+    redrawStudyCanvas();
+  }
+  const cx = smartInkBBox ? smartInkBBox.x + smartInkBBox.w / 2 : 160;
+  const cy = smartInkBBox ? smartInkBBox.y + smartInkBBox.h / 2 : 160;
+  addMoldBadge(cx, cy, text, inkColor);
+  saveStudyAnnotationsForCurrentPage();
+  dismissSmartInkBox();
+}
+
 function initStudyInteraction() {
   const canvas = document.getElementById("performerCanvas");
   const stage = document.getElementById("performerStage");
   if (!canvas) return;
   let drawing = false;
-  let last = { x: 0, y: 0 };
+  let activeStroke = null;
+  let activePointerId = null;
+  let lastPt = null;
+  let lastPressure = 0.5;
 
   const getPt = (e) => {
     const r = canvas.getBoundingClientRect();
-    const cx = e.touches ? e.touches[0].clientX : e.clientX;
-    const cy = e.touches ? e.touches[0].clientY : e.clientY;
-    return { x: cx - r.left, y: cy - r.top };
+    return { x: e.clientX - r.left, y: e.clientY - r.top };
+  };
+
+  const computePressure = (e, pt) => {
+    if (e.pointerType === "pen" && typeof e.pressure === "number" && e.pressure > 0) {
+      lastPressure = Math.max(0.08, Math.min(1.0, e.pressure));
+      return lastPressure;
+    }
+    const now = performance.now();
+    if (!lastPt) {
+      lastPressure = 0.55;
+      return lastPressure;
+    }
+    const dt = Math.max(4, now - lastPt.t);
+    const dist = Math.hypot(pt.x - lastPt.x, pt.y - lastPt.y);
+    const vel = dist / dt;
+    const raw = Math.max(0.18, Math.min(0.85, 0.85 - vel * 0.24));
+    lastPressure = lastPressure * 0.65 + raw * 0.35;
+    return lastPressure;
   };
 
   const down = (e) => {
@@ -4115,75 +4462,127 @@ function initStudyInteraction() {
     const rail = document.getElementById("performerToolRail");
     const railOpen = rail && !rail.classList.contains("rail-collapsed");
     if (performanceMode === "concert" && !railOpen) return;
+
+    // Rechazo de Palma Nativo (Palm Rejection)
+    if (e.pointerType === "pen") strictPenMode = true;
+    if (strictPenMode && !fingerDrawAllowed && e.pointerType === "touch") return;
+
     resetToolRailInactivityTimer();
+    if (smartInkTimer) {
+      clearTimeout(smartInkTimer);
+      smartInkTimer = null;
+    }
     e.preventDefault();
+    try { canvas.setPointerCapture(e.pointerId); } catch (_) {}
+    activePointerId = e.pointerId;
+
     document.body.classList.add("writing-focus");
     document.getElementById("dockRevealHandle")?.classList.remove("hidden");
     document.getElementById("brushPopover")?.classList.add("hidden");
+
     const pt = getPt(e);
     pushStudyUndoSnapshot();
+
     if (studyTool === "stamp" && selectedStamp) {
       addMoldBadge(pt.x, pt.y, selectedStamp, inkColor);
       saveStudyAnnotationsForCurrentPage();
       return;
     }
+
+    if (studyTool === "eraser") {
+      drawing = true;
+      eraseAtPoint(pt);
+      return;
+    }
+
+    if (studyTool === "smarttext" && !smartBatchId) {
+      smartBatchId = `sb-${Date.now()}`;
+    }
+
+    const p = computePressure(e, pt);
+    lastPt = { x: pt.x, y: pt.y, p, t: performance.now() };
+    activeStroke = {
+      id: `st-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+      tool: studyTool,
+      color: studyTool === "marker" ? "#d4af37" : inkColor,
+      baseWidth: brushWidth,
+      opacity: brushOpacity,
+      smartBatchId: studyTool === "smarttext" ? smartBatchId : null,
+      points: [{ x: pt.x, y: pt.y, p }]
+    };
+
+    const key = getStudyPageKey();
+    if (!studyPageStrokes[key]) studyPageStrokes[key] = [];
+    studyPageStrokes[key].push(activeStroke);
+
+    const ctx = canvas.getContext("2d");
+    const baseW = applyStrokeContextStyle(ctx, activeStroke);
+    ctx.beginPath();
+    ctx.arc(pt.x, pt.y, calcDynamicWidth(baseW, p) / 2, 0, Math.PI * 2);
+    ctx.fillStyle = ctx.strokeStyle;
+    ctx.fill();
+    ctx.globalAlpha = 1;
+    ctx.globalCompositeOperation = "source-over";
     drawing = true;
-    last = pt;
   };
 
   const move = (e) => {
+    if (!drawing || e.pointerId !== activePointerId) return;
     const rail = document.getElementById("performerToolRail");
     const railOpen = rail && !rail.classList.contains("rail-collapsed");
-    if (!drawing || (performanceMode === "concert" && !railOpen)) return;
+    if (performanceMode === "concert" && !railOpen) return;
+    if (strictPenMode && !fingerDrawAllowed && e.pointerType === "touch") return;
+
     e.preventDefault();
     const pt = getPt(e);
-    const ctx = canvas.getContext("2d");
-    ctx.beginPath();
-    ctx.moveTo(last.x, last.y);
-    ctx.lineTo(pt.x, pt.y);
 
-    if (studyTool === "marker") {
-      ctx.globalAlpha = Math.min(0.45, brushOpacity * 0.45);
-      ctx.strokeStyle = "#d4af37";
-      ctx.lineWidth = Math.max(14, brushWidth * 5.5);
-    } else if (studyTool === "eraser") {
-      ctx.globalAlpha = 1;
-      ctx.globalCompositeOperation = "destination-out";
-      ctx.lineWidth = 26;
-    } else {
-      ctx.globalAlpha = brushOpacity;
-      ctx.globalCompositeOperation = "source-over";
-      ctx.strokeStyle = inkColor;
-      ctx.lineWidth = brushWidth;
+    if (studyTool === "eraser") {
+      eraseAtPoint(pt);
+      return;
     }
-    ctx.lineCap = "round";
-    ctx.stroke();
+    if (!activeStroke) return;
+
+    const p = computePressure(e, pt);
+    const nextPt = { x: pt.x, y: pt.y, p };
+    lastPt = { x: pt.x, y: pt.y, p, t: performance.now() };
+    activeStroke.points.push(nextPt);
+
+    // Renderizado incremental Bézier cuadrático (60-120 FPS sin redibujar PDF)
+    const pts = activeStroke.points;
+    const ctx = canvas.getContext("2d");
+    const baseW = applyStrokeContextStyle(ctx, activeStroke);
+    if (pts.length >= 3) {
+      const n = pts.length;
+      drawQuadraticSegment(ctx, pts[n - 3], pts[n - 2], pts[n - 1], baseW);
+    } else if (pts.length === 2) {
+      ctx.lineWidth = calcDynamicWidth(baseW, (pts[0].p + pts[1].p) / 2);
+      ctx.beginPath();
+      ctx.moveTo(pts[0].x, pts[0].y);
+      ctx.lineTo(pts[1].x, pts[1].y);
+      ctx.stroke();
+    }
     ctx.globalAlpha = 1;
     ctx.globalCompositeOperation = "source-over";
-    last = pt;
   };
 
-  const up = () => {
-    if (!drawing) return;
+  const up = (e) => {
+    if (!drawing || (activePointerId !== null && e.pointerId !== activePointerId)) return;
     drawing = false;
-    if (autoMold && studyTool === "pen") {
-      setTimeout(() => {
-        canvas.getContext("2d").clearRect(0, 0, canvas.width, canvas.height);
-        const word = moldWords[moldIndex++ % moldWords.length];
-        addMoldBadge(last.x, last.y, word, inkColor);
-        saveStudyAnnotationsForCurrentPage();
-      }, 280);
-    } else {
-      saveStudyAnnotationsForCurrentPage();
+    activePointerId = null;
+    activeStroke = null;
+    lastPt = null;
+    resetToolRailInactivityTimer();
+
+    if (studyTool === "smarttext") {
+      scheduleSmartInkBox();
     }
+    saveStudyAnnotationsForCurrentPage();
   };
 
-  canvas.addEventListener("mousedown", down);
-  canvas.addEventListener("mousemove", move);
-  window.addEventListener("mouseup", up);
-  canvas.addEventListener("touchstart", down, { passive: false });
-  canvas.addEventListener("touchmove", move, { passive: false });
-  window.addEventListener("touchend", up);
+  canvas.addEventListener("pointerdown", down);
+  canvas.addEventListener("pointermove", move);
+  canvas.addEventListener("pointerup", up);
+  canvas.addEventListener("pointercancel", up);
 
   // Gestos táctiles de swipe para pasar página en Modo Concierto
   if (stage) {
@@ -4206,15 +4605,17 @@ function initStudyInteraction() {
 }
 
 function addMoldBadge(x, y, text, color) {
-  const layer = document.getElementById("performerMoldLayer");
-  if (!layer) return;
-  const el = document.createElement("div");
-  el.className = "mold-item";
-  el.style.left = `${x}px`;
-  el.style.top = `${y}px`;
-  el.style.color = color;
-  el.textContent = text;
-  layer.appendChild(el);
+  const key = getStudyPageKey();
+  if (!studyPageMoldItems[key]) studyPageMoldItems[key] = [];
+  studyPageMoldItems[key].push({
+    id: `m-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+    x,
+    y,
+    text,
+    color: color || inkColor,
+    fontSize: 17.5
+  });
+  renderMoldLayer();
 }
 
 function confirmClearStudyLayer() {
@@ -4226,10 +4627,12 @@ function confirmClearStudyLayer() {
 }
 
 function clearStudyLayer() {
-  const canvas = document.getElementById("performerCanvas");
-  if (canvas) canvas.getContext("2d").clearRect(0, 0, canvas.width, canvas.height);
-  const ml = document.getElementById("performerMoldLayer");
-  if (ml) ml.innerHTML = "";
+  const key = getStudyPageKey();
+  studyPageStrokes[key] = [];
+  studyPageMoldItems[key] = [];
+  dismissSmartInkBox();
+  redrawStudyCanvas();
+  renderMoldLayer();
 }
 
 // ==========================================================================
@@ -5993,6 +6396,7 @@ window.addEventListener("DOMContentLoaded", async () => {
   loadScoreMetadataOverrides();
   loadFavoritesState();
   loadProgramsState();
+  loadStudyAnnotationsFromStorage();
   initBachGptWidget();
   renderLibrary();
   renderSetlistDrawer();

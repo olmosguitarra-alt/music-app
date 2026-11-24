@@ -12493,3 +12493,173 @@ body.mode-performer-active:not(.mode-concert-active) #mode-performer.is-study-mo
     max-width: none !important;
   }
 }
+
+
+/* ==========================================================================
+   V98 — SMART INK BOX, TARJETA EDITORIAL Y NOTAS ARRASTRABLES / EDITABLES
+   ========================================================================== */
+.smart-ink-box {
+  position: absolute;
+  border: 1.5px dashed var(--accent);
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--accent) 6%, transparent);
+  z-index: 18;
+  pointer-events: none;
+  transition: opacity 0.18s ease;
+}
+
+.smart-ink-box.hidden {
+  display: none;
+}
+
+.smart-ink-convert-btn,
+.smart-ink-dismiss-btn {
+  position: absolute;
+  top: -32px;
+  height: 26px;
+  border-radius: 14px;
+  border: 1px solid var(--glass-border);
+  background: var(--card-bg);
+  color: var(--text-primary);
+  font-size: 11.5px;
+  font-weight: 600;
+  cursor: pointer;
+  pointer-events: auto;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.2);
+}
+
+.smart-ink-convert-btn {
+  left: 0;
+  padding: 0 10px;
+  background: var(--accent);
+  color: var(--accent-ink);
+  border-color: var(--accent);
+}
+
+.smart-ink-dismiss-btn {
+  right: 0;
+  width: 26px;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.smart-ink-card {
+  position: absolute;
+  width: min(290px, calc(100% - 24px));
+  padding: 12px;
+  border-radius: 16px;
+  background: color-mix(in srgb, var(--card-bg) 92%, transparent);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border: 1px solid var(--glass-border);
+  box-shadow: 0 14px 36px rgba(0, 0, 0, 0.28);
+  z-index: 26;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.smart-ink-card.hidden {
+  display: none;
+}
+
+.smart-ink-card-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.smart-ink-close-x {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  border: none;
+  background: transparent;
+  color: var(--text-secondary);
+  cursor: pointer;
+}
+
+.smart-ink-input {
+  width: 100%;
+  height: 34px;
+  padding: 0 10px;
+  border-radius: 10px;
+  border: 1px solid var(--glass-border);
+  background: var(--bg-canvas);
+  color: var(--text-primary);
+  font-size: 13px;
+  font-family: "Georgia", serif;
+}
+
+.smart-ink-suggestions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+}
+
+.smart-sugg-chip {
+  height: 24px;
+  padding: 0 8px;
+  border-radius: 12px;
+  border: 1px solid var(--glass-border);
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: 11px;
+  font-style: italic;
+  font-family: "Georgia", serif;
+  cursor: pointer;
+}
+
+.smart-sugg-chip:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.smart-ink-card-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 6px;
+}
+
+.smart-ink-cancel-btn,
+.smart-ink-apply-btn {
+  height: 30px;
+  padding: 0 12px;
+  border-radius: 10px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.smart-ink-cancel-btn {
+  border: 1px solid var(--glass-border);
+  background: transparent;
+  color: var(--text-secondary);
+}
+
+.smart-ink-apply-btn {
+  border: none;
+  background: var(--accent);
+  color: var(--accent-ink);
+}
+
+/* Notas editoriales arrastrables y editables en Modo Estudio */
+#mode-performer.is-study-mode .mold-item {
+  pointer-events: auto;
+  cursor: grab;
+  user-select: none;
+  touch-action: none;
+}
+
+#mode-performer.is-study-mode .mold-item:active {
+  cursor: grabbing;
+}
+
+#mode-performer.is-concert-mode .mold-item {
+  pointer-events: none !important;
+}

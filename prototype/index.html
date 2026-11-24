@@ -11,7 +11,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:wght@600;700&display=swap" />
-  <link rel="stylesheet" href="styles.css?v=97" />
+  <link rel="stylesheet" href="styles.css?v=98" />
   <!-- Motores Oficiales para Renderizar (PDF.js) y Particionar/Editar PDFs Reales (pdf-lib) -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf-lib/1.17.1/pdf-lib.min.js"></script>
@@ -475,6 +475,35 @@
             <div id="performerSvg" class="svg-layer"></div>
             <canvas id="performerCanvas" class="draw-layer"></canvas>
             <div id="performerMoldLayer" class="mold-layer"></div>
+
+            <!-- SMART INK BOX (CAJA DELIMITADORA + ACCIÓN CONVERTIR) -->
+            <div class="smart-ink-box hidden" id="smartInkBoxOverlay">
+              <button type="button" class="smart-ink-convert-btn" onclick="openSmartInkCard()" title="Convertir escritura a texto editorial">
+                <span>✨ Convertir</span>
+              </button>
+              <button type="button" class="smart-ink-dismiss-btn" onclick="dismissSmartInkBox()" title="Descartar caja" aria-label="Cerrar">✕</button>
+            </div>
+
+            <!-- TARJETA FLOTANTE SMART INK (INPUT NATIVO + SUGERENCIAS MUSICALES) -->
+            <div class="smart-ink-card hidden" id="smartInkCard" onclick="event.stopPropagation()">
+              <div class="smart-ink-card-head">
+                <span>Texto editorial</span>
+                <button type="button" class="smart-ink-close-x" onclick="closeSmartInkCard()" aria-label="Cerrar">✕</button>
+              </div>
+              <input type="text" id="smartInkInput" class="smart-ink-input" inputmode="text" placeholder="Escribe o usa teclado manuscrito..." autocomplete="off" onkeydown="if(event.key==='Enter') confirmSmartInkText()" />
+              <div class="smart-ink-suggestions" id="smartInkSuggestions">
+                <button type="button" class="smart-sugg-chip" onclick="pickSmartInkSuggestion('Ritardando')">Ritardando</button>
+                <button type="button" class="smart-sugg-chip" onclick="pickSmartInkSuggestion('A tempo')">A tempo</button>
+                <button type="button" class="smart-sugg-chip" onclick="pickSmartInkSuggestion('Crescendo')">Crescendo</button>
+                <button type="button" class="smart-sugg-chip" onclick="pickSmartInkSuggestion('Diminuendo')">Diminuendo</button>
+                <button type="button" class="smart-sugg-chip" onclick="pickSmartInkSuggestion('Dolce')">Dolce</button>
+                <button type="button" class="smart-sugg-chip" onclick="pickSmartInkSuggestion('Espressivo')">Espressivo</button>
+              </div>
+              <div class="smart-ink-card-actions">
+                <button type="button" class="smart-ink-cancel-btn" onclick="closeSmartInkCard()">Cancelar</button>
+                <button type="button" class="smart-ink-apply-btn" onclick="confirmSmartInkText()">Insertar texto</button>
+              </div>
+            </div>
           </div>
 
           <div class="folio-footer" id="performerFolioFooter">
@@ -536,19 +565,29 @@
 
       <!-- RAIL DE HERRAMIENTAS PLEGABLE (MISMO ANCHO QUE EL BOTÓN, LISTA VERTICAL, AUTO-PLIEGUE 30s) -->
       <aside class="concepts-tool-rail rail-collapsed" id="performerToolRail">
-      <button class="rail-tool active" id="btnPen" onclick="setStudyTool('pen')" title="Pluma de trazo libre">
+      <button class="rail-tool active" id="btnPen" onclick="setStudyTool('pen')" title="Pluma Fuente (sensible a presión)">
         <svg viewBox="0 0 24 24" class="v-ico"><path d="M12 19l7-7 3 3-7 7-3-3z"/><path d="M18 13l-1.5-7.5L2 2l3.5 14.5L13 18l5-5z"/><path d="M2 2l7.586 7.586"/></svg>
         <span class="rail-label">Pluma</span>
       </button>
 
-      <button class="rail-tool" id="btnMarker" onclick="setStudyTool('marker')" title="Marcador de frases">
+      <button class="rail-tool" id="btnPencil" onclick="setStudyTool('pencil')" title="Lápiz de Grafito (opacidad 70%)">
+        <svg viewBox="0 0 24 24" class="v-ico"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/></svg>
+        <span class="rail-label">Lápiz</span>
+      </button>
+
+      <button class="rail-tool" id="btnMarker" onclick="setStudyTool('marker')" title="Resaltador Flotante">
         <svg viewBox="0 0 24 24" class="v-ico"><path d="m9 11-6 6v3h9l3-3"/><path d="m22 12-4.6 4.6a2 2 0 0 1-2.8 0l-5.2-5.2a2 2 0 0 1 0-2.8L14 4"/></svg>
         <span class="rail-label">Marcador</span>
       </button>
 
-      <button class="rail-tool" id="btnEraser" onclick="setStudyTool('eraser')" title="Borrador">
+      <button class="rail-tool" id="btnEraser" onclick="setStudyTool('eraser')" title="Borrador Inteligente">
         <svg viewBox="0 0 24 24" class="v-ico"><path d="m7 21-4.3-4.3c-1-1-1-2.5 0-3.4l9.6-9.6c1-1 2.5-1 3.4 0l5.6 5.6c1 1 1 2.5 0 3.4L13 21"/><path d="M22 21H7"/><path d="m5 11 9 9"/></svg>
         <span class="rail-label">Borrar</span>
+      </button>
+
+      <button class="rail-tool" id="btnSmartText" onclick="setStudyTool('smarttext')" title="Texto / Tinta Smart Ink">
+        <svg viewBox="0 0 24 24" class="v-ico"><polyline points="4 7 4 4 20 4 20 7"/><line x1="9" y1="20" x2="15" y2="20"/><line x1="12" y1="4" x2="12" y2="20"/></svg>
+        <span class="rail-label">Texto</span>
       </button>
 
       <div class="rail-divider"></div>
@@ -617,6 +656,20 @@
       <div class="brush-pop-section">
         <span class="brush-pop-label">Opacidad: <strong id="brushOpacityLabel">100%</strong></span>
         <input type="range" id="brushOpacityRange" min="25" max="100" step="5" value="100" oninput="setBrushOpacity(this.value)" />
+      </div>
+      <div class="brush-pop-section">
+        <span class="brush-pop-label">Modo borrador</span>
+        <div class="popover-segmented">
+          <button type="button" class="p-seg active" id="btnEraserStroke" onclick="setEraserMode('stroke', this)">Por trazo</button>
+          <button type="button" class="p-seg" id="btnEraserPixel" onclick="setEraserMode('pixel', this)">Precisión</button>
+        </div>
+      </div>
+      <div class="brush-pop-section">
+        <span class="brush-pop-label">Rechazo de palma</span>
+        <div class="popover-segmented">
+          <button type="button" class="p-seg active" id="btnPalmAuto" onclick="setFingerDrawAllowed(false, this)">Solo Stylus</button>
+          <button type="button" class="p-seg" id="btnPalmFinger" onclick="setFingerDrawAllowed(true, this)">Con dedo</button>
+        </div>
       </div>
     </div>
 
@@ -1004,6 +1057,6 @@
     <span class="pdf-loading-text">Cargando...</span>
   </div>
 
-  <script src="app.js?v=97"></script>
+  <script src="app.js?v=98"></script>
 </body>
 </html>
