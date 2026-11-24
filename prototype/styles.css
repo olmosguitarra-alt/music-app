@@ -11979,3 +11979,34 @@ body.concert-immersion #mode-performer.is-concert-mode .concert-only-bar {
     top: 20vh !important;
   }
 }
+
+
+/* ==========================================================================
+   V93 — DISPOSICIÓN VERTICAL ERGONÓMICA SUPERIOR IZQUIERDA (REGRESO -> ★ -> VISTA)
+   ========================================================================== */
+#mode-performer .performer-top-bar {
+  align-items: flex-start !important;
+}
+
+#mode-performer .perf-top-left {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
+}
+
+#mode-performer .perf-top-left-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+#mode-performer .fountain-pen-anchor {
+  top: max(128px, 22vh);
+}
+
+@media (max-width: 900px) {
+  #mode-performer .fountain-pen-anchor {
+    top: max(124px, 20vh);
+  }
+}

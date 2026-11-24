@@ -11,7 +11,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:wght@600;700&display=swap" />
-  <link rel="stylesheet" href="styles.css?v=92" />
+  <link rel="stylesheet" href="styles.css?v=93" />
   <!-- Motores Oficiales para Renderizar (PDF.js) y Particionar/Editar PDFs Reales (pdf-lib) -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf-lib/1.17.1/pdf-lib.min.js"></script>
@@ -394,12 +394,25 @@
     <!-- BARRA SUPERIOR SOBRIA (Única fuente de título + chips vivos) -->
     <header class="performer-top-bar study-tools" id="performerTopBar">
       <div class="perf-top-left">
-        <button type="button" class="perf-back-btn" onclick="switchMode('library')" title="Volver a Biblioteca" aria-label="Volver a Biblioteca">
-          <svg viewBox="0 0 24 24" class="v-ico" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
-          <span>Biblioteca</span>
+        <div class="perf-top-left-row">
+          <button type="button" class="perf-back-btn" onclick="switchMode('library')" title="Volver a Biblioteca" aria-label="Volver a Biblioteca">
+            <svg viewBox="0 0 24 24" class="v-ico" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+            <span>Biblioteca</span>
+          </button>
+          <button type="button" class="perf-util-btn perf-editor-shortcut" onclick="switchMode('editor')" title="Abrir en Editor de Partitura" aria-label="Editor">
+            <svg viewBox="0 0 24 24" class="v-ico" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8h9M3 12h6M3 16h13M3 20h18"/><path d="M13.5 14.5L19.5 4.5l2.5 1.5-6 10-3 1.5z"/></svg>
+          </button>
+        </div>
+
+        <button class="bookmark-star-btn perf-top-star" id="btnPerformerBookmark" onclick="togglePageBookmark()" title="Marcar página favorita" aria-label="Favorito de página">
+          ☆
         </button>
-        <button type="button" class="perf-util-btn perf-editor-shortcut" onclick="switchMode('editor')" title="Abrir en Editor de Partitura" aria-label="Editor">
-          <svg viewBox="0 0 24 24" class="v-ico" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8h9M3 12h6M3 16h13M3 20h18"/><path d="M13.5 14.5L19.5 4.5l2.5 1.5-6 10-3 1.5z"/></svg>
+
+        <!-- Selector de vista de página solo con iconos dinámicos -->
+        <button type="button" class="perf-util-btn perf-layout-btn" id="btnPerformerLayout" onclick="cyclePageLayout()" title="Vista: Página completa" aria-label="Vista: Página completa">
+          <span id="performerLayoutIcon" class="perf-layout-ico">
+            <svg viewBox="0 0 24 24" class="v-ico" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="3" width="14" height="18" rx="2"/><line x1="8" y1="8" x2="16" y2="8"/><line x1="8" y1="12" x2="16" y2="12"/><line x1="8" y1="16" x2="13" y2="16"/></svg>
+          </span>
         </button>
       </div>
 
@@ -442,16 +455,6 @@
             <button type="button" class="perf-chip-caret" onclick="toggleTunerPopover(event)" title="Cambiar afinación Hz" aria-label="Cambiar Hz">▾</button>
           </div>
 
-          <!-- Selector de vista de página solo con iconos dinámicos -->
-          <button type="button" class="perf-util-btn perf-layout-btn" id="btnPerformerLayout" onclick="cyclePageLayout()" title="Vista: Página completa" aria-label="Vista: Página completa">
-            <span id="performerLayoutIcon" class="perf-layout-ico">
-              <svg viewBox="0 0 24 24" class="v-ico" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="3" width="14" height="18" rx="2"/><line x1="8" y1="8" x2="16" y2="8"/><line x1="8" y1="12" x2="16" y2="12"/><line x1="8" y1="16" x2="13" y2="16"/></svg>
-            </span>
-          </button>
-
-          <button class="bookmark-star-btn perf-top-star" id="btnPerformerBookmark" onclick="togglePageBookmark()" title="Marcar página favorita" aria-label="Favorito de página">
-            ☆
-          </button>
         </div>
       </div>
     </header>
@@ -1010,6 +1013,6 @@
     <span class="pdf-loading-text">Cargando...</span>
   </div>
 
-  <script src="app.js?v=92"></script>
+  <script src="app.js?v=93"></script>
 </body>
 </html>
