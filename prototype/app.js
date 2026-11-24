@@ -3770,9 +3770,34 @@ function buildPortraitScoreSvg(activeSys = -1) {
 // 2. MODO ESTUDIO
 // ==========================================================================
 const stampProfiles = {
-  dynamics: ["ppp", "pp", "p", "mp", "mf", "f", "ff", "fff", "sfz", "sfp", "<", ">", "dolce", "espress.", "cant.", "sub."],
-  agogic: ["rit.", "rall.", "accel.", "a tempo", "𝄐", "𝄑", "//", "’", "𝄋", "𝄌", "D.C.", "Fine"],
-  articulation: ["•", "▾", "—", "•—", ">", "⋀", "tr~", "𝆝", "𝆞", "gliss."],
+  // DINÁMICAS (Intensidad y volumen sonoro exclusivamente)
+  dynamics: [
+    "ppp", "pp", "p", "mp", "mf", "f", "ff", "fff",
+    "sfz", "sfp", "fp", "rfz",
+    "<", ">", "sub. p", "sub. f"
+  ],
+
+  // AGÓGICA Y TEMPO (Velocidad, pulso y modificaciones de tiempo)
+  agogic: [
+    "rit.", "rall.", "accel.", "a tempo",
+    "meno mosso", "più mosso", "rubato", "ad lib.",
+    "𝄐", "𝄑", "//", "’",
+    "𝄋", "𝄌", "D.C.", "Fine"
+  ],
+
+  // EXPRESIÓN Y CARÁCTER
+  expression: [
+    "dolce", "espress.", "cantab.", "legato",
+    "pesante", "leggiero", "sotto voce", "marcato"
+  ],
+
+  // ARTICULACIÓN Y ACENTOS
+  articulation: [
+    "•", "▾", "—", "•—",
+    ">", "⋀", "tr~", "𝆝", "𝆞", "gliss."
+  ],
+
+  // FAMILIAS INSTRUMENTALES
   strings: ["⨅", "⋁", "0", "1", "2", "3", "4", "I Pos.", "II Pos.", "III Pos.", "IV Pos.", "V Pos.", "pizz.", "arco", "con sord.", "◇"],
   guitar: ["p", "i", "m", "a", "e", "1", "2", "3", "4", "0", "C.I", "C.II", "C.III", "C.IV", "C.V", "C.VI", "C.VII", "C.VIII", "C.IX", "½C", "①", "②", "③", "④", "⑤", "⑥", "rasg.", "apoy.", "tir.", "tamb."],
   piano: ["Ped.", "^", "*", "u.c.", "t.c.", "m.d.", "m.s.", "1", "2", "3", "4", "5"],
@@ -3804,15 +3829,16 @@ function setFingerDrawAllowed(allowed, btn) {
 }
 
 function switchStampTab(key, btn) {
-  document.querySelectorAll("#stampTabsCarousel .p-seg").forEach((t) => t.classList.remove("active"));
-  if (btn) btn.classList.add("active");
+  const sel = document.getElementById("stampCategorySelect");
+  if (sel && sel.value !== key) sel.value = key;
   const grid = document.getElementById("stampGrid");
   if (!grid) return;
   grid.innerHTML = (stampProfiles[key] || [])
     .map((st) => {
       const activeCls = selectedStamp === st && studyTool === "stamp" ? " active" : "";
+      const longAttr = st.length >= 6 ? ' data-long="true"' : "";
       const safe = st.replace(/'/g, "\\'");
-      return `<button type="button" class="stamp-btn${activeCls}" onclick="chooseStamp('${safe}', this)">${st}</button>`;
+      return `<button type="button" class="stamp-btn${activeCls}"${longAttr} onclick="chooseStamp('${safe}', this)">${st}</button>`;
     })
     .join("");
 }
@@ -3850,31 +3876,48 @@ function initStampPaletteDrag() {
   const pop = document.getElementById("stampPopover");
   const header = document.getElementById("stampPaletteHeader");
   if (!pop || !header) return;
-  let dragging = false;
-  let startX = 0;
-  let startY = 0;
-  let offsetX = 0;
-  let offsetY = 0;
 
-  header.addEventListener("pointerdown", (e) => {
+  let isDragging = false;
+  let startX = 0, startY = 0;
+  let initialLeft = 0, initialTop = 0;
+
+  header.onpointerdown = (e) => {
     if (e.target.closest("button")) return;
+    isDragging = true;
+    try { header.setPointerCapture(e.pointerId); } catch (_) {}
+
+    const rect = pop.getBoundingClientRect();
+    initialLeft = rect.left;
+    initialTop = rect.top;
+    startX = e.clientX;
+    startY = e.clientY;
     e.preventDefault();
-    header.setPointerCapture(e.pointerId);
-    dragging = true;
-    startX = e.clientX - offsetX;
-    startY = e.clientY - offsetY;
-  });
+  };
 
-  header.addEventListener("pointermove", (e) => {
-    if (!dragging) return;
-    offsetX = e.clientX - startX;
-    offsetY = e.clientY - startY;
-    pop.style.transform = `translate3d(${offsetX}px, ${offsetY}px, 0)`;
-  });
+  header.onpointermove = (e) => {
+    if (!isDragging) return;
+    const dx = e.clientX - startX;
+    const dy = e.clientY - startY;
 
-  const endDrag = () => { dragging = false; };
-  header.addEventListener("pointerup", endDrag);
-  header.addEventListener("pointercancel", endDrag);
+    const newX = Math.max(10, Math.min(window.innerWidth - pop.offsetWidth - 10, initialLeft + dx));
+    const newY = Math.max(10, Math.min(window.innerHeight - pop.offsetHeight - 10, initialTop + dy));
+
+    pop.style.left = `${newX}px`;
+    pop.style.top = `${newY}px`;
+    pop.style.right = "auto";
+    pop.style.bottom = "auto";
+    pop.style.transform = "none";
+  };
+
+  const stopDrag = (e) => {
+    if (isDragging) {
+      isDragging = false;
+      try { header.releasePointerCapture(e.pointerId); } catch (_) {}
+    }
+  };
+
+  header.onpointerup = stopDrag;
+  header.onpointercancel = stopDrag;
 }
 
 let brushWidth = 2.4;
@@ -3949,7 +3992,7 @@ function applyStrokeContextStyle(ctx, stroke) {
     return (stroke.baseWidth || 2.0) * 0.85;
   }
   ctx.globalCompositeOperation = "source-over";
-  ctx.globalAlpha = stroke.opacity ?? 1;
+  ctx.globalAlpha = Math.min(1.0, Math.max(0.1, stroke.opacity ?? 1.0));
   ctx.fillStyle = stroke.color || "#23426e";
   ctx.strokeStyle = stroke.color || "#23426e";
   return stroke.baseWidth || 2.4;
