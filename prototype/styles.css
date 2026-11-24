@@ -12759,3 +12759,22 @@ body.mode-performer-active:not(.mode-concert-active) #mode-performer.is-study-mo
   cursor: nwse-resize;
   touch-action: none;
 }
+
+
+/* ==========================================================================
+   V102 — INTEGRACIÓN VISUAL LIMPIA DEL TEXTO DE MOLDE (SIN FONDO NI BORDES)
+   ========================================================================== */
+.mold-item,
+.mold-item.editorial-note {
+  background: transparent !important;
+  border: 1px solid transparent !important;
+  box-shadow: none !important;
+  padding: 0 !important;
+}
+
+.mold-item.editorial-note.selected-mold {
+  padding: 4px 10px !important;
+  border: 1.5px dashed var(--accent) !important;
+  background: color-mix(in srgb, var(--card-bg) 72%, transparent) !important;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.16) !important;
+}

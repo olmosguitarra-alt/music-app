@@ -4624,6 +4624,176 @@ function dismissSmartInkBox() {
   smartInkBBox = null;
 }
 
+function tryApplyPenGesture(stroke) {
+  if (!stroke || !stroke.points || stroke.points.length === 0) return false;
+  if (stroke.tool !== "pen" && stroke.tool !== "pencil" && stroke.tool !== "smarttext") return false;
+
+  const canvas = document.getElementById("performerCanvas");
+  const layer = document.getElementById("performerMoldLayer");
+  if (!canvas || !layer) return false;
+
+  const key = getStudyPageKey();
+  const items = studyPageMoldItems[key] || [];
+  if (items.length === 0) return false;
+
+  const pts = stroke.points;
+  let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+  let pathLen = 0;
+  for (let i = 0; i < pts.length; i++) {
+    const p = pts[i];
+    if (p.x < minX) minX = p.x;
+    if (p.y < minY) minY = p.y;
+    if (p.x > maxX) maxX = p.x;
+    if (p.y > maxY) maxY = p.y;
+    if (i > 0) pathLen += Math.hypot(p.x - pts[i - 1].x, p.y - pts[i - 1].y);
+  }
+
+  const w = maxX - minX;
+  const h = maxY - minY;
+  const cx = (minX + maxX) / 2;
+  const cy = (minY + maxY) / 2;
+  const start = pts[0];
+  const end = pts[pts.length - 1];
+  const dxTotal = end.x - start.x;
+  const dyTotal = end.y - start.y;
+
+  // Contar cambios de dirección horizontal (para Gesto 1: Zigzag)
+  let hReversals = 0;
+  let lastDir = 0;
+  for (let i = 1; i < pts.length; i++) {
+    const dx = pts[i].x - pts[i - 1].x;
+    if (Math.abs(dx) < 2.5) continue;
+    const dir = dx > 0 ? 1 : -1;
+    if (lastDir !== 0 && dir !== lastDir) hReversals++;
+    lastDir = dir;
+  }
+
+  const cRect = canvas.getBoundingClientRect();
+  const moldEls = Array.from(layer.querySelectorAll(".mold-item"));
+
+  for (const el of moldEls) {
+    const r = el.getBoundingClientRect();
+    const box = {
+      left: r.left - cRect.left,
+      top: r.top - cRect.top,
+      right: r.right - cRect.left,
+      bottom: r.bottom - cRect.top,
+      width: Math.max(12, r.width),
+      height: Math.max(12, r.height)
+    };
+
+    const margin = 16;
+    const overlaps =
+      maxX >= box.left - margin &&
+      minX <= box.right + margin &&
+      maxY >= box.top - margin &&
+      minY <= box.bottom + margin;
+    if (!overlaps) continue;
+
+    const item = items.find((m) => m.id === el.dataset.moldId);
+    if (!item) continue;
+
+    // Gesto 1: Tachar para Borrar (Scratch-out / Zigzag horizontal >= 2 inversiones)
+    if (hReversals >= 2 && w >= 16) {
+      pushStudyUndoSnapshot();
+      studyPageMoldItems[key] = items.filter((m) => m.id !== item.id);
+      if (selectedMoldId === item.id) selectedMoldId = null;
+      renderMoldLayer();
+      saveStudyAnnotationsForCurrentPage();
+      return true;
+    }
+
+    // Gesto 2: Insertar Espacio (Línea vertical descendente | entre letras)
+    if (h >= 12 && h > w * 1.75 && dyTotal > 8 && cx > box.left + 4 && cx < box.right - 4) {
+      const ratio = Math.max(0.05, Math.min(0.95, (cx - box.left) / box.width));
+      const idx = Math.round(ratio * item.text.length);
+      if (idx > 0 && idx < item.text.length && item.text[idx - 1] !== " " && item.text[idx] !== " ") {
+        pushStudyUndoSnapshot();
+        item.text = item.text.slice(0, idx) + " " + item.text.slice(idx);
+        renderMoldLayer();
+        saveStudyAnnotationsForCurrentPage();
+        return true;
+      }
+    }
+
+    // Gesto 3: Añadir Acentos (Pequeña línea oblicua descendente ´ sobre una vocal)
+    if (pathLen >= 5 && pathLen <= 28 && w >= 2 && h >= 2 && cy <= box.top + box.height * 0.55) {
+      const ratio = Math.max(0, Math.min(1, (cx - box.left) / box.width));
+      const approxIdx = Math.min(item.text.length - 1, Math.max(0, Math.floor(ratio * item.text.length)));
+      const accentMap = { a: "á", e: "é", i: "í", o: "ó", u: "ú", A: "Á", E: "É", I: "Í", O: "Ó", U: "Ú" };
+      let bestIdx = -1;
+      let bestDist = Infinity;
+      for (let i = 0; i < item.text.length; i++) {
+        if (accentMap[item.text[i]]) {
+          const d = Math.abs(i - approxIdx);
+          if (d <= 2 && d < bestDist) {
+            bestDist = d;
+            bestIdx = i;
+          }
+        }
+      }
+      if (bestIdx !== -1) {
+        pushStudyUndoSnapshot();
+        item.text = item.text.slice(0, bestIdx) + accentMap[item.text[bestIdx]] + item.text.slice(bestIdx + 1);
+        renderMoldLayer();
+        saveStudyAnnotationsForCurrentPage();
+        return true;
+      }
+    }
+
+    // Gesto 4: Puntuación Directa (. tap corto o , pequeño arco descendente al final)
+    if (cx >= box.right - 14 && cx <= box.right + 22) {
+      if (Math.max(w, h) < 4.5 && pts.length <= 4) {
+        if (!item.text.endsWith(".")) {
+          pushStudyUndoSnapshot();
+          item.text = `${item.text}.`;
+          renderMoldLayer();
+          saveStudyAnnotationsForCurrentPage();
+          return true;
+        }
+      } else if (h >= 5 && h <= 20 && w <= 12 && dyTotal > 3) {
+        if (!item.text.endsWith(",")) {
+          pushStudyUndoSnapshot();
+          item.text = `${item.text},`;
+          renderMoldLayer();
+          saveStudyAnnotationsForCurrentPage();
+          return true;
+        }
+      }
+    }
+
+    // Gesto 5: Unir Palabras (Arco inferior ‿ por debajo de dos palabras separadas)
+    if (w >= 14 && cy >= box.bottom - 10 && item.text.includes(" ")) {
+      const midPt = pts[Math.floor(pts.length / 2)];
+      const endAvgY = (start.y + end.y) / 2;
+      if (midPt && midPt.y > endAvgY + 1.5) {
+        const spaceIndices = [];
+        for (let i = 0; i < item.text.length; i++) {
+          if (item.text[i] === " ") spaceIndices.push(i);
+        }
+        const targetPos = Math.round(((cx - box.left) / box.width) * item.text.length);
+        let nearestSpace = spaceIndices[0];
+        let bestD = Infinity;
+        for (const si of spaceIndices) {
+          const d = Math.abs(si - targetPos);
+          if (d < bestD) {
+            bestD = d;
+            nearestSpace = si;
+          }
+        }
+        if (typeof nearestSpace === "number") {
+          pushStudyUndoSnapshot();
+          item.text = item.text.slice(0, nearestSpace) + item.text.slice(nearestSpace + 1);
+          renderMoldLayer();
+          saveStudyAnnotationsForCurrentPage();
+          return true;
+        }
+      }
+    }
+  }
+  return false;
+}
+
 function initStudyInteraction() {
   const canvas = document.getElementById("performerCanvas");
   const stage = document.getElementById("performerStage");
@@ -4765,16 +4935,30 @@ function initStudyInteraction() {
     activePointerId = null;
 
     if (activeStroke) {
+      const completed = activeStroke;
+      activeStroke = null;
+
+      if (tryApplyPenGesture(completed)) {
+        if (smartInkTimer) {
+          clearTimeout(smartInkTimer);
+          smartInkTimer = null;
+        }
+        smartBatchId = null;
+        redrawStudyCanvas();
+        lastPt = null;
+        resetToolRailInactivityTimer();
+        return;
+      }
+
       const key = getStudyPageKey();
       if (!studyPageStrokes[key]) studyPageStrokes[key] = [];
-      studyPageStrokes[key].push(activeStroke);
+      studyPageStrokes[key].push(completed);
 
       const cache = ensureCommittedLayer(canvas.width, canvas.height);
-      renderStrokeToCtx(cache.getContext("2d"), activeStroke);
+      renderStrokeToCtx(cache.getContext("2d"), completed);
       const ctx = canvas.getContext("2d");
       ctx.clearRect(0, 0, canvas.width, canvas.height);
       ctx.drawImage(cache, 0, 0);
-      activeStroke = null;
     }
 
     lastPt = null;
