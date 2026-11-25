@@ -4406,16 +4406,27 @@ function renderStudyPageScrubber() {
   const fill = document.getElementById("scrubberFill");
   const bmContainer = document.getElementById("scrubberBookmarks");
   const rng = document.getElementById("scrubberRangeInput");
+  const cFill = document.getElementById("concertProgressFill");
+  const cThumb = document.getElementById("concertProgressThumb");
+  const cInput = document.getElementById("concertProgressInput");
+  const cLabel = document.getElementById("concertProgressLabel");
 
+  const pct = total <= 1 ? 100 : ((pageNum - 1) / (total - 1)) * 100;
   if (pill) pill.textContent = `Pág. ${pageNum} / ${total}`;
   if (rng) {
     rng.max = String(total);
     rng.value = String(pageNum);
   }
-  if (fill) {
-    const pct = total <= 1 ? 100 : ((pageNum - 1) / (total - 1)) * 100;
-    fill.style.width = `${Math.max(2, pct)}%`;
+  if (fill) fill.style.width = `${Math.max(2, pct)}%`;
+
+  if (cLabel) cLabel.textContent = `${pageNum} / ${total}`;
+  if (cInput) {
+    cInput.max = String(total);
+    cInput.value = String(pageNum);
   }
+  if (cFill) cFill.style.width = `${Math.max(2, pct)}%`;
+  if (cThumb) cThumb.style.left = `${pct}%`;
+
   if (bmContainer) {
     const sId = activeScore ? activeScore.id : 1;
     const bms = studyBookmarks[sId] || new Set();
@@ -4434,10 +4445,17 @@ function previewScrubberPage(val) {
   const pill = document.getElementById("scrubberPagePill");
   const fill = document.getElementById("scrubberFill");
   const tip = document.getElementById("scrubberHoverTip");
+  const cFill = document.getElementById("concertProgressFill");
+  const cThumb = document.getElementById("concertProgressThumb");
+  const cLabel = document.getElementById("concertProgressLabel");
   const pct = total <= 1 ? 100 : ((target - 1) / (total - 1)) * 100;
 
   if (pill) pill.textContent = `Pág. ${target} / ${total}`;
   if (fill) fill.style.width = `${Math.max(2, pct)}%`;
+  if (cLabel) cLabel.textContent = `${target} / ${total}`;
+  if (cFill) cFill.style.width = `${Math.max(2, pct)}%`;
+  if (cThumb) cThumb.style.left = `${pct}%`;
+  if (performanceMode === "concert") scheduleConcertAutoHide();
   if (tip) {
     tip.textContent = `Pág. ${target}`;
     tip.style.left = `${pct}%`;
@@ -5240,7 +5258,7 @@ function initStudyInteraction() {
   canvas.addEventListener("pointerup", up);
   canvas.addEventListener("pointercancel", up);
 
-  // Gestos táctiles de swipe para pasar página en Modo Concierto (cuando no está escribiendo)
+  // Gestos táctiles en Modo Concierto: swipe lateral (página) y swipe desde la base (emerger HUD)
   if (stage) {
     let swipeStartX = 0;
     let swipeStartY = 0;
@@ -5253,6 +5271,12 @@ function initStudyInteraction() {
       if (performanceMode !== "concert" || isWritingAllowed() || e.changedTouches.length !== 1) return;
       const dx = e.changedTouches[0].clientX - swipeStartX;
       const dy = e.changedTouches[0].clientY - swipeStartY;
+      // Deslizar desde la base hacia arriba revela el HUD de Concierto
+      if (swipeStartY >= window.innerHeight - 90 && dy < -32 && Math.abs(dy) > Math.abs(dx)) {
+        document.body.classList.remove("concert-immersion");
+        scheduleConcertAutoHide();
+        return;
+      }
       if (Math.abs(dx) > 55 && Math.abs(dx) > Math.abs(dy) * 1.4) {
         turnPage(dx < 0 ? 1 : -1);
       }
@@ -5309,6 +5333,16 @@ function triggerPageTurnFlash(dir) {
   setTimeout(() => el.classList.remove("active"), 180);
 }
 
+function triggerFolioTurnAnimation(dir) {
+  const sheet = document.getElementById("performerSheet");
+  if (!sheet) return;
+  const cls = dir < 0 ? "folio-turning-prev" : "folio-turning-next";
+  sheet.classList.remove("folio-turning-prev", "folio-turning-next");
+  void sheet.offsetWidth;
+  sheet.classList.add(cls);
+  setTimeout(() => sheet.classList.remove(cls), 190);
+}
+
 function showConcertPageToast() {
   if (performanceMode !== "concert") return;
   const toast = document.getElementById("performerPageToast");
@@ -5317,7 +5351,7 @@ function showConcertPageToast() {
   toast.textContent = `${pageNum} / ${total}`;
   toast.classList.remove("hidden");
   if (pageToastTimer) clearTimeout(pageToastTimer);
-  pageToastTimer = setTimeout(() => toast.classList.add("hidden"), 1300);
+  pageToastTimer = setTimeout(() => toast.classList.add("hidden"), 1200);
 }
 
 function syncHalfPageVisual() {
@@ -5331,6 +5365,7 @@ async function turnPage(dir) {
   saveStudyAnnotationsForCurrentPage();
   resetFolioZoom();
   triggerPageTurnFlash(dir);
+  triggerFolioTurnAnimation(dir);
   const total = activeScore.pageCount || 10;
 
   // Media Pág real: avanza primero mitad superior -> mitad inferior -> siguiente página
@@ -5419,15 +5454,27 @@ function scheduleConcertAutoHide() {
     if (performanceMode === "concert") {
       document.body.classList.add("concert-immersion");
     }
-  }, 3200);
+  }, 3500);
 }
 
 function handlePerformerStageTap(e) {
   if (performanceMode !== "concert" || isWritingAllowed()) return;
-  if (e.target.closest("button, .floating-bottom-bar, .concert-exit-overlay")) {
+  if (e.target.closest("button, .floating-bottom-bar, .concert-exit-overlay, .concert-audio-satellite")) {
     scheduleConcertAutoHide();
     return;
   }
+
+  // En modo concierto: Lateral izquierdo (<= 30%) retrocede, Centro (30% - 62%) revela/oculta HUD, Lateral derecho (> 62%) avanza
+  const xRatio = (e.clientX || 0) / Math.max(1, window.innerWidth);
+  if (xRatio < 0.30) {
+    turnPage(-1);
+    return;
+  }
+  if (xRatio > 0.62) {
+    turnPage(1);
+    return;
+  }
+
   const willShow = document.body.classList.contains("concert-immersion");
   document.body.classList.toggle("concert-immersion", !willShow);
   if (willShow) {

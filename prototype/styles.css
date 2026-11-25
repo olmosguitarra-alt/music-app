@@ -13212,3 +13212,253 @@ body.mode-performer-active:not(.mode-concert-active) #bottomNavDock .bottom-mode
   border-radius: 14px;
   font-size: 11.5px;
 }
+
+
+/* ==========================================================================
+   V107 — SECUENCIA LINEAL DE CONCIERTO, CABECERA SIMÉTRICA ([ ← Ensayo ] / Pluma)
+          Y BOTÓN SATÉLITE INDEPENDIENTE DE ESCUCHA ACTIVA (VERDE ESMERALDA)
+   ========================================================================== */
+
+/* 1. Cabecera Superior en Modo Concierto: [ ← Ensayo ] Izquierda | Pluma Derecha */
+#mode-performer.is-concert-mode .concert-exit-overlay {
+  top: max(14px, env(safe-area-inset-top)) !important;
+  left: 16px !important;
+  right: auto !important;
+}
+
+#mode-performer.is-concert-mode .fountain-pen-anchor {
+  top: max(14px, env(safe-area-inset-top)) !important;
+  right: 16px !important;
+  left: auto !important;
+  transition: opacity 0.24s ease, transform 0.24s ease;
+}
+
+#mode-performer.is-concert-mode #brushPopover {
+  left: auto !important;
+  right: 62px !important;
+  top: max(14px, env(safe-area-inset-top)) !important;
+}
+
+/* En reposo (inmersión de escenario), ocultar también el botón de pluma si no está desplegado */
+body.concert-immersion #mode-performer.is-concert-mode:not(.rail-open-drawing) .fountain-pen-anchor {
+  opacity: 0 !important;
+  pointer-events: none !important;
+  transform: translateY(-12px) !important;
+}
+
+/* 2. Barra Inferior Lineal en Modo Concierto */
+#mode-performer.is-concert-mode #concertBottomBar.concert-linear-capsule {
+  bottom: max(14px, env(safe-area-inset-bottom)) !important;
+  left: 50% !important;
+  transform: translateX(-50%) !important;
+  height: 38px !important;
+  padding: 4px 10px !important;
+  gap: 6px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  max-width: calc(100vw - 20px) !important;
+  white-space: nowrap;
+}
+
+body.concert-immersion #mode-performer.is-concert-mode #concertBottomBar.concert-linear-capsule {
+  opacity: 0 !important;
+  pointer-events: none !important;
+  transform: translate(-50%, 18px) !important;
+}
+
+.concert-macro-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  height: 28px;
+  padding: 0 9px;
+  border-radius: 14px;
+  border: none;
+  background: transparent;
+  color: var(--text-primary);
+  font-size: 11.5px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.16s ease, color 0.16s ease;
+}
+
+.concert-macro-btn:hover {
+  background: color-mix(in srgb, var(--accent) 14%, transparent);
+  color: var(--accent);
+}
+
+.concert-macro-btn .v-ico {
+  width: 13px;
+  height: 13px;
+}
+
+.concert-micro-btn {
+  width: 28px !important;
+  height: 28px !important;
+  border-radius: 50% !important;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.concert-progress-unit {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 10px;
+  height: 24px;
+  border-left: 1px solid color-mix(in srgb, var(--glass-border) 75%, transparent);
+  border-right: 1px solid color-mix(in srgb, var(--glass-border) 75%, transparent);
+}
+
+.concert-progress-track-wrap {
+  position: relative;
+  width: clamp(92px, 22vw, 190px);
+  height: 20px;
+  display: flex;
+  align-items: center;
+}
+
+.concert-progress-track {
+  position: relative;
+  width: 100%;
+  height: 3.5px;
+  border-radius: 99px;
+  background: color-mix(in srgb, var(--text-secondary) 25%, transparent);
+}
+
+.concert-progress-fill {
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  border-radius: 99px;
+  background: var(--accent);
+  transition: width 0.18s ease;
+}
+
+.concert-progress-thumb {
+  position: absolute;
+  top: 50%;
+  left: 0%;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--accent);
+  border: 1.5px solid var(--card-bg);
+  transform: translate(-50%, -50%);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.28);
+  transition: left 0.18s ease;
+  pointer-events: none;
+}
+
+.concert-progress-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-primary);
+  min-width: 36px;
+  text-align: center;
+}
+
+/* 3. Botón Satélite Independiente de Escucha Activa */
+.concert-audio-satellite {
+  position: fixed;
+  bottom: calc(max(14px, env(safe-area-inset-bottom)) + 46px);
+  right: max(16px, calc(50vw - 235px));
+  height: 32px;
+  padding: 0 12px 0 10px;
+  border-radius: 18px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: color-mix(in srgb, var(--card-bg) 46%, transparent) !important;
+  backdrop-filter: blur(14px) saturate(145%);
+  -webkit-backdrop-filter: blur(14px) saturate(145%);
+  border: 1px solid color-mix(in srgb, var(--glass-border) 80%, transparent);
+  color: var(--text-primary);
+  font-size: 11.5px;
+  font-weight: 600;
+  cursor: pointer;
+  z-index: 86;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.18);
+  transition: opacity 0.24s ease, transform 0.24s ease, border-color 0.22s ease, background 0.22s ease, box-shadow 0.22s ease, color 0.22s ease;
+}
+
+.concert-audio-satellite .sat-mic-ico {
+  width: 13.5px;
+  height: 13.5px;
+}
+
+.concert-audio-satellite .pulse-ring {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--text-secondary);
+  opacity: 0.45;
+  transition: background 0.2s ease, box-shadow 0.2s ease, opacity 0.2s ease;
+}
+
+/* Estado Activo: Respiración luminosa en verde esmeralda (#2e7d32 / #4caf50) */
+.concert-audio-satellite.listening {
+  border-color: #4caf50 !important;
+  background: color-mix(in srgb, #2e7d32 26%, var(--card-bg)) !important;
+  color: #4caf50 !important;
+  animation: emeraldAudioPulse 2.1s infinite ease-in-out;
+}
+
+.concert-audio-satellite.listening .pulse-ring {
+  background: #4caf50;
+  opacity: 1;
+  box-shadow: 0 0 8px #4caf50;
+}
+
+@keyframes emeraldAudioPulse {
+  0%, 100% {
+    box-shadow: 0 0 0 1px rgba(76, 175, 80, 0.24), 0 6px 20px rgba(46, 125, 50, 0.26);
+  }
+  50% {
+    box-shadow: 0 0 0 5px rgba(76, 175, 80, 0.18), 0 8px 26px rgba(76, 175, 80, 0.38);
+  }
+}
+
+body.concert-immersion #mode-performer.is-concert-mode .concert-audio-satellite {
+  opacity: 0 !important;
+  pointer-events: none !important;
+  transform: translateY(14px) !important;
+}
+
+/* 4. Animación suave de paso de folio */
+@keyframes folioTurnNext {
+  0% { opacity: 0.82; transform: translateX(10px); }
+  100% { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes folioTurnPrev {
+  0% { opacity: 0.82; transform: translateX(-10px); }
+  100% { opacity: 1; transform: translateX(0); }
+}
+
+.score-folio.folio-turning-next {
+  animation: folioTurnNext 0.18s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.score-folio.folio-turning-prev {
+  animation: folioTurnPrev 0.18s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+@media (max-width: 600px) {
+  .concert-macro-btn .macro-btn-lbl {
+    display: none;
+  }
+  .concert-macro-btn {
+    padding: 0 7px;
+  }
+  .concert-progress-track-wrap {
+    width: clamp(84px, 30vw, 140px);
+  }
+  .concert-audio-satellite {
+    right: 12px;
+    bottom: calc(max(12px, env(safe-area-inset-bottom)) + 44px);
+  }
+}
