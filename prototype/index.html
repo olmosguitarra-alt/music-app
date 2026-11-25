@@ -11,7 +11,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:wght@600;700&display=swap" />
-  <link rel="stylesheet" href="styles.css?v=107" />
+  <link rel="stylesheet" href="styles.css?v=108" />
   <!-- Motores Oficiales para Renderizar (PDF.js) y Particionar/Editar PDFs Reales (pdf-lib) -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf-lib/1.17.1/pdf-lib.min.js"></script>
@@ -708,33 +708,27 @@
       <span id="audioFollowLabel">Escucha</span>
     </button>
 
-    <!-- BARRA INFERIOR DE NAVEGACIÓN LINEAL (CÁPSULA CONCIERTO) -->
-    <!-- Orden exacto: [ ⏮ Obra ant. ] [ ‹ Pág. ant. ] [ ═══●═══ 3/10 ] [ Pág. sig. › ] [ Sig. obra ⏭ ] -->
+    <!-- BARRA INFERIOR DE NAVEGACIÓN LINEAL EN CONCIERTO (MISMA DISPOSICIÓN QUE MODO ENSAYO) -->
     <div class="glass-pill floating-bottom-bar concert-only-bar concert-linear-capsule" id="concertBottomBar">
       <button type="button" class="bar-token-btn concert-macro-btn" id="btnPrevProgramPiece" onclick="stepProgramPiece(-1)" title="Obra anterior del programa" aria-label="Obra anterior">
         <svg viewBox="0 0 24 24" class="v-ico" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><polygon points="19 20 9 12 19 4 19 20"/><line x1="5" y1="19" x2="5" y2="5"/></svg>
         <span class="macro-btn-lbl">Obra ant.</span>
       </button>
 
-      <button type="button" class="bar-icon-btn concert-micro-btn" onclick="turnPage(-1)" title="Página anterior" aria-label="Página anterior">
-        <svg viewBox="0 0 24 24" class="v-ico"><polyline points="15 18 9 12 15 6"/></svg>
-      </button>
-
-      <div class="concert-progress-unit">
-        <div class="concert-progress-track-wrap">
-          <div class="concert-progress-track" id="concertProgressTrack">
-            <div class="concert-progress-fill" id="concertProgressFill"></div>
-            <span class="concert-progress-thumb" id="concertProgressThumb"></span>
+      <div class="performer-scrubber-bar concert-scrubber-mirror">
+        <button type="button" class="scrub-nav-btn" onclick="turnPage(-1)" title="Página anterior" aria-label="Página anterior">‹</button>
+        <span class="scrubber-page-pill" id="concertProgressLabel">Pág. 1 / 10</span>
+        <div class="scrubber-track-wrap">
+          <div class="scrubber-track" id="concertProgressTrack">
+            <div class="scrubber-fill" id="concertProgressFill"></div>
+            <div class="scrubber-bookmarks" id="concertBookmarks"></div>
           </div>
           <input type="range" class="scrubber-range-input" id="concertProgressInput" min="1" max="10" step="1" value="1"
-                 oninput="previewScrubberPage(this.value)" onchange="commitScrubberPage(this.value)" aria-label="Progreso de página en concierto" />
+                 oninput="previewScrubberPage(this.value)" onchange="commitScrubberPage(this.value)" aria-label="Selector de página en concierto" />
+          <span class="scrubber-hover-tip hidden" id="concertHoverTip">Pág. 1</span>
         </div>
-        <span class="concert-progress-label" id="concertProgressLabel">1 / 10</span>
+        <button type="button" class="scrub-nav-btn" onclick="turnPage(1)" title="Siguiente página" aria-label="Siguiente página">›</button>
       </div>
-
-      <button type="button" class="bar-icon-btn concert-micro-btn" onclick="turnPage(1)" title="Siguiente página" aria-label="Siguiente página">
-        <svg viewBox="0 0 24 24" class="v-ico"><polyline points="9 18 15 12 9 6"/></svg>
-      </button>
 
       <button type="button" class="bar-token-btn concert-macro-btn" id="btnNextProgramPiece" onclick="stepProgramPiece(1)" title="Siguiente obra del programa" aria-label="Siguiente obra">
         <span class="macro-btn-lbl">Sig. obra</span>
@@ -1055,6 +1049,6 @@
     <span class="pdf-loading-text">Cargando...</span>
   </div>
 
-  <script src="app.js?v=107"></script>
+  <script src="app.js?v=108"></script>
 </body>
 </html>

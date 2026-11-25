@@ -2271,16 +2271,28 @@ function toggleSettingsDrawer(forceState) {
   drw.classList.toggle("hidden", !shouldOpen);
 }
 
+function resetLibraryViewportScroll() {
+  ["librarySlidesViewport", "mode-library"].forEach((id) => {
+    const el = document.getElementById(id);
+    if (el) el.scrollLeft = 0;
+  });
+  document.querySelectorAll(".library-workspace, .library-stage, .catalog-slide").forEach((el) => {
+    el.scrollLeft = 0;
+  });
+}
+
 function openProgramsSlideView() {
   refreshProgramRecentSnapshot();
   renderSetlistDrawer();
   document.getElementById("librarySlidesViewport")?.classList.add("is-programs-active");
   document.body.classList.add("programs-slide-open");
+  resetLibraryViewportScroll();
 }
 
 function closeProgramsSlideView() {
   document.getElementById("librarySlidesViewport")?.classList.remove("is-programs-active");
   document.body.classList.remove("programs-slide-open");
+  resetLibraryViewportScroll();
 }
 
 function revealBottomNavDock() {
@@ -4419,7 +4431,7 @@ function renderStudyPageScrubber() {
   }
   if (fill) fill.style.width = `${Math.max(2, pct)}%`;
 
-  if (cLabel) cLabel.textContent = `${pageNum} / ${total}`;
+  if (cLabel) cLabel.textContent = `Pág. ${pageNum} / ${total}`;
   if (cInput) {
     cInput.max = String(total);
     cInput.value = String(pageNum);
@@ -4427,7 +4439,8 @@ function renderStudyPageScrubber() {
   if (cFill) cFill.style.width = `${Math.max(2, pct)}%`;
   if (cThumb) cThumb.style.left = `${pct}%`;
 
-  if (bmContainer) {
+  const cBmContainer = document.getElementById("concertBookmarks");
+  if (bmContainer || cBmContainer) {
     const sId = activeScore ? activeScore.id : 1;
     const bms = studyBookmarks[sId] || new Set();
     let ticks = "";
@@ -4435,7 +4448,8 @@ function renderStudyPageScrubber() {
       const pos = total <= 1 ? 50 : ((p - 1) / (total - 1)) * 100;
       ticks += `<span class="scrubber-bm-tick" style="left:${pos}%"></span>`;
     });
-    bmContainer.innerHTML = ticks;
+    if (bmContainer) bmContainer.innerHTML = ticks;
+    if (cBmContainer) cBmContainer.innerHTML = ticks;
   }
 }
 
@@ -4452,7 +4466,7 @@ function previewScrubberPage(val) {
 
   if (pill) pill.textContent = `Pág. ${target} / ${total}`;
   if (fill) fill.style.width = `${Math.max(2, pct)}%`;
-  if (cLabel) cLabel.textContent = `${target} / ${total}`;
+  if (cLabel) cLabel.textContent = `Pág. ${target} / ${total}`;
   if (cFill) cFill.style.width = `${Math.max(2, pct)}%`;
   if (cThumb) cThumb.style.left = `${pct}%`;
   if (performanceMode === "concert") scheduleConcertAutoHide();
@@ -4461,10 +4475,17 @@ function previewScrubberPage(val) {
     tip.style.left = `${pct}%`;
     tip.classList.remove("hidden");
   }
+  const cTip = document.getElementById("concertHoverTip");
+  if (cTip) {
+    cTip.textContent = `Pág. ${target}`;
+    cTip.style.left = `${pct}%`;
+    cTip.classList.remove("hidden");
+  }
 }
 
 function commitScrubberPage(val) {
   document.getElementById("scrubberHoverTip")?.classList.add("hidden");
+  document.getElementById("concertHoverTip")?.classList.add("hidden");
   const target = parseInt(val, 10) || 1;
   jumpToPage(target);
 }
@@ -6011,10 +6032,13 @@ function renderSetlistDrawer() {
       `<button type="button" class="mobile-prog-pill mobile-prog-pill-new" onclick="toggleNewProgramInput(true)">${plusSvg}<span>Nuevo</span></button>`;
 
     const activeChip = mobilePillsEl.querySelector(".mobile-prog-pill.active");
-    if (activeChip) {
+    if (activeChip && document.body.classList.contains("programs-slide-open")) {
       requestAnimationFrame(() => {
         try {
-          activeChip.scrollIntoView({ behavior: "smooth", inline: "nearest", block: "nearest" });
+          mobilePillsEl.scrollLeft = Math.max(
+            0,
+            activeChip.offsetLeft - mobilePillsEl.clientWidth / 2 + activeChip.clientWidth / 2
+          );
         } catch (_) {}
       });
     }

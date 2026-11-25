@@ -13462,3 +13462,65 @@ body.concert-immersion #mode-performer.is-concert-mode .concert-audio-satellite 
     bottom: calc(max(12px, env(safe-area-inset-bottom)) + 44px);
   }
 }
+
+
+/* ==========================================================================
+   V108 — FIX DESPLAZAMIENTO INICIAL EN BIBLIOTECA Y MISMA DISPOSICIÓN DE
+          CÁPSULA INFERIOR EN CONCIERTO Y ENSAYO
+   ========================================================================== */
+
+/* 1. Evitar que .programs-slide fuera de pantalla desplace scrollLeft de Biblioteca */
+.library-slides-viewport:not(.is-programs-active) .programs-slide {
+  visibility: hidden !important;
+  pointer-events: none !important;
+}
+
+/* 2. Cápsula inferior de Concierto con idéntica disposición que Modo Ensayo */
+#mode-performer.is-concert-mode #concertBottomBar.concert-linear-capsule {
+  bottom: max(12px, env(safe-area-inset-bottom)) !important;
+  height: 36px !important;
+  padding: 3px 6px !important;
+  gap: 5px !important;
+  border-radius: 22px !important;
+}
+
+#mode-performer.is-concert-mode #concertBottomBar .concert-scrubber-mirror {
+  position: static !important;
+  left: auto !important;
+  right: auto !important;
+  bottom: auto !important;
+  transform: none !important;
+  margin: 0 !important;
+  width: clamp(140px, 26vw, 280px) !important;
+  height: 24px !important;
+  padding: 0 8px !important;
+  gap: 6px !important;
+  background: transparent !important;
+  border: none !important;
+  border-left: 1px solid color-mix(in srgb, var(--glass-border) 75%, transparent) !important;
+  border-right: 1px solid color-mix(in srgb, var(--glass-border) 75%, transparent) !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  display: flex !important;
+  align-items: center !important;
+  flex-shrink: 1;
+}
+
+@media (max-width: 600px) {
+  #mode-performer.is-concert-mode #concertBottomBar.concert-linear-capsule {
+    height: 34px !important;
+    padding: 2px 5px !important;
+    gap: 3px !important;
+  }
+  #mode-performer.is-concert-mode #concertBottomBar .concert-scrubber-mirror {
+    width: clamp(104px, 32vw, 160px) !important;
+    padding: 0 5px !important;
+    gap: 3px !important;
+  }
+  #mode-performer.is-concert-mode #concertBottomBar .scrubber-page-pill {
+    min-width: 38px !important;
+    font-size: 10px !important;
+  }
+}
