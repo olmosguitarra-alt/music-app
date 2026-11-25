@@ -11,7 +11,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:wght@600;700&display=swap" />
-  <link rel="stylesheet" href="styles.css?v=108" />
+  <link rel="stylesheet" href="styles.css?v=109" />
   <!-- Motores Oficiales para Renderizar (PDF.js) y Particionar/Editar PDFs Reales (pdf-lib) -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf-lib/1.17.1/pdf-lib.min.js"></script>
@@ -664,18 +664,151 @@
       </div>
     </div>
 
-    <!-- POPOVER COMPACTO DE METRÓNOMO -->
-    <div class="perf-utility-popover study-tools hidden" id="metronomePopover" onclick="event.stopPropagation()">
-      <div class="perf-pop-head">
-        <span>Metrónomo</span>
-        <span class="metro-beat-dot" id="metroBeatDot"></span>
+    <!-- POPOVER COMPACTO DE METRÓNOMO ESPECIALIZADO -->
+    <div class="perf-utility-popover metro-pro-popover study-tools hidden" id="metronomePopover" onclick="event.stopPropagation()">
+      <div class="perf-pop-head metro-pop-head" id="metroPopoverHeader">
+        <div class="metro-title-group">
+          <span class="metro-drag-grip" aria-hidden="true">⋮⋮</span>
+          <span>Metrónomo</span>
+          <span class="metro-agogic-badge" id="metroAgogicLabel">Adagio</span>
+        </div>
+        <div class="metro-beats-strip" id="metroBeatsStrip" title="Toca un pulso para cambiar: Fuerte → Medio → Débil → Silencio">
+          <!-- Generado dinámicamente según el compás -->
+        </div>
       </div>
+
+      <!-- Fila de BPM con ajuste fino (-5, -1, +1, +5) -->
       <div class="metro-bpm-row">
-        <button type="button" class="metro-step-btn" onclick="stepMetronomeBpm(-5)">-5</button>
-        <strong id="metroBpmValue">76 BPM</strong>
-        <button type="button" class="metro-step-btn" onclick="stepMetronomeBpm(5)">+5</button>
+        <div class="metro-step-group">
+          <button type="button" class="metro-step-btn" onclick="stepMetronomeBpm(-5)" title="-5 BPM">-5</button>
+          <button type="button" class="metro-step-btn" onclick="stepMetronomeBpm(-1)" title="-1 BPM">-1</button>
+        </div>
+        <div class="metro-bpm-display" onclick="resetMetronomeTrainerBase()" title="Tempo actual">
+          <strong id="metroBpmValue">76</strong>
+          <small>BPM</small>
+        </div>
+        <div class="metro-step-group">
+          <button type="button" class="metro-step-btn" onclick="stepMetronomeBpm(1)" title="+1 BPM">+1</button>
+          <button type="button" class="metro-step-btn" onclick="stepMetronomeBpm(5)" title="+5 BPM">+5</button>
+        </div>
       </div>
-      <input type="range" id="metroBpmRange" min="40" max="208" step="1" value="76" oninput="setMetronomeBpm(this.value)" />
+
+      <!-- Slider + Botón Tap Tempo en la misma fila -->
+      <div class="metro-slider-tap-row">
+        <input type="range" id="metroBpmRange" min="30" max="240" step="1" value="76" oninput="setMetronomeBpm(this.value)" aria-label="Control deslizante de BPM" />
+        <button type="button" class="metro-tap-btn" id="btnMetroTap" onclick="tapMetronomeTempo()" title="Toca repetidamente para marcar el pulso">Tap</button>
+      </div>
+
+      <!-- Selector compacto de Compás -->
+      <div class="metro-compact-row">
+        <span class="metro-row-lbl">Compás</span>
+        <div class="metro-pills-group" id="metroMeterGroup">
+          <button type="button" class="metro-pill-btn" onclick="setMetronomeMeter('2/4', this)">2/4</button>
+          <button type="button" class="metro-pill-btn" onclick="setMetronomeMeter('3/4', this)">3/4</button>
+          <button type="button" class="metro-pill-btn active" onclick="setMetronomeMeter('4/4', this)">4/4</button>
+          <button type="button" class="metro-pill-btn" onclick="setMetronomeMeter('6/8', this)">6/8</button>
+          <button type="button" class="metro-pill-btn" onclick="setMetronomeMeter('5/4', this)">5/4</button>
+          <button type="button" class="metro-pill-btn" onclick="setMetronomeMeter('7/8', this)">7/8</button>
+        </div>
+      </div>
+
+      <!-- Selector compacto de Subdivisión -->
+      <div class="metro-compact-row">
+        <span class="metro-row-lbl">Pulso</span>
+        <div class="metro-pills-group" id="metroSubdivGroup">
+          <button type="button" class="metro-pill-btn active" onclick="setMetronomeSubdiv(1, this)" title="Negra (sin subdivisión)">♩</button>
+          <button type="button" class="metro-pill-btn" onclick="setMetronomeSubdiv(2, this)" title="Corcheas (2 por pulso)">♫</button>
+          <button type="button" class="metro-pill-btn" onclick="setMetronomeSubdiv(3, this)" title="Tresillos (3 por pulso)">🎶</button>
+          <button type="button" class="metro-pill-btn" onclick="setMetronomeSubdiv(4, this)" title="Semicorcheas (4 por pulso)">♬</button>
+          <button type="button" class="metro-pill-btn" onclick="setMetronomeSubdiv('dotted', this)" title="Ritmo con puntillo">♩.♪</button>
+        </div>
+      </div>
+
+      <!-- Timbre acústico + Destello visual discreto -->
+      <div class="metro-compact-row">
+        <span class="metro-row-lbl">Timbre</span>
+        <div class="metro-timbre-wrap">
+          <select class="metro-select-compact" id="metroSoundSelect" onchange="setMetronomeSound(this.value)" aria-label="Timbre del metrónomo">
+            <option value="wood">Madera Lutier</option>
+            <option value="mech">Mecánico Wittner</option>
+            <option value="soft">Fieltro Suave</option>
+            <option value="click">Estudio Seco</option>
+            <option value="silent">Silencio (Solo Visual)</option>
+          </select>
+          <button type="button" class="metro-visual-toggle" id="btnMetroVisualHalo" onclick="toggleMetronomeVisualHalo()" title="Destello visual sutil en el borde superior del atril" aria-label="Luz de pulso visual">
+            <svg viewBox="0 0 24 24" class="v-ico" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/></svg>
+          </button>
+        </div>
+      </div>
+
+      <!-- Acordeón plegable: Entrenador de Estudio (0 ruido visual cuando está cerrado) -->
+      <div class="metro-trainer-box">
+        <button type="button" class="metro-trainer-toggle" id="btnMetroTrainerToggle" onclick="toggleMetronomeTrainerPanel()">
+          <span id="metroTrainerCaret">▸</span>
+          <span>Entrenador de Estudio</span>
+          <span class="metro-trainer-status" id="metroTrainerBadge">Off</span>
+        </button>
+        <div class="metro-trainer-body hidden" id="metroTrainerBody">
+          <div class="metro-trainer-mode-pills">
+            <button type="button" class="metro-tmode-btn active" onclick="setMetronomeTrainerMode('off', this)">Apagado</button>
+            <button type="button" class="metro-tmode-btn" onclick="setMetronomeTrainerMode('ladder', this)" title="Aumenta el BPM automáticamente cada ciertos compases">Escalera</button>
+            <button type="button" class="metro-tmode-btn" onclick="setMetronomeTrainerMode('mute', this)" title="Silencia compases periódicamente para entrenar tu pulso interno">Compás Mudo</button>
+          </div>
+
+          <!-- Configuración Escalera Progresiva -->
+          <div class="metro-trainer-cfg hidden" id="metroCfgLadder">
+            <div class="metro-cfg-line">
+              <span>Subir</span>
+              <select class="metro-mini-sel" id="metroLadderStep" onchange="updateMetronomeTrainerParams()">
+                <option value="1">+1 BPM</option>
+                <option value="2" selected>+2 BPM</option>
+                <option value="4">+4 BPM</option>
+                <option value="5">+5 BPM</option>
+              </select>
+              <span>cada</span>
+              <select class="metro-mini-sel" id="metroLadderBars" onchange="updateMetronomeTrainerParams()">
+                <option value="2">2 comp.</option>
+                <option value="4" selected>4 comp.</option>
+                <option value="8">8 comp.</option>
+              </select>
+            </div>
+            <div class="metro-cfg-line">
+              <span>Meta:</span>
+              <input type="number" class="metro-mini-num" id="metroLadderTarget" min="40" max="240" value="108" onchange="updateMetronomeTrainerParams()" />
+              <span>BPM</span>
+            </div>
+          </div>
+
+          <!-- Configuración Compás Mudo (Pulso Interno) -->
+          <div class="metro-trainer-cfg hidden" id="metroCfgMute">
+            <div class="metro-cfg-line">
+              <span>Sonar</span>
+              <select class="metro-mini-sel" id="metroMutePlayBars" onchange="updateMetronomeTrainerParams()">
+                <option value="1">1 comp.</option>
+                <option value="2">2 comp.</option>
+                <option value="3" selected>3 comp.</option>
+                <option value="4">4 comp.</option>
+              </select>
+              <span>/ Callar</span>
+              <select class="metro-mini-sel" id="metroMuteSilentBars" onchange="updateMetronomeTrainerParams()">
+                <option value="1" selected>1 comp.</option>
+                <option value="2">2 comp.</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- Pre-cuenta opcional -->
+          <div class="metro-cfg-line metro-countin-line">
+            <span>Pre-cuenta:</span>
+            <div class="metro-pills-group">
+              <button type="button" class="metro-pill-btn active" onclick="setMetronomeCountIn(0, this)">0</button>
+              <button type="button" class="metro-pill-btn" onclick="setMetronomeCountIn(1, this)">1 comp.</button>
+              <button type="button" class="metro-pill-btn" onclick="setMetronomeCountIn(2, this)">2 comp.</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
       <button type="button" class="perf-pop-primary-btn" id="btnMetroPlay" onclick="toggleMetronomePlay()">Iniciar</button>
     </div>
 
@@ -1049,6 +1182,6 @@
     <span class="pdf-loading-text">Cargando...</span>
   </div>
 
-  <script src="app.js?v=108"></script>
+  <script src="app.js?v=109"></script>
 </body>
 </html>

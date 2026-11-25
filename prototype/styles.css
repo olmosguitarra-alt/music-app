@@ -10890,18 +10890,26 @@ body.mode-concert-active .bachgpt-widget-root {
 /* Popovers de Metrónomo y Afinador */
 .perf-utility-popover {
   position: fixed;
-  top: 68px;
-  right: 20px;
+  top: 56px;
+  right: 16px;
   width: 224px;
   padding: 12px 14px;
   border-radius: 16px;
   background: var(--card-bg);
+  backdrop-filter: blur(18px) saturate(140%);
+  -webkit-backdrop-filter: blur(18px) saturate(140%);
   border: 1px solid var(--glass-border);
   box-shadow: 0 14px 36px rgba(0, 0, 0, 0.28);
   z-index: 95;
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 9px;
+}
+
+.perf-utility-popover.metro-pro-popover {
+  width: 262px;
+  padding: 11px 13px;
+  gap: 8px;
 }
 
 .perf-utility-popover.hidden {
@@ -10912,43 +10920,423 @@ body.mode-concert-active .bachgpt-widget-root {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  font-size: 12.5px;
+  font-size: 12px;
   font-weight: 600;
   color: var(--text-primary);
 }
 
-.metro-beat-dot {
-  width: 10px;
-  height: 10px;
-  border-radius: 50%;
-  background: var(--glass-border);
-  transition: transform 0.08s ease, background 0.08s ease;
+.metro-pop-head {
+  cursor: grab;
+  padding-bottom: 2px;
+  border-bottom: 1px solid color-mix(in srgb, var(--glass-border) 60%, transparent);
 }
 
-.metro-beat-dot.pulse {
-  background: var(--accent);
-  transform: scale(1.35);
+.metro-pop-head:active {
+  cursor: grabbing;
+}
+
+.metro-title-group {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.metro-drag-grip {
+  font-size: 11px;
+  color: var(--text-secondary);
+  opacity: 0.65;
+  letter-spacing: -1px;
+}
+
+.metro-agogic-badge {
+  font-size: 10px;
+  font-weight: 500;
+  font-style: italic;
+  color: var(--accent);
+  padding: 1px 6px;
+  border-radius: 6px;
+  background: color-mix(in srgb, var(--accent) 12%, transparent);
+}
+
+/* Tira de puntos/pilares de pulso interactivos (Fuerte / Medio / Débil / Silencio) */
+.metro-beats-strip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.metro-beat-node {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  border: 1.5px solid var(--glass-border);
+  background: color-mix(in srgb, var(--text-secondary) 22%, transparent);
+  padding: 0;
+  cursor: pointer;
+  position: relative;
+  transition: transform 0.08s ease, background 0.12s ease, border-color 0.12s ease, box-shadow 0.08s ease;
+}
+
+/* Nivel 3: Fuerte (Downbeat) */
+.metro-beat-node[data-accent="3"] {
+  border-color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 42%, transparent);
+}
+
+/* Nivel 2: Medio (Sub-acento) */
+.metro-beat-node[data-accent="2"] {
+  border-color: color-mix(in srgb, var(--accent) 70%, var(--glass-border));
+  background: color-mix(in srgb, var(--accent) 24%, transparent);
+}
+
+/* Nivel 1: Débil (Pulso normal) */
+.metro-beat-node[data-accent="1"] {
+  border-color: var(--glass-border);
+  background: color-mix(in srgb, var(--text-secondary) 22%, transparent);
+}
+
+/* Nivel 0: Silencio (Pulso mudo) */
+.metro-beat-node[data-accent="0"] {
+  border-style: dashed;
+  border-color: color-mix(in srgb, var(--text-secondary) 45%, transparent);
+  background: transparent;
+  opacity: 0.55;
+}
+
+/* Pulso activo en tiempo real */
+.metro-beat-node.is-beating {
+  transform: scale(1.32);
+  background: var(--accent) !important;
+  border-color: var(--accent) !important;
+  box-shadow: 0 0 8px color-mix(in srgb, var(--accent) 75%, transparent);
+  opacity: 1;
+}
+
+.metro-beat-node.is-beating[data-accent="0"] {
+  background: transparent !important;
+  box-shadow: none;
+  border-color: var(--accent) !important;
 }
 
 .metro-bpm-row {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  font-size: 14px;
+  gap: 4px;
   color: var(--text-primary);
+}
+
+.metro-step-group {
+  display: inline-flex;
+  gap: 3px;
+}
+
+.metro-bpm-display {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 3px;
+  font-variant-numeric: tabular-nums;
+  cursor: pointer;
+}
+
+.metro-bpm-display strong {
+  font-size: 18px;
+  font-weight: 700;
+  letter-spacing: -0.3px;
+  color: var(--text-primary);
+}
+
+.metro-bpm-display small {
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--text-secondary);
 }
 
 .metro-step-btn,
 .tuner-hz-btn {
-  height: 28px;
-  padding: 0 10px;
-  border-radius: 8px;
+  height: 26px;
+  padding: 0 7px;
+  border-radius: 7px;
   border: 1px solid var(--glass-border);
   background: transparent;
   color: var(--text-primary);
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 600;
   cursor: pointer;
+  transition: border-color 0.15s ease, background 0.15s ease, color 0.15s ease;
+}
+
+.metro-step-btn:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+/* Slider + Tap Tempo en 1 línea */
+.metro-slider-tap-row {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.metro-slider-tap-row input[type="range"] {
+  flex: 1;
+  height: 4px;
+  accent-color: var(--accent);
+  cursor: pointer;
+}
+
+.metro-tap-btn {
+  height: 24px;
+  padding: 0 9px;
+  border-radius: 7px;
+  border: 1px solid var(--glass-border);
+  background: color-mix(in srgb, var(--bg-canvas) 45%, transparent);
+  color: var(--text-primary);
+  font-size: 10.5px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: transform 0.08s ease, border-color 0.15s ease, background 0.15s ease;
+}
+
+.metro-tap-btn:active,
+.metro-tap-btn.tap-flash {
+  transform: scale(0.95);
+  border-color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 22%, transparent);
+  color: var(--accent);
+}
+
+/* Filas compactas de Compás, Subdivisión y Timbre */
+.metro-compact-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+}
+
+.metro-row-lbl {
+  font-size: 10.5px;
+  font-weight: 500;
+  color: var(--text-secondary);
+  min-width: 38px;
+}
+
+.metro-pills-group {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  flex: 1;
+  justify-content: flex-end;
+}
+
+.metro-pill-btn {
+  height: 22px;
+  min-width: 28px;
+  padding: 0 5px;
+  border-radius: 6px;
+  border: 1px solid var(--glass-border);
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: 10.5px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.14s ease;
+}
+
+.metro-pill-btn:hover {
+  color: var(--text-primary);
+  border-color: color-mix(in srgb, var(--accent) 50%, var(--glass-border));
+}
+
+.metro-pill-btn.active {
+  background: var(--accent);
+  color: var(--accent-ink);
+  border-color: var(--accent);
+}
+
+.metro-timbre-wrap {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  flex: 1;
+  justify-content: flex-end;
+}
+
+.metro-select-compact {
+  flex: 1;
+  height: 24px;
+  padding: 0 6px;
+  border-radius: 6px;
+  border: 1px solid var(--glass-border);
+  background: color-mix(in srgb, var(--bg-canvas) 55%, transparent);
+  color: var(--text-primary);
+  font-size: 11px;
+  outline: none;
+  cursor: pointer;
+}
+
+.metro-visual-toggle {
+  width: 24px;
+  height: 24px;
+  border-radius: 6px;
+  border: 1px solid var(--glass-border);
+  background: transparent;
+  color: var(--text-secondary);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.metro-visual-toggle .v-ico {
+  width: 13px;
+  height: 13px;
+}
+
+.metro-visual-toggle.active {
+  border-color: var(--accent);
+  color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 16%, transparent);
+}
+
+/* Acordeón de Entrenador de Estudio */
+.metro-trainer-box {
+  border-top: 1px solid color-mix(in srgb, var(--glass-border) 60%, transparent);
+  padding-top: 5px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.metro-trainer-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  border: none;
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 2px 0;
+  text-align: left;
+}
+
+.metro-trainer-toggle:hover {
+  color: var(--text-primary);
+}
+
+.metro-trainer-status {
+  font-size: 9.5px;
+  font-weight: 600;
+  padding: 1px 6px;
+  border-radius: 6px;
+  background: color-mix(in srgb, var(--text-secondary) 16%, transparent);
+  color: var(--text-secondary);
+}
+
+.metro-trainer-status.active {
+  background: color-mix(in srgb, var(--accent) 20%, transparent);
+  color: var(--accent);
+}
+
+.metro-trainer-body {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 6px 7px;
+  border-radius: 9px;
+  background: color-mix(in srgb, var(--bg-canvas) 45%, transparent);
+  border: 1px solid color-mix(in srgb, var(--glass-border) 65%, transparent);
+}
+
+.metro-trainer-body.hidden,
+.metro-trainer-cfg.hidden {
+  display: none !important;
+}
+
+.metro-trainer-mode-pills {
+  display: flex;
+  gap: 4px;
+}
+
+.metro-tmode-btn {
+  flex: 1;
+  height: 22px;
+  border-radius: 6px;
+  border: 1px solid var(--glass-border);
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: 10px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.metro-tmode-btn.active {
+  background: var(--accent);
+  color: var(--accent-ink);
+  border-color: var(--accent);
+}
+
+.metro-trainer-cfg {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.metro-cfg-line {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 4px;
+  font-size: 10.5px;
+  color: var(--text-secondary);
+}
+
+.metro-mini-sel,
+.metro-mini-num {
+  height: 21px;
+  padding: 0 4px;
+  border-radius: 5px;
+  border: 1px solid var(--glass-border);
+  background: var(--card-bg);
+  color: var(--text-primary);
+  font-size: 10.5px;
+  font-weight: 600;
+}
+
+.metro-mini-num {
+  width: 48px;
+  text-align: center;
+}
+
+/* Destello visual discreto en el borde superior del atril cuando está activo el Halo */
+#performerStage.metro-halo-downbeat::before,
+#performerStage.metro-halo-beat::before {
+  content: "";
+  position: fixed;
+  top: 0;
+  left: 15%;
+  right: 15%;
+  height: 3px;
+  border-radius: 0 0 8px 8px;
+  pointer-events: none;
+  z-index: 90;
+  transition: opacity 0.08s ease;
+}
+
+#performerStage.metro-halo-downbeat::before {
+  background: var(--accent);
+  box-shadow: 0 2px 14px var(--accent);
+  opacity: 0.9;
+}
+
+#performerStage.metro-halo-beat::before {
+  background: color-mix(in srgb, var(--accent) 55%, transparent);
+  box-shadow: 0 1px 8px color-mix(in srgb, var(--accent) 45%, transparent);
+  opacity: 0.55;
 }
 
 .tuner-freq-pills {
@@ -10968,14 +11356,19 @@ body.mode-concert-active .bachgpt-widget-root {
 }
 
 .perf-pop-primary-btn {
-  height: 34px;
-  border-radius: 10px;
+  height: 32px;
+  border-radius: 9px;
   border: none;
   background: var(--accent);
   color: var(--accent-ink);
-  font-size: 12.5px;
+  font-size: 12px;
   font-weight: 600;
   cursor: pointer;
+  transition: filter 0.15s ease;
+}
+
+.perf-pop-primary-btn:hover {
+  filter: brightness(1.06);
 }
 
 /* En Modo Ensayo solo ocultamos el cintillo y el botón de importar; Dock y BachGPT conviven */

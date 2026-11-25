@@ -487,6 +487,7 @@ async function openScoreById(scoreId, targetMode = "study") {
 
   switchMode("performer");
   setPerformanceMode(targetMode === "concert" ? "concert" : "study", { skipRender: true });
+  loadMetronomePresetForScore(found.id);
 
   if (found.isRealPdf && found.pdfBytes && window.pdfjsLib) {
     const loadingTask = window.pdfjsLib.getDocument({ data: found.pdfBytes.slice(0) });
@@ -6566,13 +6567,46 @@ async function stepProgramPiece(dir) {
 }
 
 // ==========================================================================
-// UTILIDADES DE ENSAYO: METRÓNOMO Y AFINADOR (WEB AUDIO API)
+// UTILIDADES DE ENSAYO: METRÓNOMO ESPECIALIZADO Y AFINADOR (WEB AUDIO API)
 // ==========================================================================
 let performerAudioCtx = null;
 let metroBpm = 76;
-let metroTimer = null;
+let metroIsPlaying = false;
+let metroLookaheadTimer = null;
+let metroNextNoteTime = 0;
+let metroCurrentBeat = 0;
+let metroCurrentSub = 0;
+let metroBarCount = 0;
+let metroCountInRemainingBars = 0;
+
+// Configuración musical del metrónomo
+let metroMeter = "4/4";
+let metroBeatsPerBar = 4;
+// Niveles de acento por pulso: 3 = Fuerte (Downbeat), 2 = Medio, 1 = Débil, 0 = Silencio
+let metroBeatAccents = [3, 1, 1, 1];
+let metroSubdiv = 1; // 1 | 2 | 3 | 4 | 'dotted'
+let metroSound = "wood"; // 'wood' | 'mech' | 'soft' | 'click' | 'silent'
+let metroVisualHalo = false;
+
+// Entrenador de estudio (Escalera progresiva / Compás mudo / Pre-cuenta)
+let metroTrainerMode = "off"; // 'off' | 'ladder' | 'mute'
+let metroTrainerBaseBpm = 76;
+let metroLadderStep = 2;
+let metroLadderBars = 4;
+let metroLadderTarget = 108;
+let metroMutePlayBars = 3;
+let metroMuteSilentBars = 1;
+let metroCountInBars = 0;
+
+// Tap Tempo
+let metroTapTimestamps = [];
+let metroNoiseBuffer = null;
+
+// Afinador
 let tunerOsc = null;
 let tunerHz = 440;
+
+const METRO_STORAGE_KEY = "cadenza_metronome_score_presets_v1";
 
 function getPerformerAudioCtx() {
   if (!performerAudioCtx) {
@@ -6585,23 +6619,103 @@ function getPerformerAudioCtx() {
   return performerAudioCtx;
 }
 
+function getMetronomeNoiseBuffer(ctx) {
+  if (metroNoiseBuffer && metroNoiseBuffer.sampleRate === ctx.sampleRate) {
+    return metroNoiseBuffer;
+  }
+  const bufferSize = Math.floor(ctx.sampleRate * 0.06);
+  const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
+  const data = buffer.getChannelData(0);
+  for (let i = 0; i < bufferSize; i++) {
+    data[i] = (Math.random() * 2 - 1) * Math.exp(-i / (ctx.sampleRate * 0.012));
+  }
+  metroNoiseBuffer = buffer;
+  return buffer;
+}
+
+function getClassicalAgogicName(bpm) {
+  if (bpm < 45) return "Grave";
+  if (bpm < 55) return "Largo";
+  if (bpm < 66) return "Larghetto";
+  if (bpm < 78) return "Adagio";
+  if (bpm < 98) return "Andante";
+  if (bpm < 116) return "Moderato";
+  if (bpm < 132) return "Allegretto";
+  if (bpm < 168) return "Allegro";
+  if (bpm < 200) return "Vivace";
+  return "Presto";
+}
+
+function getDefaultAccentsForMeter(meter) {
+  switch (meter) {
+    case "2/4":
+      return [3, 1];
+    case "3/4":
+      return [3, 1, 1];
+    case "4/4":
+      return [3, 1, 2, 1];
+    case "6/8":
+      return [3, 1, 1, 2, 1, 1];
+    case "5/4":
+      return [3, 1, 1, 2, 1];
+    case "7/8":
+      return [3, 1, 1, 2, 1, 2, 1];
+    default:
+      return [3, 1, 1, 1];
+  }
+}
+
+function renderMetronomeBeatsStrip() {
+  const strip = document.getElementById("metroBeatsStrip");
+  if (!strip) return;
+  strip.innerHTML = "";
+  metroBeatAccents.forEach((acc, idx) => {
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "metro-beat-node";
+    btn.dataset.index = String(idx);
+    btn.dataset.accent = String(acc);
+    const labels = ["Silencio", "Débil", "Medio", "Fuerte"];
+    btn.title = `Tiempo ${idx + 1}: ${labels[acc] || "Normal"} (toca para cambiar)`;
+    btn.onclick = (e) => {
+      e.stopPropagation();
+      // Ciclo: 3 (Fuerte) -> 2 (Medio) -> 1 (Débil) -> 0 (Silencio) -> 3
+      const next = acc === 3 ? 2 : acc === 2 ? 1 : acc === 1 ? 0 : 3;
+      metroBeatAccents[idx] = next;
+      renderMetronomeBeatsStrip();
+      saveMetronomePresetForCurrentScore();
+    };
+    strip.appendChild(btn);
+  });
+}
+
 function toggleMetronomePopover(e) {
   if (e) e.stopPropagation();
   document.getElementById("tunerPopover")?.classList.add("hidden");
   document.getElementById("metronomePopover")?.classList.toggle("hidden");
 }
 
-function setMetronomeBpm(val) {
-  metroBpm = Math.max(40, Math.min(208, parseInt(val, 10) || 76));
+function setMetronomeBpm(val, { fromTrainer = false } = {}) {
+  metroBpm = Math.max(30, Math.min(240, parseInt(val, 10) || 76));
+  if (!fromTrainer) {
+    metroTrainerBaseBpm = metroBpm;
+  }
   const lbl = document.getElementById("metroBpmValue");
   const chipLbl = document.getElementById("metroChipLabel");
   const rng = document.getElementById("metroBpmRange");
-  if (lbl) lbl.textContent = `${metroBpm} BPM`;
+  const agogicLbl = document.getElementById("metroAgogicLabel");
+  if (lbl) lbl.textContent = `${metroBpm}`;
   if (chipLbl) chipLbl.textContent = `${metroBpm}`;
   if (rng) rng.value = String(metroBpm);
-  if (metroTimer) {
-    clearInterval(metroTimer);
-    metroTimer = setInterval(playMetronomeTick, Math.round(60000 / metroBpm));
+  if (agogicLbl) agogicLbl.textContent = getClassicalAgogicName(metroBpm);
+  if (!fromTrainer) {
+    saveMetronomePresetForCurrentScore();
+  }
+}
+
+function resetMetronomeTrainerBase() {
+  if (metroTrainerMode === "ladder" && metroBpm !== metroTrainerBaseBpm) {
+    setMetronomeBpm(metroTrainerBaseBpm);
   }
 }
 
@@ -6609,45 +6723,472 @@ function stepMetronomeBpm(delta) {
   setMetronomeBpm(metroBpm + delta);
 }
 
-function playMetronomeTick() {
-  const ctx = getPerformerAudioCtx();
-  const dot = document.getElementById("metroBeatDot");
-  const topIcon = document.getElementById("metroTopIcon");
-  if (dot) {
-    dot.classList.add("pulse");
-    setTimeout(() => dot.classList.remove("pulse"), 95);
+function tapMetronomeTempo() {
+  const now = performance.now();
+  const tapBtn = document.getElementById("btnMetroTap");
+  if (tapBtn) {
+    tapBtn.classList.add("tap-flash");
+    setTimeout(() => tapBtn.classList.remove("tap-flash"), 110);
   }
+  // Si pasaron más de 2.4 segundos desde el último tap, reiniciar ventana
+  if (metroTapTimestamps.length > 0 && now - metroTapTimestamps[metroTapTimestamps.length - 1] > 2400) {
+    metroTapTimestamps = [];
+  }
+  metroTapTimestamps.push(now);
+  if (metroTapTimestamps.length > 5) {
+    metroTapTimestamps.shift();
+  }
+  if (metroTapTimestamps.length >= 2) {
+    let totalDiff = 0;
+    for (let i = 1; i < metroTapTimestamps.length; i++) {
+      totalDiff += metroTapTimestamps[i] - metroTapTimestamps[i - 1];
+    }
+    const avgMs = totalDiff / (metroTapTimestamps.length - 1);
+    const computedBpm = Math.round(60000 / avgMs);
+    setMetronomeBpm(computedBpm);
+  }
+}
+
+function setMetronomeMeter(meter, btn) {
+  metroMeter = meter;
+  metroBeatAccents = getDefaultAccentsForMeter(meter);
+  metroBeatsPerBar = metroBeatAccents.length;
+  metroCurrentBeat = 0;
+  metroCurrentSub = 0;
+
+  document.querySelectorAll("#metroMeterGroup .metro-pill-btn").forEach((b) => {
+    b.classList.toggle("active", b === btn || (!btn && b.textContent.trim() === meter));
+  });
+  renderMetronomeBeatsStrip();
+  saveMetronomePresetForCurrentScore();
+}
+
+function setMetronomeSubdiv(subdiv, btn) {
+  metroSubdiv = subdiv;
+  metroCurrentSub = 0;
+  document.querySelectorAll("#metroSubdivGroup .metro-pill-btn").forEach((b) => {
+    if (btn) {
+      b.classList.toggle("active", b === btn);
+    }
+  });
+  saveMetronomePresetForCurrentScore();
+}
+
+function setMetronomeSound(sound) {
+  metroSound = sound;
+  const sel = document.getElementById("metroSoundSelect");
+  if (sel && sel.value !== sound) sel.value = sound;
+  saveMetronomePresetForCurrentScore();
+}
+
+function toggleMetronomeVisualHalo(forceState) {
+  metroVisualHalo = typeof forceState === "boolean" ? forceState : !metroVisualHalo;
+  document.getElementById("btnMetroVisualHalo")?.classList.toggle("active", metroVisualHalo);
+  saveMetronomePresetForCurrentScore();
+}
+
+function toggleMetronomeTrainerPanel() {
+  const body = document.getElementById("metroTrainerBody");
+  const caret = document.getElementById("metroTrainerCaret");
+  if (!body) return;
+  const isHidden = body.classList.toggle("hidden");
+  if (caret) caret.textContent = isHidden ? "▸" : "▾";
+}
+
+function setMetronomeTrainerMode(mode, btn) {
+  metroTrainerMode = mode;
+  metroBarCount = 0;
+  if (btn) {
+    document.querySelectorAll(".metro-tmode-btn").forEach((b) => b.classList.toggle("active", b === btn));
+  }
+  document.getElementById("metroCfgLadder")?.classList.toggle("hidden", mode !== "ladder");
+  document.getElementById("metroCfgMute")?.classList.toggle("hidden", mode !== "mute");
+  updateMetronomeTrainerParams();
+}
+
+function updateMetronomeTrainerParams() {
+  metroLadderStep = parseInt(document.getElementById("metroLadderStep")?.value || "2", 10);
+  metroLadderBars = parseInt(document.getElementById("metroLadderBars")?.value || "4", 10);
+  metroLadderTarget = Math.max(35, Math.min(240, parseInt(document.getElementById("metroLadderTarget")?.value || "108", 10)));
+  metroMutePlayBars = parseInt(document.getElementById("metroMutePlayBars")?.value || "3", 10);
+  metroMuteSilentBars = parseInt(document.getElementById("metroMuteSilentBars")?.value || "1", 10);
+
+  const badge = document.getElementById("metroTrainerBadge");
+  if (badge) {
+    if (metroTrainerMode === "ladder") {
+      badge.textContent = `+${metroLadderStep}/${metroLadderBars}c`;
+      badge.classList.add("active");
+    } else if (metroTrainerMode === "mute") {
+      badge.textContent = `${metroMutePlayBars}+${metroMuteSilentBars}m`;
+      badge.classList.add("active");
+    } else {
+      badge.textContent = "Off";
+      badge.classList.remove("active");
+    }
+  }
+}
+
+function setMetronomeCountIn(bars, btn) {
+  metroCountInBars = parseInt(bars, 10) || 0;
+  if (btn) {
+    btn.parentElement?.querySelectorAll(".metro-pill-btn").forEach((b) => b.classList.toggle("active", b === btn));
+  }
+}
+
+// Síntesis acústica especializada Web Audio API (Cero latencia, cero archivos externos)
+function scheduleMetronomeGrain(ctx, time, accentLevel, isSubdivision, isCountIn) {
+  if (metroSound === "silent" || accentLevel === 0) return;
+
+  // Ganancia y frecuencia base según jerarquía rítmica
+  let freq = 820;
+  let peakGain = 0.22;
+
+  if (isCountIn) {
+    freq = 1240;
+    peakGain = 0.18;
+  } else if (isSubdivision) {
+    freq = 620;
+    peakGain = 0.085;
+  } else if (accentLevel === 3) {
+    freq = 1120;
+    peakGain = 0.34;
+  } else if (accentLevel === 2) {
+    freq = 920;
+    peakGain = 0.24;
+  } else {
+    freq = 760;
+    peakGain = 0.16;
+  }
+
+  if (metroSound === "wood") {
+    // Madera Lutier (Clave / Woodblock resonante con ataque percusivo cálido)
+    const osc = ctx.createOscillator();
+    const subOsc = ctx.createOscillator();
+    const gain = ctx.createGain();
+
+    osc.type = "triangle";
+    subOsc.type = "sine";
+    osc.frequency.setValueAtTime(freq * 1.15, time);
+    osc.frequency.exponentialRampToValueAtTime(freq * 0.86, time + 0.028);
+
+    subOsc.frequency.setValueAtTime(freq * 0.72, time);
+    gain.gain.setValueAtTime(0.0001, time);
+    gain.gain.linearRampToValueAtTime(peakGain, time + 0.002);
+    gain.gain.exponentialRampToValueAtTime(0.0008, time + 0.036);
+
+    osc.connect(gain);
+    subOsc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.start(time);
+    subOsc.start(time);
+    osc.stop(time + 0.04);
+    subOsc.stop(time + 0.04);
+  } else if (metroSound === "mech") {
+    // Mecánico Wittner (Transitorio de escape metálico + cuerpo de caja de madera)
+    const noise = ctx.createBufferSource();
+    noise.buffer = getMetronomeNoiseBuffer(ctx);
+    const filter = ctx.createBiquadFilter();
+    filter.type = "bandpass";
+    filter.frequency.setValueAtTime(accentLevel === 3 ? 2100 : 1550, time);
+    filter.Q.setValueAtTime(3.2, time);
+
+    const nGain = ctx.createGain();
+    nGain.gain.setValueAtTime(peakGain * 1.1, time);
+    nGain.gain.exponentialRampToValueAtTime(0.001, time + 0.025);
+
+    const bodyOsc = ctx.createOscillator();
+    const bGain = ctx.createGain();
+    bodyOsc.type = "triangle";
+    bodyOsc.frequency.setValueAtTime(accentLevel === 3 ? 640 : 480, time);
+    bGain.gain.setValueAtTime(peakGain * 0.55, time);
+    bGain.gain.exponentialRampToValueAtTime(0.001, time + 0.022);
+
+    noise.connect(filter);
+    filter.connect(nGain);
+    nGain.connect(ctx.destination);
+
+    bodyOsc.connect(bGain);
+    bGain.connect(ctx.destination);
+
+    noise.start(time);
+    noise.stop(time + 0.03);
+    bodyOsc.start(time);
+    bodyOsc.stop(time + 0.026);
+  } else if (metroSound === "soft") {
+    // Fieltro Suave (Ideal para estudio nocturno o pasajes pianissimo)
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.type = "sine";
+    const softFreq = freq * 0.62;
+    osc.frequency.setValueAtTime(softFreq, time);
+    osc.frequency.exponentialRampToValueAtTime(softFreq * 0.78, time + 0.05);
+
+    gain.gain.setValueAtTime(0.0001, time);
+    gain.gain.linearRampToValueAtTime(peakGain * 0.85, time + 0.005);
+    gain.gain.exponentialRampToValueAtTime(0.0008, time + 0.055);
+
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.start(time);
+    osc.stop(time + 0.06);
+  } else {
+    // Estudio Seco (Click de alta definición)
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.type = "sine";
+    osc.frequency.setValueAtTime(freq * 1.35, time);
+    osc.frequency.exponentialRampToValueAtTime(320, time + 0.016);
+
+    gain.gain.setValueAtTime(peakGain, time);
+    gain.gain.exponentialRampToValueAtTime(0.0008, time + 0.018);
+
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.start(time);
+    osc.stop(time + 0.02);
+  }
+}
+
+function triggerMetronomeVisualPulse(beatIndex, accentLevel, isSubdivision) {
+  if (isSubdivision) return;
+
+  const topIcon = document.getElementById("metroTopIcon");
   if (topIcon) {
     topIcon.classList.add("beat-flash");
-    setTimeout(() => topIcon.classList.remove("beat-flash"), 110);
+    setTimeout(() => topIcon.classList.remove("beat-flash"), 95);
   }
-  if (!ctx) return;
-  const osc = ctx.createOscillator();
-  const gain = ctx.createGain();
-  osc.type = "triangle";
-  osc.frequency.value = 980;
-  gain.gain.setValueAtTime(0.18, ctx.currentTime);
-  gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.045);
-  osc.connect(gain);
-  gain.connect(ctx.destination);
-  osc.start();
-  osc.stop(ctx.currentTime + 0.05);
+
+  const nodes = document.querySelectorAll("#metroBeatsStrip .metro-beat-node");
+  nodes.forEach((node, idx) => {
+    if (idx === beatIndex) {
+      node.classList.add("is-beating");
+      setTimeout(() => node.classList.remove("is-beating"), 115);
+    } else {
+      node.classList.remove("is-beating");
+    }
+  });
+
+  if (metroVisualHalo || metroSound === "silent") {
+    const stage = document.getElementById("performerStage");
+    if (stage) {
+      const cls = accentLevel === 3 ? "metro-halo-downbeat" : "metro-halo-beat";
+      stage.classList.add(cls);
+      setTimeout(() => stage.classList.remove("metro-halo-downbeat", "metro-halo-beat"), 110);
+    }
+  }
+}
+
+function advanceMetronomeNote() {
+  const secondsPerBeat = 60.0 / metroBpm;
+  const subCount = metroSubdiv === "dotted" ? 2 : Number(metroSubdiv) || 1;
+
+  if (metroSubdiv === "dotted") {
+    // 75% para la primera figura (corchea con puntillo), 25% para la semicorchea
+    const factor = metroCurrentSub === 0 ? 0.75 : 0.25;
+    metroNextNoteTime += secondsPerBeat * factor;
+  } else {
+    metroNextNoteTime += secondsPerBeat / subCount;
+  }
+
+  metroCurrentSub++;
+  if (metroCurrentSub >= subCount) {
+    metroCurrentSub = 0;
+    metroCurrentBeat++;
+    if (metroCurrentBeat >= metroBeatsPerBar) {
+      metroCurrentBeat = 0;
+
+      if (metroCountInRemainingBars > 0) {
+        metroCountInRemainingBars--;
+      } else {
+        metroBarCount++;
+        // Evaluar Escalera Progresiva al inicio de un nuevo compás
+        if (metroTrainerMode === "ladder" && metroBarCount > 0 && metroBarCount % metroLadderBars === 0) {
+          if (metroBpm < metroLadderTarget) {
+            const nextBpm = Math.min(metroLadderTarget, metroBpm + metroLadderStep);
+            setMetronomeBpm(nextBpm, { fromTrainer: true });
+          }
+        }
+      }
+    }
+  }
+}
+
+function runMetronomeScheduler() {
+  const ctx = getPerformerAudioCtx();
+  if (!ctx || !metroIsPlaying) return;
+
+  const scheduleAheadTime = 0.1; // 100ms lookahead
+  while (metroNextNoteTime < ctx.currentTime + scheduleAheadTime) {
+    const beatIdx = metroCurrentBeat;
+    const subIdx = metroCurrentSub;
+    const isSub = subIdx > 0;
+    const isCountIn = metroCountInRemainingBars > 0;
+    const accent = metroBeatAccents[beatIdx] ?? 1;
+
+    // Verificar si este compás debe silenciarse por el modo "Compás Mudo"
+    let isMutedByTrainer = false;
+    if (!isCountIn && metroTrainerMode === "mute") {
+      const cycle = metroMutePlayBars + metroMuteSilentBars;
+      const posInCycle = metroBarCount % cycle;
+      if (posInCycle >= metroMutePlayBars) {
+        isMutedByTrainer = true;
+      }
+    }
+
+    if (!isMutedByTrainer) {
+      scheduleMetronomeGrain(ctx, metroNextNoteTime, accent, isSub, isCountIn);
+    }
+
+    const delayMs = Math.max(0, (metroNextNoteTime - ctx.currentTime) * 1000);
+    setTimeout(() => {
+      if (metroIsPlaying) {
+        triggerMetronomeVisualPulse(beatIdx, accent, isSub);
+      }
+    }, delayMs);
+
+    advanceMetronomeNote();
+  }
 }
 
 function toggleMetronomePlay() {
   const btn = document.getElementById("btnMetroPlay");
   const chip = document.getElementById("metroLiveChip");
-  if (metroTimer) {
-    clearInterval(metroTimer);
-    metroTimer = null;
+
+  if (metroIsPlaying) {
+    metroIsPlaying = false;
+    if (metroLookaheadTimer) {
+      clearInterval(metroLookaheadTimer);
+      metroLookaheadTimer = null;
+    }
     if (btn) btn.textContent = "Iniciar";
     if (chip) chip.classList.remove("active");
     return;
   }
-  playMetronomeTick();
-  metroTimer = setInterval(playMetronomeTick, Math.round(60000 / metroBpm));
+
+  const ctx = getPerformerAudioCtx();
+  if (!ctx) return;
+
+  metroIsPlaying = true;
+  metroCurrentBeat = 0;
+  metroCurrentSub = 0;
+  metroBarCount = 0;
+  metroCountInRemainingBars = metroCountInBars;
+  metroNextNoteTime = ctx.currentTime + 0.03;
+
+  runMetronomeScheduler();
+  metroLookaheadTimer = setInterval(runMetronomeScheduler, 25);
+
   if (btn) btn.textContent = "Detener";
   if (chip) chip.classList.add("active");
+}
+
+// Memoria de tempo y compás por partitura + arrastre suave del popover
+function saveMetronomePresetForCurrentScore() {
+  if (!activeScore || !activeScore.id) return;
+  try {
+    const raw = localStorage.getItem(METRO_STORAGE_KEY);
+    const map = raw ? JSON.parse(raw) : {};
+    map[activeScore.id] = {
+      bpm: metroBpm,
+      meter: metroMeter,
+      accents: metroBeatAccents,
+      subdiv: metroSubdiv,
+      sound: metroSound,
+      halo: metroVisualHalo
+    };
+    localStorage.setItem(METRO_STORAGE_KEY, JSON.stringify(map));
+  } catch (_) {}
+}
+
+function loadMetronomePresetForScore(scoreId) {
+  if (!scoreId) return;
+  try {
+    const raw = localStorage.getItem(METRO_STORAGE_KEY);
+    if (!raw) return;
+    const map = JSON.parse(raw);
+    const preset = map[scoreId];
+    if (!preset) return;
+
+    if (preset.meter) {
+      metroMeter = preset.meter;
+      metroBeatAccents = Array.isArray(preset.accents) && preset.accents.length > 0
+        ? preset.accents.slice()
+        : getDefaultAccentsForMeter(preset.meter);
+      metroBeatsPerBar = metroBeatAccents.length;
+      document.querySelectorAll("#metroMeterGroup .metro-pill-btn").forEach((b) => {
+        b.classList.toggle("active", b.textContent.trim() === metroMeter);
+      });
+      renderMetronomeBeatsStrip();
+    }
+    if (preset.bpm) {
+      setMetronomeBpm(preset.bpm, { fromTrainer: true });
+      metroTrainerBaseBpm = metroBpm;
+    }
+    if (preset.subdiv !== undefined) {
+      metroSubdiv = preset.subdiv;
+      const subMap = { 1: "♩", 2: "♫", 3: "🎶", 4: "♬", dotted: "♩.♪" };
+      document.querySelectorAll("#metroSubdivGroup .metro-pill-btn").forEach((b) => {
+        b.classList.toggle("active", b.textContent.trim() === subMap[metroSubdiv]);
+      });
+    }
+    if (preset.sound) {
+      metroSound = preset.sound;
+      const sel = document.getElementById("metroSoundSelect");
+      if (sel) sel.value = metroSound;
+    }
+    if (typeof preset.halo === "boolean") {
+      metroVisualHalo = preset.halo;
+      document.getElementById("btnMetroVisualHalo")?.classList.toggle("active", metroVisualHalo);
+    }
+  } catch (_) {}
+}
+
+function initMetronomePopover() {
+  renderMetronomeBeatsStrip();
+  setMetronomeBpm(metroBpm, { fromTrainer: true });
+
+  const pop = document.getElementById("metronomePopover");
+  const header = document.getElementById("metroPopoverHeader");
+  if (!pop || !header) return;
+
+  let isDragging = false;
+  let startX = 0;
+  let startY = 0;
+  let initialLeft = 0;
+  let initialTop = 0;
+
+  header.onpointerdown = (e) => {
+    if (e.target.closest("button")) return;
+    isDragging = true;
+    try { header.setPointerCapture(e.pointerId); } catch (_) {}
+    const rect = pop.getBoundingClientRect();
+    initialLeft = rect.left;
+    initialTop = rect.top;
+    startX = e.clientX;
+    startY = e.clientY;
+    e.preventDefault();
+  };
+
+  header.onpointermove = (e) => {
+    if (!isDragging) return;
+    const dx = e.clientX - startX;
+    const dy = e.clientY - startY;
+    const newX = Math.max(8, Math.min(window.innerWidth - pop.offsetWidth - 8, initialLeft + dx));
+    const newY = Math.max(8, Math.min(window.innerHeight - pop.offsetHeight - 8, initialTop + dy));
+    pop.style.left = `${newX}px`;
+    pop.style.top = `${newY}px`;
+    pop.style.right = "auto";
+    pop.style.bottom = "auto";
+  };
+
+  const stopDrag = (e) => {
+    if (!isDragging) return;
+    isDragging = false;
+    try { header.releasePointerCapture(e.pointerId); } catch (_) {}
+  };
+
+  header.onpointerup = stopDrag;
+  header.onpointercancel = stopDrag;
 }
 
 function toggleTunerPopover(e) {
@@ -7138,6 +7679,7 @@ window.addEventListener("DOMContentLoaded", async () => {
   renderSetlistDrawer();
   switchStampTab("dynamics");
   initStampPaletteDrag();
+  initMetronomePopover();
   initFolioZoomAndPan();
   const perfSvg = document.getElementById("performerSvg");
   if (perfSvg) perfSvg.innerHTML = buildPortraitScoreSvg(-1);
