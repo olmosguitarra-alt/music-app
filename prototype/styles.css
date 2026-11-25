@@ -14204,3 +14204,158 @@ body.concert-immersion #mode-performer.is-concert-mode .concert-audio-satellite 
     font-size: 10px !important;
   }
 }
+
+
+/* ==========================================================================
+   V111 — RENGLÓN INFERIOR DE CONCIERTO: CÁPSULA LINEAL + SATÉLITE ESCUCHA
+          ACTIVA EN EL MISMO NIVEL HORIZONTAL SIN COLISIÓN (OPCIÓN B)
+   ========================================================================== */
+
+/* Ocultar renglón de Concierto en Modo Ensayo */
+#mode-performer.is-study-mode .concert-bottom-row {
+  display: none !important;
+}
+
+/* Contenedor horizontal centrado: dos píldoras independientes en el mismo renglón */
+#mode-performer.is-concert-mode .concert-bottom-row {
+  position: fixed;
+  bottom: max(12px, env(safe-area-inset-bottom));
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  width: max-content;
+  max-width: calc(100vw - 20px);
+  z-index: 86;
+  pointer-events: none;
+  transition: opacity 0.24s ease, transform 0.24s ease;
+}
+
+/* Auto-ocultamiento limpio e integral en inmersión de escenario */
+body.concert-immersion #mode-performer.is-concert-mode .concert-bottom-row {
+  opacity: 0 !important;
+  pointer-events: none !important;
+  transform: translate(-50%, 18px) !important;
+}
+
+body.concert-immersion #mode-performer.is-concert-mode .concert-bottom-row #concertBottomBar.concert-linear-capsule,
+body.concert-immersion #mode-performer.is-concert-mode .concert-bottom-row #btnAudioFollow.concert-audio-satellite {
+  transform: none !important;
+}
+
+/* 1. Cápsula de navegación reacomodada para convivir sin colisión y sin recortar tooltip */
+#mode-performer.is-concert-mode .concert-bottom-row #concertBottomBar.concert-linear-capsule {
+  position: relative !important;
+  left: auto !important;
+  right: auto !important;
+  bottom: auto !important;
+  top: auto !important;
+  transform: none !important;
+  width: auto !important;
+  max-width: none !important;
+  flex: 0 1 auto !important;
+  min-width: 0 !important;
+  height: 36px !important;
+  padding: 3px 6px !important;
+  gap: 4px !important;
+  border-radius: 22px !important;
+  overflow: visible !important;
+  pointer-events: auto !important;
+}
+
+/* Scrubber interno libre de colisiones con largo ajustado */
+#mode-performer.is-concert-mode .concert-bottom-row #concertBottomBar .concert-scrubber-mirror {
+  display: flex !important;
+  align-items: center !important;
+  width: clamp(176px, 23vw, 238px) !important;
+  flex: 1 1 auto !important;
+  min-width: 0 !important;
+  height: 24px !important;
+  padding: 0 8px !important;
+  gap: 6px !important;
+  border-left: 1px solid color-mix(in srgb, var(--glass-border) 75%, transparent) !important;
+  border-right: 1px solid color-mix(in srgb, var(--glass-border) 75%, transparent) !important;
+}
+
+#mode-performer.is-concert-mode .concert-bottom-row #concertBottomBar .scrubber-page-pill {
+  white-space: nowrap !important;
+  flex-shrink: 0 !important;
+  min-width: 56px !important;
+  font-size: 11px !important;
+}
+
+#mode-performer.is-concert-mode .concert-bottom-row #concertBottomBar .scrubber-track-wrap {
+  flex: 1 1 56px !important;
+  min-width: 36px !important;
+}
+
+/* 2. Satélite independiente de Escucha Activa alineado en el mismo renglón a la derecha */
+#mode-performer.is-concert-mode .concert-bottom-row #btnAudioFollow.concert-audio-satellite {
+  position: relative !important;
+  left: auto !important;
+  right: auto !important;
+  bottom: auto !important;
+  top: auto !important;
+  transform: none !important;
+  height: 36px !important;
+  padding: 0 13px 0 11px !important;
+  border-radius: 22px !important;
+  gap: 6px !important;
+  flex: 0 0 auto !important;
+  white-space: nowrap !important;
+  pointer-events: auto !important;
+}
+
+/* Tablet y pantallas medianas (<= 820px): compactar texto de salto de obra a iconos puros */
+@media (max-width: 820px) {
+  #mode-performer.is-concert-mode .concert-bottom-row {
+    gap: 8px;
+  }
+  #mode-performer.is-concert-mode .concert-bottom-row #concertBottomBar .concert-macro-btn .macro-btn-lbl {
+    display: none !important;
+  }
+  #mode-performer.is-concert-mode .concert-bottom-row #concertBottomBar .concert-macro-btn {
+    width: 28px !important;
+    height: 28px !important;
+    padding: 0 !important;
+    justify-content: center !important;
+    flex-shrink: 0 !important;
+  }
+  #mode-performer.is-concert-mode .concert-bottom-row #concertBottomBar .concert-scrubber-mirror {
+    width: clamp(156px, 34vw, 216px) !important;
+  }
+}
+
+/* Teléfono móvil (<= 600px): ajuste milimétrico sin desbordamiento ni colisión */
+@media (max-width: 600px) {
+  #mode-performer.is-concert-mode .concert-bottom-row {
+    gap: 6px;
+    max-width: calc(100vw - 16px);
+  }
+  #mode-performer.is-concert-mode .concert-bottom-row #concertBottomBar.concert-linear-capsule {
+    height: 34px !important;
+    padding: 2px 5px !important;
+    gap: 3px !important;
+  }
+  #mode-performer.is-concert-mode .concert-bottom-row #concertBottomBar .concert-macro-btn {
+    width: 26px !important;
+    height: 26px !important;
+  }
+  #mode-performer.is-concert-mode .concert-bottom-row #concertBottomBar .concert-scrubber-mirror {
+    width: clamp(132px, 43vw, 176px) !important;
+    padding: 0 5px !important;
+    gap: 4px !important;
+  }
+  #mode-performer.is-concert-mode .concert-bottom-row #concertBottomBar .scrubber-page-pill {
+    min-width: 44px !important;
+    font-size: 10px !important;
+  }
+  #mode-performer.is-concert-mode .concert-bottom-row #btnAudioFollow.concert-audio-satellite {
+    height: 34px !important;
+    padding: 0 10px 0 9px !important;
+    gap: 5px !important;
+    font-size: 11px !important;
+  }
+}
