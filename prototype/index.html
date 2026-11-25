@@ -11,7 +11,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:wght@600;700&display=swap" />
-  <link rel="stylesheet" href="styles.css?v=109" />
+  <link rel="stylesheet" href="styles.css?v=110" />
   <!-- Motores Oficiales para Renderizar (PDF.js) y Particionar/Editar PDFs Reales (pdf-lib) -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf-lib/1.17.1/pdf-lib.min.js"></script>
@@ -438,13 +438,13 @@
             <button type="button" class="perf-chip-caret" onclick="toggleMetronomePopover(event)" title="Ajustar BPM" aria-label="Ajustar BPM">▾</button>
           </div>
 
-          <!-- Chip vivo de Afinador: icono diapasón tradicional -->
+          <!-- Chip vivo de Afinador: al tocarlo se despliega y activa automáticamente -->
           <div class="perf-live-chip" id="tunerLiveChip">
-            <button type="button" class="perf-chip-main" id="btnPerformerTuner" onclick="toggleTunerPlay()" title="Emitir / Detener Diapasón">
+            <button type="button" class="perf-chip-main" id="btnPerformerTuner" onclick="toggleTunerPopover(event)" title="Abrir Afinador">
               <svg viewBox="0 0 24 24" class="v-ico" id="tunerTopIcon" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 3v7.5a3 3 0 0 0 6 0V3"/><path d="M12 13.5V21"/><circle cx="12" cy="21" r="1"/></svg>
               <span id="tunerChipLabel">440</span>
             </button>
-            <button type="button" class="perf-chip-caret" onclick="toggleTunerPopover(event)" title="Cambiar afinación Hz" aria-label="Cambiar Hz">▾</button>
+            <button type="button" class="perf-chip-caret" onclick="toggleTunerPopover(event)" title="Abrir Afinador" aria-label="Abrir Afinador">▾</button>
           </div>
         </div>
       </div>
@@ -812,18 +812,60 @@
       <button type="button" class="perf-pop-primary-btn" id="btnMetroPlay" onclick="toggleMetronomePlay()">Iniciar</button>
     </div>
 
-    <!-- POPOVER COMPACTO DE AFINADOR (LA 440) -->
-    <div class="perf-utility-popover study-tools hidden" id="tunerPopover" onclick="event.stopPropagation()">
-      <div class="perf-pop-head">
-        <span>Diapasón / Afinador</span>
-        <span id="tunerHzLabel">440 Hz</span>
+    <!-- POPOVER COMPACTO DE AFINADOR TIPO PINZA (FENDER / DONNER CLIP-ON) -->
+    <div class="perf-utility-popover tuner-clip-popover study-tools hidden" id="tunerPopover" onclick="event.stopPropagation()">
+      <!-- Cabecera: [ - 440 Hz + ] a la izquierda y botón icono Diapasón a la derecha -->
+      <div class="tuner-clip-head">
+        <div class="tuner-hz-stepper">
+          <button type="button" class="tuner-hz-step-btn" onclick="stepTunerFreq(-1)" title="Bajar 1 Hz" aria-label="Bajar 1 Hz">−</button>
+          <button type="button" class="tuner-hz-readout" id="tunerHzLabel" onclick="cycleTunerPresetFreq()" title="Toca para alternar 440 / 442 / 415 Hz">440 Hz</button>
+          <button type="button" class="tuner-hz-step-btn" onclick="stepTunerFreq(1)" title="Subir 1 Hz" aria-label="Subir 1 Hz">+</button>
+        </div>
+        <button type="button" class="tuner-fork-icon-btn" id="btnTunerFork" onclick="toggleTunerForkTone()" title="Emitir tono de referencia La (A4)" aria-label="Diapasón">
+          <svg viewBox="0 0 24 24" class="v-ico" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M9 3v7.5a3 3 0 0 0 6 0V3"/>
+            <path d="M12 13.5V21"/>
+            <circle cx="12" cy="21" r="1.2"/>
+          </svg>
+        </button>
       </div>
-      <div class="tuner-freq-pills">
-        <button type="button" class="tuner-hz-btn" onclick="setTunerFreq(415, this)">415</button>
-        <button type="button" class="tuner-hz-btn active" onclick="setTunerFreq(440, this)">440</button>
-        <button type="button" class="tuner-hz-btn" onclick="setTunerFreq(442, this)">442</button>
+
+      <!-- Pantalla LED estilo pinza: Segmentos + Nota gigante central -->
+      <div class="tuner-clip-screen" id="tunerClipScreen">
+        <div class="tuner-led-arc" id="tunerLedArc">
+          <span class="tuner-acc-sym">♭</span>
+          <div class="tuner-led-bars" id="tunerLedBars">
+            <span class="t-led" data-pos="-5"></span>
+            <span class="t-led" data-pos="-4"></span>
+            <span class="t-led" data-pos="-3"></span>
+            <span class="t-led" data-pos="-2"></span>
+            <span class="t-led" data-pos="-1"></span>
+            <span class="t-led center" data-pos="0"></span>
+            <span class="t-led" data-pos="1"></span>
+            <span class="t-led" data-pos="2"></span>
+            <span class="t-led" data-pos="3"></span>
+            <span class="t-led" data-pos="4"></span>
+            <span class="t-led" data-pos="5"></span>
+          </div>
+          <span class="tuner-acc-sym">♯</span>
+        </div>
+
+        <div class="tuner-note-stage" id="tunerNoteStage">
+          <span class="tuner-string-badge" id="tunerStringBadge"></span>
+          <div class="tuner-main-note-wrap">
+            <span class="tuner-main-note" id="tunerMainNote">—</span>
+            <span class="tuner-note-acc" id="tunerNoteAcc"></span>
+          </div>
+          <span class="tuner-cents-sub" id="tunerCentsSub">440.0 Hz</span>
+        </div>
       </div>
-      <button type="button" class="perf-pop-primary-btn" id="btnTunerPlay" onclick="toggleTunerPlay()">Emitir La (A4)</button>
+
+      <!-- Botón inferior único: cambia de instrumento (solo icono lineal minimalista) -->
+      <button type="button" class="tuner-instrument-cycle-btn" id="btnTunerInstrument" onclick="cycleTunerInstrument()" title="Instrumento: Guitarra" aria-label="Cambiar instrumento">
+        <span class="tuner-inst-icon-wrap" id="tunerInstrumentIcon">
+          <!-- Icono SVG inyectado dinámicamente -->
+        </span>
+      </button>
     </div>
 
     <!-- CONTROL SUPERIOR IZQUIERDO PARA REGRESAR A ENSAYO DESDE CONCIERTO -->
@@ -1182,6 +1224,6 @@
     <span class="pdf-loading-text">Cargando...</span>
   </div>
 
-  <script src="app.js?v=109"></script>
+  <script src="app.js?v=110"></script>
 </body>
 </html>

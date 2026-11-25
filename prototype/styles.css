@@ -11339,20 +11339,307 @@ body.mode-concert-active .bachgpt-widget-root {
   opacity: 0.55;
 }
 
-.tuner-freq-pills {
+/* ==========================================================================
+   AFINADOR TIPO PINZA MINIMALISTA (FENDER / DONNER CLIP-ON TUNER)
+   ========================================================================== */
+.perf-utility-popover.tuner-clip-popover {
+  width: 214px;
+  padding: 11px 13px;
+  gap: 9px;
+}
+
+.tuner-clip-head {
   display: flex;
-  gap: 6px;
+  align-items: center;
   justify-content: space-between;
+  gap: 6px;
 }
 
-.tuner-hz-btn {
-  flex: 1;
+.tuner-hz-stepper {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  background: color-mix(in srgb, var(--bg-canvas) 45%, transparent);
+  border: 1px solid var(--glass-border);
+  border-radius: 9px;
+  padding: 2px;
 }
 
-.tuner-hz-btn.active {
-  background: var(--accent);
-  color: var(--accent-ink);
+.tuner-hz-step-btn {
+  width: 22px;
+  height: 22px;
+  border-radius: 6px;
+  border: none;
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: color 0.14s ease, background 0.14s ease;
+}
+
+.tuner-hz-step-btn:hover {
+  color: var(--text-primary);
+  background: color-mix(in srgb, var(--glass-border) 50%, transparent);
+}
+
+.tuner-hz-readout {
+  min-width: 54px;
+  height: 22px;
+  padding: 0 5px;
+  border: none;
+  background: transparent;
+  color: var(--text-primary);
+  font-size: 11.5px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  cursor: pointer;
+}
+
+.tuner-fork-icon-btn {
+  width: 28px;
+  height: 28px;
+  border-radius: 9px;
+  border: 1px solid var(--glass-border);
+  background: transparent;
+  color: var(--text-secondary);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.16s ease;
+}
+
+.tuner-fork-icon-btn .v-ico {
+  width: 15px;
+  height: 15px;
+}
+
+.tuner-fork-icon-btn:hover {
+  color: var(--text-primary);
+  border-color: color-mix(in srgb, var(--accent) 55%, var(--glass-border));
+}
+
+.tuner-fork-icon-btn.active {
+  color: var(--accent);
   border-color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 16%, transparent);
+  box-shadow: 0 0 10px color-mix(in srgb, var(--accent) 30%, transparent);
+}
+
+/* Pantalla LCD/LED estilo pinza */
+.tuner-clip-screen {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 11px 10px 9px;
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--bg-canvas) 65%, rgba(10, 12, 14, 0.35));
+  border: 1px solid color-mix(in srgb, var(--glass-border) 80%, transparent);
+  box-shadow: inset 0 2px 8px rgba(0, 0, 0, 0.22);
+}
+
+.tuner-led-arc {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  gap: 5px;
+}
+
+.tuner-acc-sym {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  opacity: 0.7;
+  width: 11px;
+  text-align: center;
+}
+
+.tuner-led-bars {
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  gap: 4px;
+  flex: 1;
+  height: 18px;
+}
+
+.t-led {
+  width: 4.5px;
+  height: 11px;
+  border-radius: 2px;
+  background: color-mix(in srgb, var(--text-secondary) 20%, transparent);
+  transition: background 0.06s ease, box-shadow 0.06s ease, transform 0.06s ease;
+}
+
+.t-led[data-pos="-5"],
+.t-led[data-pos="5"] {
+  height: 8px;
+}
+
+.t-led[data-pos="-4"],
+.t-led[data-pos="4"] {
+  height: 9px;
+}
+
+.t-led[data-pos="-3"],
+.t-led[data-pos="3"] {
+  height: 10px;
+}
+
+.t-led[data-pos="-2"],
+.t-led[data-pos="2"] {
+  height: 11px;
+}
+
+.t-led[data-pos="-1"],
+.t-led[data-pos="1"] {
+  height: 12.5px;
+}
+
+.t-led.center {
+  width: 5.5px;
+  height: 16px;
+  border-radius: 2.5px;
+  background: color-mix(in srgb, var(--text-secondary) 32%, transparent);
+}
+
+/* Estados encendidos de los segmentos LED */
+.t-led.lit-warn {
+  background: #e29b38;
+  box-shadow: 0 0 6px rgba(226, 155, 56, 0.65);
+}
+
+.t-led.lit-far {
+  background: #d95c50;
+  box-shadow: 0 0 6px rgba(217, 92, 80, 0.65);
+}
+
+.t-led.lit-ok {
+  background: #2ecc71;
+  box-shadow: 0 0 8px rgba(46, 204, 113, 0.85);
+  transform: scaleY(1.08);
+}
+
+/* Escenario de la Nota Central Gigante */
+.tuner-note-stage {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  width: 100%;
+  min-height: 54px;
+}
+
+.tuner-string-badge {
+  position: absolute;
+  left: 4px;
+  top: 4px;
+  font-size: 10.5px;
+  font-weight: 700;
+  color: var(--text-secondary);
+  padding: 1px 5px;
+  border-radius: 5px;
+  background: color-mix(in srgb, var(--text-secondary) 14%, transparent);
+  font-variant-numeric: tabular-nums;
+}
+
+.tuner-string-badge:empty {
+  display: none;
+}
+
+.tuner-main-note-wrap {
+  display: inline-flex;
+  align-items: flex-start;
+  justify-content: center;
+  line-height: 1;
+}
+
+.tuner-main-note {
+  font-size: 38px;
+  font-weight: 700;
+  letter-spacing: -1px;
+  color: var(--text-primary);
+  font-variant-numeric: tabular-nums;
+  transition: color 0.08s ease, text-shadow 0.08s ease;
+}
+
+.tuner-note-acc {
+  font-size: 16px;
+  font-weight: 700;
+  margin-top: 3px;
+  margin-left: 1px;
+  color: var(--text-primary);
+  transition: color 0.08s ease;
+}
+
+/* Confirmación verde esmeralda cuando está afinada al centro (Fender / Donner) */
+.tuner-clip-screen.is-in-tune .tuner-main-note,
+.tuner-clip-screen.is-in-tune .tuner-note-acc {
+  color: #2ecc71;
+  text-shadow: 0 0 14px rgba(46, 204, 113, 0.45);
+}
+
+.tuner-clip-screen.is-in-tune .tuner-string-badge {
+  color: #2ecc71;
+  background: rgba(46, 204, 113, 0.16);
+}
+
+.tuner-cents-sub {
+  margin-top: 3px;
+  font-size: 10px;
+  font-weight: 500;
+  color: var(--text-secondary);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.2px;
+}
+
+/* Botón inferior minimalista de instrumento (solo icono lineal elegante) */
+.tuner-instrument-cycle-btn {
+  height: 32px;
+  width: 100%;
+  border-radius: 9px;
+  border: 1px solid var(--glass-border);
+  background: color-mix(in srgb, var(--bg-canvas) 38%, transparent);
+  color: var(--text-primary);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: border-color 0.16s ease, background 0.16s ease, color 0.16s ease, transform 0.08s ease;
+}
+
+.tuner-instrument-cycle-btn:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 10%, transparent);
+}
+
+.tuner-instrument-cycle-btn:active {
+  transform: scale(0.97);
+}
+
+.tuner-inst-icon-wrap {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.tuner-inst-icon-wrap svg {
+  width: 20px;
+  height: 20px;
+  stroke: currentColor;
+  stroke-width: 1.5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  fill: none;
 }
 
 .perf-pop-primary-btn {

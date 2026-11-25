@@ -2067,7 +2067,7 @@ function setPerformanceMode(modeState, opts = {}) {
     document.getElementById("brushPopover")?.classList.add("hidden");
     document.getElementById("stampPopover")?.classList.add("hidden");
     document.getElementById("metronomePopover")?.classList.add("hidden");
-    document.getElementById("tunerPopover")?.classList.add("hidden");
+    closeTunerPopoverAndStop();
   } else {
     document.body.classList.remove("concert-immersion");
     if (concertAutoHideTimer) {
@@ -6691,7 +6691,7 @@ function renderMetronomeBeatsStrip() {
 
 function toggleMetronomePopover(e) {
   if (e) e.stopPropagation();
-  document.getElementById("tunerPopover")?.classList.add("hidden");
+  closeTunerPopoverAndStop();
   document.getElementById("metronomePopover")?.classList.toggle("hidden");
 }
 
@@ -7191,48 +7191,492 @@ function initMetronomePopover() {
   header.onpointercancel = stopDrag;
 }
 
-function toggleTunerPopover(e) {
-  if (e) e.stopPropagation();
-  document.getElementById("metronomePopover")?.classList.add("hidden");
-  document.getElementById("tunerPopover")?.classList.toggle("hidden");
+// ==========================================================================
+// AFINADOR TIPO PINZA MINIMALISTA (FENDER / DONNER CLIP-ON + AUTOCORRELACIÓN)
+// ==========================================================================
+const TUNER_STORAGE_KEY = "cadenza_clip_tuner_settings_v1";
+
+// Ciclos de instrumentos con sus cuerdas estándar (en números MIDI) y SVG lineal minimalista
+const TUNER_INSTRUMENTS = [
+  {
+    id: "guitar",
+    name: "Guitarra",
+    // 6E (E2=40), 5A (A2=45), 4D (D3=50), 3G (G3=55), 2B (B3=59), 1E (E4=64)
+    strings: [
+      { label: "6ª", midi: 40 },
+      { label: "5ª", midi: 45 },
+      { label: "4ª", midi: 50 },
+      { label: "3ª", midi: 55 },
+      { label: "2ª", midi: 59 },
+      { label: "1ª", midi: 64 }
+    ],
+    // Silueta lineal elegante de guitarra clásica (cuerpo en 8, boca circular, mástil y clavijero)
+    svg: `<svg viewBox="0 0 24 24"><path d="M9.5 10.5c-2 0-3.3 1.4-3.3 3.2 0 1 .5 1.9 1.2 2.4-1.3.7-2.2 2-2.2 3.6 0 2.3 2 3.8 4.8 3.8s4.8-1.5 4.8-3.8c0-1.6-.9-2.9-2.2-3.6.7-.5 1.2-1.4 1.2-2.4 0-1.8-1.3-3.2-3.3-3.2h-1z"/><circle cx="10" cy="14.2" r="1.4"/><line x1="8.6" y1="19.8" x2="11.4" y2="19.8"/><path d="M10 10.5V3.5"/><rect x="8.8" y="1.5" width="2.4" height="2" rx="0.6"/></svg>`
+  },
+  {
+    id: "violin",
+    name: "Violín",
+    // 4G (G3=55), 3D (D4=62), 2A (A4=69), 1E (E5=76)
+    strings: [
+      { label: "4ª", midi: 55 },
+      { label: "3ª", midi: 62 },
+      { label: "2ª", midi: 69 },
+      { label: "1ª", midi: 76 }
+    ],
+    // Silueta lineal de violín con efes (f-holes) y voluta superior
+    svg: `<svg viewBox="0 0 24 24"><path d="M9.6 10c-1.8.2-3 1.5-3 3 0 1 .6 1.8 1.5 2.3-1.4.6-2.3 1.9-2.3 3.4 0 2.1 1.8 3.6 4.2 3.6s4.2-1.5 4.2-3.6c0-1.5-.9-2.8-2.3-3.4.9-.5 1.5-1.3 1.5-2.3 0-1.5-1.2-2.8-3-3h-.8z"/><path d="M8.3 15.8c.4.8.4 1.8 0 2.6"/><path d="M11.7 15.8c-.4.8-.4 1.8 0 2.6"/><path d="M10 10V3.2"/><circle cx="10" cy="2.1" r="1.1"/><line x1="16.5" y1="3" x2="19.5" y2="21"/></svg>`
+  },
+  {
+    id: "cello",
+    name: "Chelo",
+    // 4C (C2=36), 3G (G2=43), 2D (D3=50), 1A (A3=57)
+    strings: [
+      { label: "4ª", midi: 36 },
+      { label: "3ª", midi: 43 },
+      { label: "2ª", midi: 50 },
+      { label: "1ª", midi: 57 }
+    ],
+    // Silueta lineal de violonchelo con pica inferior (endpin) y efes
+    svg: `<svg viewBox="0 0 24 24"><path d="M11.5 8.5c-2 .2-3.2 1.4-3.2 2.8 0 .9.5 1.7 1.3 2.2-1.4.6-2.3 1.8-2.3 3.3 0 2 1.9 3.4 4.7 3.4s4.7-1.4 4.7-3.4c0-1.5-.9-2.7-2.3-3.3.8-.5 1.3-1.3 1.3-2.2 0-1.4-1.2-2.6-3.2-2.8h-1z"/><path d="M10.2 14c.3.7.3 1.6 0 2.3"/><path d="M13.8 14c-.3.7-.3 1.6 0 2.3"/><path d="M12 8.5V2.8"/><circle cx="12" cy="1.8" r="0.9"/><line x1="12" y1="20.2" x2="12" y2="23"/><line x1="10.8" y1="23" x2="13.2" y2="23"/></svg>`
+  },
+  {
+    id: "viola",
+    name: "Viola",
+    // 4C (C3=48), 3G (G3=55), 2D (D4=62), 1A (A4=69)
+    strings: [
+      { label: "4ª", midi: 48 },
+      { label: "3ª", midi: 55 },
+      { label: "2ª", midi: 62 },
+      { label: "1ª", midi: 69 }
+    ],
+    // Silueta lineal de viola (caja más ancha con cordal trapezoidal y arco cruzado)
+    svg: `<svg viewBox="0 0 24 24"><path d="M11.4 9.5c-2.1.2-3.4 1.5-3.4 3.1 0 1 .6 1.8 1.5 2.4-1.5.6-2.5 1.9-2.5 3.5 0 2.2 2.1 3.7 5 3.7s5-1.5 5-3.7c0-1.6-1-2.9-2.5-3.5.9-.6 1.5-1.4 1.5-2.4 0-1.6-1.3-2.9-3.4-3.1h-1.2z"/><path d="M9.8 15.2c.4.8.4 1.8 0 2.6"/><path d="M14.2 15.2c-.4.8-.4 1.8 0 2.6"/><path d="M12 9.5V2.8"/><rect x="11" y="1.4" width="2" height="1.5" rx="0.5"/><path d="M11.2 20.5l.8-2.3.8 2.3"/></svg>`
+  },
+  {
+    id: "bass",
+    name: "Bajo",
+    // 4E (E1=28), 3A (A1=33), 2D (D2=38), 1G (G2=43)
+    strings: [
+      { label: "4ª", midi: 28 },
+      { label: "3ª", midi: 33 },
+      { label: "2ª", midi: 38 },
+      { label: "1ª", midi: 43 }
+    ],
+    // Silueta lineal de bajo (hombros asimétricos / caída de contrabajo-bajo y clavijero de 4 clavijas)
+    svg: `<svg viewBox="0 0 24 24"><path d="M12 10.2c-2.2.4-3.6 2-3.6 3.7 0 1 .5 1.8 1.2 2.3-1.3.7-2.1 1.9-2.1 3.4 0 2 1.9 3.4 4.5 3.4s4.5-1.4 4.5-3.4c0-1.5-.8-2.7-2.1-3.4.7-.5 1.2-1.3 1.2-2.3 0-1.7-1.4-3.3-3.6-3.7z"/><path d="M12 10.2V3.2"/><rect x="10.7" y="1.4" width="2.6" height="2" rx="0.5"/><line x1="9.6" y1="2.1" x2="10.7" y2="2.1"/><line x1="13.3" y1="2.1" x2="14.4" y2="2.1"/><circle cx="12" cy="15.8" r="1.2"/></svg>`
+  }
+];
+
+const CHROMATIC_NOTE_NAMES = [
+  { letter: "C", acc: "" },
+  { letter: "C", acc: "♯" },
+  { letter: "D", acc: "" },
+  { letter: "D", acc: "♯" },
+  { letter: "E", acc: "" },
+  { letter: "F", acc: "" },
+  { letter: "F", acc: "♯" },
+  { letter: "G", acc: "" },
+  { letter: "G", acc: "♯" },
+  { letter: "A", acc: "" },
+  { letter: "A", acc: "♯" },
+  { letter: "B", acc: "" }
+];
+
+let tunerInstIndex = 0;
+let tunerMicStream = null;
+let tunerAnalyser = null;
+let tunerTimeBuffer = null;
+let tunerRafId = null;
+let tunerListening = false;
+let tunerSmoothedFreq = 0;
+let tunerHarmonicOsc = null;
+
+function initClipTuner() {
+  try {
+    const raw = localStorage.getItem(TUNER_STORAGE_KEY);
+    if (raw) {
+      const saved = JSON.parse(raw);
+      if (saved.hz && saved.hz >= 410 && saved.hz <= 450) {
+        tunerHz = saved.hz;
+      }
+      if (typeof saved.instIndex === "number" && saved.instIndex >= 0 && saved.instIndex < TUNER_INSTRUMENTS.length) {
+        tunerInstIndex = saved.instIndex;
+      }
+    }
+  } catch (_) {}
+  updateTunerHzUI();
+  renderTunerInstrumentIcon();
 }
 
-function setTunerFreq(hz, btn) {
-  tunerHz = hz;
+function saveClipTunerSettings() {
+  try {
+    localStorage.setItem(TUNER_STORAGE_KEY, JSON.stringify({
+      hz: tunerHz,
+      instIndex: tunerInstIndex
+    }));
+  } catch (_) {}
+}
+
+function updateTunerHzUI() {
   const hzLbl = document.getElementById("tunerHzLabel");
   const chipLbl = document.getElementById("tunerChipLabel");
-  if (hzLbl) hzLbl.textContent = `${hz} Hz`;
-  if (chipLbl) chipLbl.textContent = `${hz}`;
-  document.querySelectorAll(".tuner-hz-btn").forEach((b) => b.classList.toggle("active", b === btn));
+  const centsSub = document.getElementById("tunerCentsSub");
+  if (hzLbl) hzLbl.textContent = `${tunerHz} Hz`;
+  if (chipLbl) chipLbl.textContent = `${tunerHz}`;
+  if (centsSub && !tunerListening && !tunerOsc) {
+    centsSub.textContent = `${tunerHz}.0 Hz`;
+  }
   if (tunerOsc) {
-    tunerOsc.frequency.setValueAtTime(tunerHz, getPerformerAudioCtx().currentTime);
+    const ctx = getPerformerAudioCtx();
+    if (ctx) {
+      tunerOsc.frequency.setValueAtTime(tunerHz, ctx.currentTime);
+      if (tunerHarmonicOsc) {
+        tunerHarmonicOsc.frequency.setValueAtTime(tunerHz * 2, ctx.currentTime);
+      }
+    }
+    showTunerForkVisualFeedback();
   }
 }
 
-function toggleTunerPlay() {
-  const btn = document.getElementById("btnTunerPlay");
-  const chip = document.getElementById("tunerLiveChip");
+function setTunerFreq(hz) {
+  tunerHz = Math.max(410, Math.min(450, Math.round(Number(hz) || 440)));
+  updateTunerHzUI();
+  saveClipTunerSettings();
+}
+
+function stepTunerFreq(delta) {
+  setTunerFreq(tunerHz + delta);
+}
+
+function cycleTunerPresetFreq() {
+  const next = tunerHz === 440 ? 442 : tunerHz === 442 ? 415 : 440;
+  setTunerFreq(next);
+}
+
+function renderTunerInstrumentIcon() {
+  const inst = TUNER_INSTRUMENTS[tunerInstIndex] || TUNER_INSTRUMENTS[0];
+  const wrap = document.getElementById("tunerInstrumentIcon");
+  const btn = document.getElementById("btnTunerInstrument");
+  if (wrap) wrap.innerHTML = inst.svg;
+  if (btn) btn.title = `Instrumento: ${inst.name}`;
+}
+
+function cycleTunerInstrument() {
+  tunerInstIndex = (tunerInstIndex + 1) % TUNER_INSTRUMENTS.length;
+  renderTunerInstrumentIcon();
+  saveClipTunerSettings();
+}
+
+function toggleTunerPopover(e) {
+  if (e) e.stopPropagation();
+  document.getElementById("metronomePopover")?.classList.add("hidden");
+  const pop = document.getElementById("tunerPopover");
+  if (!pop) return;
+
+  const willOpen = pop.classList.contains("hidden");
+  if (willOpen) {
+    pop.classList.remove("hidden");
+    document.getElementById("tunerLiveChip")?.classList.add("active");
+    startClipTunerListening();
+  } else {
+    closeTunerPopoverAndStop();
+  }
+}
+
+function closeTunerPopoverAndStop() {
+  const pop = document.getElementById("tunerPopover");
+  if (pop) pop.classList.add("hidden");
+  stopClipTunerListening();
+  stopTunerForkTone();
+  document.getElementById("tunerLiveChip")?.classList.remove("active");
+  const chipLbl = document.getElementById("tunerChipLabel");
+  if (chipLbl) chipLbl.textContent = `${tunerHz}`;
+}
+
+function toggleTunerForkTone() {
   if (tunerOsc) {
-    try { tunerOsc.stop(); } catch (_) {}
-    tunerOsc.disconnect();
-    tunerOsc = null;
-    if (btn) btn.textContent = "Emitir La (A4)";
-    if (chip) chip.classList.remove("active");
+    stopTunerForkTone();
     return;
   }
   const ctx = getPerformerAudioCtx();
   if (!ctx) return;
+
   const osc = ctx.createOscillator();
+  const harmOsc = ctx.createOscillator();
   const gain = ctx.createGain();
+  const harmGain = ctx.createGain();
+
   osc.type = "sine";
-  osc.frequency.value = tunerHz;
-  gain.gain.value = 0.14;
+  osc.frequency.setValueAtTime(tunerHz, ctx.currentTime);
+  gain.gain.setValueAtTime(0.16, ctx.currentTime);
+
+  // Suave segundo armónico para que se escuche cálido y claro en tablets
+  harmOsc.type = "triangle";
+  harmOsc.frequency.setValueAtTime(tunerHz * 2, ctx.currentTime);
+  harmGain.gain.setValueAtTime(0.025, ctx.currentTime);
+
   osc.connect(gain);
+  harmOsc.connect(harmGain);
   gain.connect(ctx.destination);
+  harmGain.connect(ctx.destination);
+
   osc.start();
+  harmOsc.start();
   tunerOsc = osc;
-  if (btn) btn.textContent = "Detener Diapasón";
-  if (chip) chip.classList.add("active");
+  tunerHarmonicOsc = harmOsc;
+
+  document.getElementById("btnTunerFork")?.classList.add("active");
+  showTunerForkVisualFeedback();
+}
+
+function stopTunerForkTone() {
+  if (tunerOsc) {
+    try { tunerOsc.stop(); } catch (_) {}
+    try { tunerOsc.disconnect(); } catch (_) {}
+    tunerOsc = null;
+  }
+  if (tunerHarmonicOsc) {
+    try { tunerHarmonicOsc.stop(); } catch (_) {}
+    try { tunerHarmonicOsc.disconnect(); } catch (_) {}
+    tunerHarmonicOsc = null;
+  }
+  document.getElementById("btnTunerFork")?.classList.remove("active");
+}
+
+function showTunerForkVisualFeedback() {
+  renderClipTunerDisplay({
+    noteLetter: "A",
+    noteAcc: "",
+    cents: 0,
+    freq: tunerHz,
+    stringLabel: findClosestInstrumentStringLabel(69)
+  });
+}
+
+function findClosestInstrumentStringLabel(detectedMidi) {
+  const inst = TUNER_INSTRUMENTS[tunerInstIndex] || TUNER_INSTRUMENTS[0];
+  let best = null;
+  let minDiff = Infinity;
+  for (const s of inst.strings) {
+    const diff = Math.abs(detectedMidi - s.midi);
+    if (diff < minDiff) {
+      minDiff = diff;
+      best = s;
+    }
+  }
+  // Mostrar número de cuerda si está dentro de +-3 semitonos de esa cuerda
+  return best && minDiff <= 3 ? best.label : "";
+}
+
+function renderClipTunerDisplay({ noteLetter, noteAcc, cents, freq, stringLabel, idle = false }) {
+  const screen = document.getElementById("tunerClipScreen");
+  const mainNote = document.getElementById("tunerMainNote");
+  const accEl = document.getElementById("tunerNoteAcc");
+  const badgeEl = document.getElementById("tunerStringBadge");
+  const subEl = document.getElementById("tunerCentsSub");
+  const leds = document.querySelectorAll("#tunerLedBars .t-led");
+
+  if (idle) {
+    screen?.classList.remove("is-in-tune");
+    if (mainNote) mainNote.textContent = "—";
+    if (accEl) accEl.textContent = "";
+    if (badgeEl) badgeEl.textContent = "";
+    if (subEl) subEl.textContent = `${tunerHz}.0 Hz`;
+    leds.forEach((l) => l.classList.remove("lit-ok", "lit-warn", "lit-far"));
+    return;
+  }
+
+  const inTune = Math.abs(cents) <= 3;
+  screen?.classList.toggle("is-in-tune", inTune);
+  if (mainNote) mainNote.textContent = noteLetter;
+  if (accEl) accEl.textContent = noteAcc || "";
+  if (badgeEl) badgeEl.textContent = stringLabel || "";
+
+  const sign = cents > 0 ? `+${cents}` : `${cents}`;
+  if (subEl) subEl.textContent = `${freq.toFixed(1)} Hz · ${sign}c`;
+
+  // Mapear cents (-50 a +50) a los 11 segmentos LED (-5 a +5)
+  const clamped = Math.max(-50, Math.min(50, cents));
+  const ledPos = Math.round(clamped / 10);
+
+  leds.forEach((led) => {
+    led.classList.remove("lit-ok", "lit-warn", "lit-far");
+    const pos = parseInt(led.dataset.pos || "0", 10);
+    if (inTune && pos === 0) {
+      led.classList.add("lit-ok");
+    } else if (!inTune) {
+      if (pos === 0) return;
+      if ((ledPos < 0 && pos >= ledPos && pos < 0) || (ledPos > 0 && pos <= ledPos && pos > 0)) {
+        const cls = Math.abs(pos) >= 4 ? "lit-far" : "lit-warn";
+        led.classList.add(cls);
+      }
+    }
+  });
+}
+
+// Algoritmo de Autocorrelación en el dominio del tiempo para detección precisa de frecuencia fundamental
+function detectPitchAutocorrelation(buf, sampleRate) {
+  const size = buf.length;
+  let rms = 0;
+  for (let i = 0; i < size; i++) {
+    const val = buf[i];
+    rms += val * val;
+  }
+  rms = Math.sqrt(rms / size);
+  if (rms < 0.012) return -1; // Silencio / ruido de fondo bajo
+
+  // Recortar bordes hasta cruce por umbral para estabilizar la ventana
+  let r1 = 0;
+  let r2 = size - 1;
+  const thres = 0.2;
+  for (let i = 0; i < size / 2; i++) {
+    if (Math.abs(buf[i]) < thres) {
+      r1 = i;
+      break;
+    }
+  }
+  for (let i = 1; i < size / 2; i++) {
+    if (Math.abs(buf[size - i]) < thres) {
+      r2 = size - i;
+      break;
+    }
+  }
+
+  const trimmed = buf.slice(r1, r2);
+  const newSize = trimmed.length;
+  if (newSize < 64) return -1;
+
+  const c = new Float32Array(newSize);
+  for (let i = 0; i < newSize; i++) {
+    let sum = 0;
+    for (let j = 0; j < newSize - i; j++) {
+      sum += trimmed[j] * trimmed[j + i];
+    }
+    c[i] = sum;
+  }
+
+  let d = 0;
+  while (d + 1 < newSize && c[d] > c[d + 1]) {
+    d++;
+  }
+  let maxval = -1;
+  let maxpos = -1;
+  for (let i = d; i < newSize; i++) {
+    if (c[i] > maxval) {
+      maxval = c[i];
+      maxpos = i;
+    }
+  }
+  if (maxpos <= 0) return -1;
+
+  // Interpolación parabólica para precisión sub-muestra
+  let T0 = maxpos;
+  if (T0 > 0 && T0 < newSize - 1) {
+    const x1 = c[T0 - 1];
+    const x2 = c[T0];
+    const x3 = c[T0 + 1];
+    const a = (x1 + x3 - 2 * x2) / 2;
+    const b = (x3 - x1) / 2;
+    if (a) T0 = T0 - b / (2 * a);
+  }
+
+  const freq = sampleRate / T0;
+  if (freq < 27 || freq > 2200) return -1;
+  return freq;
+}
+
+async function startClipTunerListening() {
+  renderClipTunerDisplay({ idle: true });
+  if (tunerListening) return;
+
+  if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+    return;
+  }
+
+  try {
+    const ctx = getPerformerAudioCtx();
+    if (!ctx) return;
+
+    tunerMicStream = await navigator.mediaDevices.getUserMedia({
+      audio: {
+        echoCancellation: false,
+        autoGainControl: false,
+        noiseSuppression: false
+      }
+    });
+
+    // Verificar si el usuario cerró el popover mientras se pedía permiso
+    const pop = document.getElementById("tunerPopover");
+    if (!pop || pop.classList.contains("hidden")) {
+      stopClipTunerListening();
+      return;
+    }
+
+    const source = ctx.createMediaStreamSource(tunerMicStream);
+    tunerAnalyser = ctx.createAnalyser();
+    tunerAnalyser.fftSize = 2048;
+    tunerTimeBuffer = new Float32Array(tunerAnalyser.fftSize);
+    source.connect(tunerAnalyser);
+
+    tunerListening = true;
+    tunerSmoothedFreq = 0;
+
+    const updatePitchLoop = () => {
+      if (!tunerListening || !tunerAnalyser) return;
+
+      // Si el diapasón está sonando, mostrar la referencia La configurada
+      if (tunerOsc) {
+        showTunerForkVisualFeedback();
+        tunerRafId = requestAnimationFrame(updatePitchLoop);
+        return;
+      }
+
+      tunerAnalyser.getFloatTimeDomainData(tunerTimeBuffer);
+      const detected = detectPitchAutocorrelation(tunerTimeBuffer, ctx.sampleRate);
+
+      if (detected > 0) {
+        tunerSmoothedFreq = tunerSmoothedFreq === 0
+          ? detected
+          : tunerSmoothedFreq * 0.72 + detected * 0.28;
+
+        // La detección de notas se rige dinámicamente por la frecuencia Hz seleccionada (tunerHz)
+        const exactMidi = 69 + 12 * Math.log2(tunerSmoothedFreq / tunerHz);
+        const nearestMidi = Math.round(exactMidi);
+        const cents = Math.round((exactMidi - nearestMidi) * 100);
+        const noteIndex = ((nearestMidi % 12) + 12) % 12;
+        const noteObj = CHROMATIC_NOTE_NAMES[noteIndex];
+        const stringLabel = findClosestInstrumentStringLabel(nearestMidi);
+
+        renderClipTunerDisplay({
+          noteLetter: noteObj.letter,
+          noteAcc: noteObj.acc,
+          cents,
+          freq: tunerSmoothedFreq,
+          stringLabel
+        });
+      }
+
+      tunerRafId = requestAnimationFrame(updatePitchLoop);
+    };
+
+    tunerRafId = requestAnimationFrame(updatePitchLoop);
+  } catch (_) {
+    // Si el navegador no tiene micrófono disponible, el diapasón y los controles siguen operativos
+  }
+}
+
+function stopClipTunerListening() {
+  tunerListening = false;
+  if (tunerRafId) {
+    cancelAnimationFrame(tunerRafId);
+    tunerRafId = null;
+  }
+  if (tunerMicStream) {
+    tunerMicStream.getTracks().forEach((t) => t.stop());
+    tunerMicStream = null;
+  }
+  tunerAnalyser = null;
+  tunerSmoothedFreq = 0;
 }
 
 function toggleImportMenu(e) {
@@ -7664,7 +8108,7 @@ document.addEventListener("click", (e) => {
 
   const tunerPop = document.getElementById("tunerPopover");
   if (tunerPop && !tunerPop.classList.contains("hidden") && !e.target.closest("#tunerPopover") && !e.target.closest("#tunerLiveChip")) {
-    tunerPop.classList.add("hidden");
+    closeTunerPopoverAndStop();
   }
 });
 
@@ -7680,6 +8124,7 @@ window.addEventListener("DOMContentLoaded", async () => {
   switchStampTab("dynamics");
   initStampPaletteDrag();
   initMetronomePopover();
+  initClipTuner();
   initFolioZoomAndPan();
   const perfSvg = document.getElementById("performerSvg");
   if (perfSvg) perfSvg.innerHTML = buildPortraitScoreSvg(-1);
