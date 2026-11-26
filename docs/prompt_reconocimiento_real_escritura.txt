@@ -1,0 +1,84 @@
+# PROMPT DE IMPLEMENTACIÓN: MOTOR REAL DE RECONOCIMIENTO DE ESCRITURA MANUSCRITA (CADENZA)
+
+Actúa como Ingeniero Senior Frontend y Especialista en Gráficos y Reconocimiento de Tinta Digital (Digital Ink Recognition) en Cadenza (`prototype/app.js`, `prototype/index.html`).
+
+---
+
+### 1. DIAGNÓSTICO DEL PROBLEMA
+En la función `convertSmartBatchDirectly()` de `prototype/app.js` (línea 4509):
+```javascript
+const text = moldWords[moldIndex++ % moldWords.length]; // "poco rit.", "dolce", "C.VII", etc.
+```
+Actualmente el prototipo **NO está reconociendo el trazo**: simplemente toma una palabra al azar de un arreglo estático de palabras musicales (`moldWords`). Esto hace que cualquier cosa que el usuario escriba a mano se sustituya por una frase genérica que nada tiene que ver con su trazo.
+
+---
+
+### 2. SOLUCIÓN: MOTOR DE RECONOCIMIENTO REAL (HANDWRITING RECOGNITION API)
+
+Debes implementar un reconocimiento **100% fiel de los trazos reales del usuario** utilizando el estándar oficial de reconocimiento de tinta manuscrita sin dependencias pesadas: **Google Handwriting Input API (Web API gratuita de trazos vectoriales)** con respaldo inteligente local.
+
+#### A. Extracción de Trazos Vectoriales (Ink Strokes):
+Al levantar el lápiz y terminar el lote de trazos (`smartBatchId`):
+1. Extraer los trazos del batch con sus coordenadas $x, y$ y tiempos $t$:
+   ```javascript
+   // Formato estándar de reconocimiento de tinta: [ [x1, x2, ...], [y1, y2, ...], [t1, t2, ...] ]
+   const inkData = batchStrokes.map(stroke => [
+     stroke.points.map(p => Math.round(p.x)),
+     stroke.points.map(p => Math.round(p.y)),
+     stroke.points.map((p, idx) => idx * 16)
+   ]);
+   ```
+
+#### B. Solicitud de Reconocimiento a la API de Tinta Digital:
+Enviar los trazos vectoriales a la API estándar de Google Input Tools (gratuita, sin API key, usada universalmente para reconocimiento de manuscrito en web):
+```javascript
+async function recognizeHandwritingInk(inkStrokes, width, height) {
+  const url = "https://www.google.com/inputtools/request?ime=handwriting&app=mobilesearch&cs=1&oe=UTF-8";
+  const body = {
+    app_version: 0.4,
+    api_level: "537.36",
+    device: navigator.userAgent,
+    input_type: "0",
+    options: "enable_pre_space",
+    requests: [{
+      writing_guide: { writing_area_width: width, writing_area_height: height },
+      ink: inkStrokes,
+      language: "es" // o "la" para términos musicales universales
+    }]
+  };
+
+  try {
+    const res = await fetch(url, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body)
+    });
+    const data = await res.json();
+    if (data[0] === "SUCCESS" && data[1][0] && data[1][0][1].length > 0) {
+      return data[1][0][1][0]; // Primera coincidencia exacta del texto escrito
+    }
+  } catch (err) {
+    console.warn("Fallo en reconocimiento online, usando fallback:", err);
+  }
+  return null;
+}
+```
+
+#### C. Respaldo Local Inteligente (Offline Fallback):
+Si la tableta no tiene conexión a internet en ese momento:
+- Si el usuario escribe digitaciones o números simples (ej: `1`, `2`, `3`, `4`, `5`, `0`), o signos como `p`, `f`, `m`, el analizador de forma básico por cuadrantes debe extraer el carácter o dígito exacto.
+- Opcionalmente, permitir que un doble toque sobre el texto convertido permita corregir o teclear cualquier letra rápidamente con el teclado táctil nativo.
+
+---
+
+### 3. INTEGRACIÓN EN `convertSmartBatchDirectly()`
+En `app.js`:
+1. Reemplazar la línea que usa `moldWords[moldIndex++]`.
+2. Ejecutar la función de reconocimiento `const recognizedText = await recognizeHandwritingInk(...)`.
+3. Asignar `text = recognizedText || textoReconocidoFallback`.
+4. El texto reconocido exacto se monta dentro de la caja interactiva (`.mold-item.editorial-note`) con:
+   - Su botón `[ ✕ ]` en la esquina para eliminar.
+   - Su manija `[ ⤡ ]` para escalar.
+   - Sus bordes para arrastrar y reposicionar.
+
+Por favor, sustituye el arreglo estático `moldWords` e implementa este reconocedor vectorial real en `prototype/app.js`.

@@ -1,0 +1,70 @@
+# PROMPT DE IMPLEMENTACIÓN: MOTOR DE TRAZO LIBRE SENSIBLE A LA PRESIÓN Y CONVERSIÓN A TEXTO DIGITAL (CADENZA)
+
+Actúa como Ingeniero Senior de Software especializado en gráficos web de bajo nivel (Canvas / WebGL / Pointer Events API) y Diseñador UX de interfaces táctiles para tabletas musicales (`prototype/index.html`, `prototype/styles.css`, `prototype/app.js`).
+
+Tu objetivo es construir en Cadenza un **motor de tinta digital profesional de grado industrial** (equivalente a Samsung Notes / Apple Notes) con dos subsistemas clave:
+1. **Trazo libre ultrasuave con respuesta dinámica a la presión real del stylus y rechazo de palma.**
+2. **Sistema Smart Ink de conversión de escritura manuscrita a letra de molde digital (tipografía musical editorial) con 100% de efectividad.**
+
+---
+
+## 🖋️ PARTE 1: MOTOR DE TRAZO PROFESIONAL (POINTER EVENTS + DINÁMICA DE PRESIÓN)
+
+Sustituir los eventos táctiles básicos (`touchmove`/`mousemove`) por la **Web Pointer Events API** para aprovechar el hardware de stylus activo (S-Pen, USI Pen, stylus capacitivo):
+
+### 1. Detección de Presión Real y Velocidad:
+- Escuchar `pointerdown`, `pointermove`, `pointerup`, `pointercancel`.
+- Capturar `event.pressure` (rango nativo `0.0` a `1.0`). Si el dispositivo no reporta presión (o es ratón sin presión activa), calcular presión emulada basada en la **velocidad inversa del trazo** (trazos rápidos = más finos; trazos lentos = más gruesos).
+- Fórmula de grosor dinámico en cada segmento:
+  $$\text{Grosor} = \text{AnchoBase} \times (0.25 + 1.5 \times \text{pressure})$$
+
+### 2. Suavizado Bézier Dinámico (Cero trazos poligonales o temblores):
+- No dibujar líneas rectas simples entre puntos (`lineTo`).
+- Implementar interpolación mediante **curvas Bézier cuadráticas continuas** uniendo los puntos medios:
+  $$P_{\text{mid}} = \left(\frac{x_1 + x_2}{2}, \frac{y_1 + y_2}{2}\right)$$
+- Utilizar puntas de trazo redondeadas (`ctx.lineCap = 'round'` y `ctx.lineJoin = 'round'`) con actualización continua del ancho en cada sub-segmento para obtener transiciones cónicas naturales (punta fina al entrar y salir del trazo).
+
+### 3. Rechazo de Palma Nativo (Palm Rejection):
+- Si `event.pointerType === 'pen'`, activar el modo estricto de pluma: ignorar cualquier evento entrante con `event.pointerType === 'touch'` para que el músico pueda descansar la muñeca completamente sobre la partitura sin dejar manchas.
+- Solo si la herramienta seleccionada explícitamente es "Dibujo con dedo" o no hay lápiz presente, aceptar entradas táctiles.
+
+### 4. Herramientas de Estudio (Styling sobrio):
+- **Pluma Fuente / Tinta:** Alta sensibilidad a la presión y bordes nítidos.
+- **Lápiz de Grafito:** Trazo con opacidad sutil (70%) y textura fina.
+- **Resaltador Flotante (Highlighter):** Trazo semitransparente con `globalCompositeOperation = 'multiply'` (o canal alfa al 35%) para iluminar notas y compases sin tapar la tinta negra de la partitura.
+- **Borrador Inteligente:** Opción dual: borrador por trazo completo (elimina el trazo entero al tocarlo) o borrador de precisión por píxeles.
+
+---
+
+## 🔤 PARTE 2: SISTEMA SMART INK DE CONVERSIÓN A TEXTO DIGITAL (100% EFECTIVIDAD)
+
+Para garantizar un 100% de efectividad sin los fallos clásicos de reconocimiento OCR automático:
+
+### 1. Flujo "Smart Ink Box" (Escritura Híbrida Asistida):
+- Al seleccionar la herramienta **`[ 🔤 Texto / Tinta ]`**, el usuario puede escribir a mano alzada libremente sobre cualquier parte de la partitura (ej: *"Ritardando compás 32"*, *"Solo vientos"*, *"Coda"*).
+- Al levantar el lápiz por más de 700ms (o al presionar un botón flotante sutil), el trazo manuscrito se agrupa en una caja delimitadora (*Bounding Box*) con un botón flotante minimalista:
+  `[ ✨ Convertir ]` / `[ T ]`.
+
+### 2. Reconocimiento y Respaldo Inteligente (100% de Precisión Garantizada):
+- **Canal Primario (Nativo del Sistema):**
+  - Utilizar el motor nativo del sistema operativo de la tableta / navegador (mediante input invisible con `inputmode="text"` y soporte de teclado manuscrito nativo de Android/Windows Gboard Handwriting).
+- **Canal de Respaldo Inmediato (Cero Frustración):**
+  - Si una palabra ofrece duda, se despliega una pequeña tarjeta flotante no invasiva con:
+    1. El texto interpretado editable en 1 toque.
+    2. Las 3 palabras sugeridas más comunes en música (*Ritardando, Diminuendo, A tempo, Crescendo, Dolce, Espressivo, etc.*).
+  - Al confirmar con un toque:
+    - Se borra el trazo manuscrito del canvas.
+    - Se inserta en su lugar un elemento tipográfico vectorial nítido con tipografía editorial de partitura (serif elegante o sans minimalista), con tamaño ajustable y fondo transparente o ligeramente iluminado.
+
+### 3. Edición y Reubicación de Notas de Texto:
+- El texto convertido se puede arrastrar con el dedo o stylus para ubicarlo con precisión milimétrica encima o debajo del pentagrama.
+- Doble toque sobre el texto abre la edición rápida sin rehacer la nota.
+
+---
+
+## 🎨 PARTE 3: LÍNEA EDITORIAL Y RENDIMIENTO EN CADENZA
+- **Rendimiento a 60-120 FPS:** Toda la interacción de dibujo debe correr en una capa de canvas independiente (`draw-layer`) superpuesta al PDF (`pdf-page-canvas`), asegurando que no se redibuje la partitura con cada movimiento del lápiz.
+- **Iconografía y UI:** Iconos lineales SVG sobrios (1.5px de trazo), paleta de colores para músicos (grafito oscuro, rojo de corrección suave, azul tenue, resaltador amarillo/verde pastel).
+- **Persistencia en LocalStorage / Serialización:** Las anotaciones (tanto trazos vectoriales como textos de molde) deben guardarse asociadas al ID de la partitura y al número de página actual en formato JSON compacto para que nunca se pierdan al cambiar de página o cerrar la aplicación.
+
+Por favor, revisa `prototype/index.html`, `prototype/styles.css` y `prototype/app.js` e implementa este subsistema de trazo y conversión a texto digital.

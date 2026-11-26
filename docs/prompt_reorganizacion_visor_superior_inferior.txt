@@ -1,0 +1,56 @@
+# PROMPT DE IMPLEMENTACIÓN: REORGANIZACIÓN SUPERIOR E INFERIOR DEL VISOR (#MODE-PERFORMER)
+
+Actúa como Ingeniero Senior Frontend y Diseñador UX/UI de Cadenza (`prototype/index.html`, `prototype/styles.css`, `prototype/app.js`).
+
+Tu objetivo es reorganizar la interfaz del visor unificado tanto en la cabecera superior como en la barra inferior para lograr máxima limpieza visual, balance orgánico y ergonomía táctil en tabletas.
+
+---
+
+### 1. CABECERA SUPERIOR (`performer-top-bar`)
+
+1. **Eliminar el Cintillo / Información Redundante del PDF:**
+   - Remover el bloque central del título y compositor (`.perf-top-center` / `#performerTopTitle`, `#performerTopComposer`). Esta información es redundante mientras se estudia o ensaya y saturaba el centro del encabezado.
+   - Dejar el espacio libre para distribuir los controles funcionales activos con suficiente aire.
+
+2. **Reubicar el Switch "Ensayo / Concierto":**
+   - Mover el conmutador de modo (`#mode-performer .perf-bottom-right-switch`) desde la esquina inferior a la **barra superior (`performer-top-bar`)**, situándolo en el bloque derecho, justo al lado de los chips vivos de **Metrónomo** y **Afinador**.
+   - **Misma Jerarquía Visual:** El switch debe adoptar exactamente la misma altura (32px - 34px), radio de borde (`border-radius: 18px`), trazo sutil (1px), efecto translúcido (`backdrop-filter`) e iconografía lineal (1.5px) que los chips de Metrónomo y Afinador, integrándose como una sola familia sobria de herramientas del músico.
+
+---
+
+### 2. BARRA INFERIOR ORGÁNICA Y EQUITATIVA EN MODO ENSAYO
+
+En la base de la pantalla, resolver el conflicto donde los elementos quedaban ocultos o encimados, distribuyéndolos de forma armónica en un solo renglón horizontal limpio:
+
+```
+┌────────────────────────────────────────────────────────────────────────────────────────┐
+│                                                                                        │
+│                                    PARTITURA LIMPIA                                    │
+│                                                                                        │
+├────────────────────────────────────────────────────────────────────────────────────────┤
+│ [ 📚  🎼  ✏️ ]   │   ‹ Pág. 1 / 10  [═════════════●═════════════]  10 ›   │   [ 🤖 Bach ] │
+│ (Modos Principales)│           (Cinto Deslizador / Scrubber)              │   (BachGPT)   │
+└────────────────────────────────────────────────────────────────────────────────────────┘
+```
+
+1. **Extremo Izquierdo — Modos Principales (`#bottomNavDock`):**
+   - Asegurar visibilidad total en `body.mode-performer-active.is-study-mode` (`opacity: 1; pointer-events: auto; display: flex;`).
+   - Ubicar la cápsula de los 3 modos (`Biblioteca`, `Partitura`, `Editor`) anclada a la izquierda (`left: 16px; bottom: max(12px, env(safe-area-inset-bottom)); transform: none;`).
+   - Altura alineada de 34px.
+
+2. **Centro — Cinto de Deslizamiento e Indicador de Página (`.performer-scrubber-bar`):**
+   - Ocupar de manera equilibrada y fluida el espacio central entre los modos y BachGPT (`left: 170px; right: 80px; margin: 0 auto; width: auto; max-width: 560px;`).
+   - Altura de 34px con esquinas redondeadas, fondo translúcido y navegación táctil cómoda (`‹`, número de página actual, riel deslizador con fill y `›`).
+
+3. **Extremo Derecho — Botón de BachGPT (`#bachGptFab`):**
+   - Asegurar visibilidad total en `body.mode-performer-active.is-study-mode` (`opacity: 1; pointer-events: auto; display: flex !important;`).
+   - Anclado en la esquina inferior derecha (`right: 16px; bottom: max(12px, env(safe-area-inset-bottom)); transform: none;`).
+   - Tamaño armonizado de 36px x 36px.
+
+---
+
+### 3. REGLAS ESTRICTAS DE CONSISTENCIA
+- **No alterar el Modo Concierto:** Todos estos ajustes aplican exclusivamente a la experiencia del visor en **Modo Ensayo** (`.is-study-mode`). En Modo Concierto se mantiene la inmersión limpia a pantalla completa.
+- **Sin colisiones de Z-Index:** Garantizar que `#bottomNavDock`, `.performer-scrubber-bar` y `#bachGptFab` tengan `z-index: 85` para que respondan inmediatamente al tacto sobre la tableta sin quedar tapados por capas transparentes del folio.
+
+Por favor, revisa `prototype/index.html` y `prototype/styles.css` e implementa esta distribución armónica.

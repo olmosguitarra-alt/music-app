@@ -1,0 +1,87 @@
+# PROMPT DE IMPLEMENTACIÓN: PALETA FLOTANTE DE SELLOS MUSICALES Y MOTOR DE ZOOM PROPORCIONAL A DOS DEDOS (CADENZA)
+
+Actúa como Ingeniero Senior Frontend, Especialista en Gráficos Web/Pointer Events y Diseñador UX/UI de Cadenza (`prototype/index.html`, `prototype/styles.css`, `prototype/app.js`).
+
+Tu objetivo es construir e integrar dos subsistemas clave en el visor de partituras (`#mode-performer`):
+1. **La Paleta Flotante Reubicable de Sellos Especializados** con una amplia biblioteca instrumental (dinámicas, agógica, articulación, cuerdas, guitarra, piano, vientos).
+2. **El Motor de Zoom Táctil a Dos Dedos (Pinch-to-Zoom y Paneo)** con anclaje y proporcionalidad matemática absoluta (100% fija) de todas las anotaciones sobre el PDF.
+
+---
+
+## 🎼 MÓDULO 1: PALETA FLOTANTE REUBICABLE DE SELLOS MUSICALES
+
+Transformar el popover actual de sellos en una **paleta flotante interactiva y reubicable** que el usuario pueda arrastrar con el dedo o stylus para colocarla en cualquier zona despejada de la pantalla.
+
+### 1. UX y Anatomía de la Paleta Flotante:
+- **Cabecera de Arrastre (`.stamp-palette-header`):**
+  - Icono lineal de agarre `⋮⋮` + Título `Sellos`.
+  - Botón de cierre sutil `[ ✕ ]` en la esquina superior derecha.
+  - Al presionar y arrastrar desde la cabecera, la ventana se desplaza suavemente con `transform: translate3d(x, y, 0);` (`touch-action: none; cursor: move;`).
+- **Carrusel Horizontal de Categorías (Tabs):**
+  - Botones tipo pastilla deslizables:
+    `[ Dinámicas ]` `[ Agógica ]` `[ Cuerdas ]` `[ Guitarra ]` `[ Piano ]` `[ Vientos ]`.
+- **Matriz Táctil de Sellos (Grid de 5 Columnas):**
+  - Botones táctiles generosos ($40\text{px} \times 40\text{px}$) con tipografía musical/SVG vectoriales nítidos.
+- **Selector Rápido de Tinta (Footer):**
+  - 4 gotas circulares: Grafito (`#201c19`), Azul Prusia (`#23426e`), Carmín (`#8c2f27`), Ámbar (`#b8860b`).
+
+### 2. Biblioteca de Sellos a Integrar:
+- **Dinámicas:** $ppp$, $pp$, $p$, $mp$, $mf$, $f$, $ff$, $fff$, $sfz$, $sfp$, reguladores crescendo ($<$) y diminuendo ($>$), *dolce*, *espress.*, *cantabile*, *subito*.
+- **Agógica y Estructura:** *rit.*, *rall.*, *accel.*, *a tempo*, Calderón ($\curvearrowleft \hspace{-0.7em} \cdot$), Calderón largo, Cesura ($//$), Respiración ($’$), Segno ($\S$), Coda ($\bigoplus$), $D.C.$, Fine.
+- **Articulación:** Staccato ($\cdot$), Staccatissimo ($\blacktriangledown$), Tenuto ($-$), Portato ($\underline{\cdot}$), Acento ($>$), Martellato ($\wedge$), Trino ($tr\sim$), Mordentes, Glissando.
+- **Cuerdas Frotadas:** Arco abajo ($\sqcap$), Arco arriba ($\vee$), digitaciones `0` al `4`, *I Pos.* a *V Pos.*, *pizz.*, *arco*, *con sord.*, Armónico ($\diamond$).
+- **Guitarra Clásica:** Mano derecha ($p, i, m, a, e$), Mano izquierda (`1, 2, 3, 4, 0`), Cejillas ($C.I$ a $C.IX$ y $\frac{1}{2}C$), Cuerdas en círculo (① al ⑥), *rasg.*, *apoyando*, *tirando*, *tambor*.
+- **Piano:** Pedales ($\mathfrak{Ped.}$, $\wedge$, $\ast$, *u.c.*, *t.c.*), Manos (*m.d.*, *m.s.*), Digitaciones `1` al `5`.
+- **Vientos:** Respiraciones ($’$, circular $O$), Articulaciones (*T-K*, *frull.*), Sordinas ($+$, $\circ$).
+
+### 3. Modo de Estampado Continuo ("Multi-Stamp"):
+- Al seleccionar un sello, queda activo con borde iluminado sutil.
+- Cada toque sobre la partitura estampa el símbolo alineado al compás sin cerrar la paleta.
+- Las marcas estampadas se guardan en el registro de la página y pueden seleccionarse para mover o borrar.
+
+---
+
+## 🔍 MÓDULO 2: ZOOM TÁCTIL A DOS DEDOS Y ANCLAJE PROPORCIONAL
+
+Garantizar que al hacer zoom y desplazar la partitura, **todas las anotaciones (trazos libres, notas de molde y sellos) permanezcan matemáticamente fijas y proporcionales** al documento original.
+
+### 1. Arquitectura de Contenedor Transformable Único:
+- Agrupar en `index.html` los lienzos de partitura dentro de un contenedor común:
+  ```html
+  <div class="score-folio performer-folio" id="performerSheet">
+    <div class="folio-transform-layer" id="folioTransformLayer">
+      <canvas id="performerPdfRenderCanvas" class="pdf-page-canvas"></canvas>
+      <div id="performerSvg" class="svg-layer"></div>
+      <canvas id="performerCanvas" class="draw-layer"></canvas>
+      <div id="performerMoldLayer" class="mold-layer"></div>
+    </div>
+  </div>
+  ```
+- En `styles.css`:
+  ```css
+  .folio-transform-layer {
+    transform-origin: 0 0;
+    will-change: transform;
+    touch-action: none;
+  }
+  ```
+- Al aplicar `transform: translate3d(panX, panY, 0) scale(currentScale);` sobre `.folio-transform-layer`, **el PDF y todas las capas de anotaciones crecen y se mueven en perfecta sincronía por aceleración GPU**.
+
+### 2. Separación de Eventos (Stylus vs Dedos):
+- **1 Stylus (`pointerType === 'pen'`):** Dibuja, escribe o estampa con sensibilidad a la presión. **Nunca activa zoom ni paneo**.
+- **1 Dedo (`pointerType === 'touch'`):** Cambio de página o selección de elementos.
+- **2 Dedos simultáneos (`pointerType === 'touch'`):**
+  - **Pinch-to-zoom:** Distancia entre dedos ajusta la escala entre $1.0\times$ (página completa encajada) y $3.5\times$.
+  - **Pan (Paneo):** El punto medio entre los dos dedos desplaza la vista por la pantalla.
+  - **Doble Toque con 2 dedos:** Restaura instantáneamente la vista a $1.0\times$ y centrada.
+
+### 3. Sistema de Coordenadas de Escritura Normalizado:
+- Cuando el usuario dibuja o inserta notas/sellos con zoom activo (ej. a $2.5\times$):
+  $$x_{\text{doc}} = \frac{x_{\text{pantalla}} - \text{pan}_X}{\text{scale}}$$
+  $$y_{\text{doc}} = \frac{y_{\text{pantalla}} - \text{pan}_Y}{\text{scale}}$$
+- De esta manera, el trazo se guarda en el espacio nativo de la partitura. Al regresar a $1.0\times$, la anotación se reduce proporcionalmente y queda exactamente en el compás donde se escribió.
+
+### 4. Nitidez Adaptativa (`pdf.js`):
+- Al finalizar el gesto de zoom (`pointerup`) tras un debounce de 250ms, si la escala es $> 1.2\times$, disparar un re-renderizado vectorial del PDF adaptado al nuevo tamaño de visualización para conservar bordes limpios sin pixelado.
+
+Por favor, revisa `prototype/index.html`, `prototype/styles.css` y `prototype/app.js` e implementa ambos módulos de manera fluida y consistente con la estética sobria de Cadenza.

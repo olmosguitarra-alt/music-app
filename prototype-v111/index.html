@@ -1,0 +1,1232 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+  <meta http-equiv="Pragma" content="no-cache" />
+  <meta http-equiv="Expires" content="0" />
+  <title>Cadenza — Estudio y Lectura Musical</title>
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='16' fill='%236b172b'/%3E%3Cpath d='M4 34c16-10 34 8 56-4M4 38c16-10 34 8 56-4M4 42c16-10 34 8 56-4' stroke='%23f7efe7' stroke-opacity='.45' stroke-width='1.5' fill='none'/%3E%3Ctext x='18' y='45' font-family='Georgia,serif' font-size='38' fill='%23fcf8f4'%3EC%3C/text%3E%3C/svg%3E" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:wght@600;700&display=swap" />
+  <link rel="stylesheet" href="styles.css?v=111" />
+  <!-- Motores Oficiales para Renderizar (PDF.js) y Particionar/Editar PDFs Reales (pdf-lib) -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf-lib/1.17.1/pdf-lib.min.js"></script>
+</head>
+<body class="palette-linen mode-library-active">
+
+  <!-- Cintillos translúcidos superior e inferior (solo los cintos tienen transparencia) -->
+  <div class="top-glass-cintillo" aria-hidden="true"></div>
+  <div class="bottom-glass-cintillo" aria-hidden="true"></div>
+
+  <!-- Fondo estático: pentagrama helicoidal con halos de luz en esquinas opuestas -->
+  <div class="bg-wind-staff" aria-hidden="true">
+    <svg viewBox="0 0 1440 900" preserveAspectRatio="none" width="100%" height="100%">
+      <defs>
+        <linearGradient id="helixFade" x1="0%" y1="100%" x2="100%" y2="0%">
+          <stop offset="0%" stop-color="currentColor" stop-opacity="0.06" />
+          <stop offset="22%" stop-color="currentColor" stop-opacity="0.34" />
+          <stop offset="50%" stop-color="currentColor" stop-opacity="0.58" />
+          <stop offset="78%" stop-color="currentColor" stop-opacity="0.34" />
+          <stop offset="100%" stop-color="currentColor" stop-opacity="0.06" />
+        </linearGradient>
+      </defs>
+      <path d="M-40 880 C 260 640, 480 465, 720 450 C 960 435, 1180 260, 1480 20" stroke="url(#helixFade)" />
+      <path d="M-40 820 C 275 610, 490 460, 720 450 C 950 440, 1165 290, 1480 80" stroke="url(#helixFade)" />
+      <path d="M-40 760 C 290 580, 500 455, 720 450 C 940 445, 1150 320, 1480 140" stroke="url(#helixFade)" />
+      <path d="M-40 700 C 305 550, 510 452, 720 450 C 930 448, 1135 350, 1480 200" stroke="url(#helixFade)" />
+      <path d="M-40 640 C 320 520, 520 448, 720 450 C 920 452, 1120 380, 1480 260" stroke="url(#helixFade)" />
+    </svg>
+  </div>
+
+  <!-- Inputs ocultos para importar PDFs reales desde la Tablet o Celular -->
+  <input type="file" id="realPdfFileInput" accept="application/pdf,.pdf" multiple style="display:none" onchange="handleRealPdfUpload(this.files)" />
+  <input type="file" id="realPdfFolderInput" webkitdirectory directory multiple style="display:none" onchange="handleRealPdfFolderUpload(this.files)" />
+  <input type="file" id="appendPdfFileInput" accept="application/pdf,.pdf" style="display:none" onchange="handleAppendPdfPages(this.files)" />
+  <input type="file" id="theoryBookPdfInput" accept="application/pdf,.pdf" style="display:none" onchange="handleTheoryBookUpload(this.files)" />
+
+  <!-- =================================================================== -->
+  <!-- CABECERA SUPERIOR: LOGO CADENZA + ENGRANAJE MINIMALISTA             -->
+  <!-- =================================================================== -->
+  <header class="floating-hud-top" id="floatingHudTop">
+    <div class="cadenza-brand-head">
+      <div class="cadenza-logo-badge" aria-hidden="true">
+        <svg viewBox="0 0 64 64" width="38" height="38">
+          <rect width="64" height="64" rx="16" fill="var(--accent)"/>
+          <path d="M4 34c16-10 34 8 56-4M4 38c16-10 34 8 56-4M4 42c16-10 34 8 56-4" stroke="var(--accent-ink)" stroke-opacity=".44" stroke-width="1.6" fill="none"/>
+          <text x="18" y="45" font-family="Georgia,serif" font-size="38" fill="var(--accent-ink)">C</text>
+        </svg>
+      </div>
+      <div class="cadenza-brand-text">
+        <span class="cadenza-wordmark">Cadenza</span>
+        <span class="hud-piece-name" id="hudPieceTitle">J. S. Bach — BWV 1034</span>
+      </div>
+    </div>
+
+    <div class="hud-center-tools" id="hudCenterTools"></div>
+
+    <div class="hud-right-cluster">
+      <button class="btn-gear-minimal" id="btnSettingsDrawer" onclick="toggleSettingsDrawer(event)" title="Configuración y paletas" aria-label="Configuración">
+        <svg viewBox="0 0 24 24" class="v-ico"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+      </button>
+    </div>
+  </header>
+
+  <!-- =================================================================== -->
+  <!-- 1. MODO BIBLIOTECA Y PROGRAMAS (SETLISTS)                           -->
+  <!-- =================================================================== -->
+  <main id="mode-library" class="canvas-view active">
+    <div class="library-workspace">
+      <div class="library-stage">
+
+        <div class="pilot-status-banner hidden" id="pilotStatusBanner"></div>
+
+        <!-- FILA ÚNICA FIJA (+15%): VISTA + BÚSQUEDA EXTENDIDA + FILTROS INTEGRADOS CON PROGRAMAS -->
+        <div class="lib-unified-row" id="libUnifiedRow">
+          <div class="view-toggle-pill" id="viewTogglePill" title="Alternar vista Tarjeta / Lista">
+            <button class="vt-btn active" id="btnViewFolio" onclick="setLibraryViewMode('folio')" aria-label="Vista Tarjeta">
+              <svg viewBox="0 0 24 24" class="v-ico"><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="9" rx="1.5"/><rect x="3" y="15" width="7" height="6" rx="1.5"/><rect x="14" y="15" width="7" height="6" rx="1.5"/></svg>
+              <span class="vt-label">Tarjeta</span>
+            </button>
+            <button class="vt-btn" id="btnViewList" onclick="setLibraryViewMode('list')" aria-label="Vista Lista">
+              <svg viewBox="0 0 24 24" class="v-ico"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
+              <span class="vt-label">Lista</span>
+            </button>
+          </div>
+
+          <div class="glass-search">
+            <svg viewBox="0 0 24 24" class="v-ico"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+            <input type="text" id="searchInput" placeholder="Buscar..." oninput="renderLibrary()" />
+          </div>
+
+          <div class="lib-filter-bar">
+            <div class="glass-pill filter-ribbon" role="tablist" aria-label="Organizar biblioteca">
+              <button class="ribbon-tab active" data-cls="all" onclick="selectClassification('all', 'Todo', this)">Todo</button>
+              <button class="ribbon-tab" data-cls="recent" onclick="selectClassification('recent', 'Recientes', this)">Recientes</button>
+              <button class="ribbon-tab" data-cls="favorites" onclick="selectClassification('favorites', 'Favoritos', this)">Favoritos</button>
+
+              <div class="filter-dd-wrap">
+                <button class="ribbon-tab filter-dd-btn" data-cls="composer" id="btnFilterComposer" onclick="toggleFilterDropdown('composer', event)">
+                  <span id="labelFilterComposer">Compositor</span>
+                  <svg viewBox="0 0 24 24" class="v-ico wedge-ico"><polyline points="6 9 12 15 18 9"/></svg>
+                </button>
+              </div>
+
+              <div class="filter-dd-wrap">
+                <button class="ribbon-tab filter-dd-btn" data-cls="period" id="btnFilterPeriod" onclick="toggleFilterDropdown('period', event)">
+                  <span id="labelFilterPeriod">Periodo</span>
+                  <svg viewBox="0 0 24 24" class="v-ico wedge-ico"><polyline points="6 9 12 15 18 9"/></svg>
+                </button>
+              </div>
+
+              <div class="filter-dd-wrap">
+                <button class="ribbon-tab filter-dd-btn" data-cls="instrumentation" id="btnFilterGroup" onclick="toggleFilterDropdown('group', event)">
+                  <span id="labelFilterGroup">Dotación</span>
+                  <svg viewBox="0 0 24 24" class="v-ico wedge-ico"><polyline points="6 9 12 15 18 9"/></svg>
+                </button>
+              </div>
+
+              <button class="ribbon-tab programs-inline-btn" id="btnOpenProgramsSlide" onclick="openProgramsSlideView()">
+                <span>Programas</span>
+                <svg viewBox="0 0 24 24" class="v-ico"><polyline points="9 18 15 12 9 6"/></svg>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- CONTENEDOR DESLIZANTE CONTINUO: BIBLIOTECA <-> PROGRAMAS -->
+        <div class="library-slides-viewport" id="librarySlidesViewport">
+          <div class="library-slide catalog-slide" id="libraryCatalogSlide">
+            <div id="libraryCatalogContainer">
+              <div class="folio-grid" id="scoreList"></div>
+            </div>
+          </div>
+
+          <section class="library-slide programs-slide" id="programsSlideView" aria-label="Programas">
+            <div class="programs-slide-top-nav">
+              <button class="prog-slide-back-btn" onclick="closeProgramsSlideView()" title="Volver a Biblioteca" aria-label="Volver">
+                <svg viewBox="0 0 24 24" class="v-ico"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+              </button>
+              <span class="prog-mobile-header-title">Programas</span>
+            </div>
+
+            <div class="programs-two-pane">
+              <!-- PANEL IZQUIERDO: LISTA COMPLETA DE PROGRAMAS + NUEVO PROGRAMA -->
+              <aside class="programs-sidebar-panel">
+                <div class="programs-sidebar-head">
+                  <span class="setlist-eyebrow">Programas</span>
+                  <button class="btn-new-prog no-box-btn" onclick="toggleNewProgramInput(true)" title="Crear nuevo programa" aria-label="Nuevo programa">＋</button>
+                </div>
+                <div class="new-prog-inline hidden" id="newProgInline">
+                  <input type="text" id="newProgNameInput" placeholder="Nombre del programa..." onkeydown="if(event.key==='Enter') confirmNewProgram()" />
+                  <button class="btn-new-prog-ok" onclick="confirmNewProgram()">Crear</button>
+                  <button class="btn-bare-x" onclick="toggleNewProgramInput(false)" aria-label="Cancelar">✕</button>
+                </div>
+
+                <!-- Buscador minimalista y controles diferenciados (Filtro vs Orden) -->
+                <div class="prog-sidebar-search">
+                  <svg viewBox="0 0 24 24" class="v-ico"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+                  <input type="text" id="progSidebarSearchInput" placeholder="Buscar programa..." oninput="onProgSidebarSearchInput()" autocomplete="off" />
+                </div>
+
+                <div class="prog-sidebar-filters" role="tablist" aria-label="Filtrar y ordenar programas">
+                  <div class="prog-filter-group">
+                    <button class="prog-filter-btn no-box-btn active" data-pfilter="all" onclick="setProgramSidebarFilter('all')">Todos</button>
+                    <button class="prog-filter-btn no-box-btn" data-pfilter="pinned" onclick="setProgramSidebarFilter('pinned')">Fijados</button>
+                    <button class="prog-filter-btn prog-mobile-dd-btn no-box-btn" id="btnMobileProgListToggle" type="button" onclick="toggleMobileProgramsDropdown(event)" aria-expanded="false">
+                      <span id="mobileProgDropdownLabel">Programas</span>
+                      <svg viewBox="0 0 24 24" class="v-ico wedge-ico"><polyline points="6 9 12 15 18 9"/></svg>
+                    </button>
+                  </div>
+                  <button class="prog-sort-btn no-box-btn" id="btnProgSortToggle" onclick="toggleProgramSidebarSort()" title="Cambiar orden de la lista">
+                    <svg viewBox="0 0 24 24" class="v-ico" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="m3 16 4 4 4-4"/><path d="M7 20V4"/><path d="m21 8-4-4-4 4"/><path d="M17 4v16"/></svg>
+                    <span id="progSortLabel">Recientes</span>
+                  </button>
+                </div>
+
+                <!-- Carrusel deslizable de píldoras horizontales en móvil -->
+                <div class="mobile-prog-pills-carousel" id="mobileProgramsPillCarousel" role="tablist" aria-label="Seleccionar programa"></div>
+
+                <div class="programs-master-list" id="programsMasterList"></div>
+              </aside>
+
+              <!-- PANEL DERECHO: DETALLE DEL PROGRAMA SELECCIONADO -->
+              <div class="programs-slide-card programs-detail-panel">
+                <div class="setlist-head">
+                  <div class="setlist-head-main">
+                    <div class="setlist-name-row">
+                      <select id="activeProgramSelect" class="hidden" onchange="switchActiveProgram(this.value)" aria-label="Seleccionar programa"></select>
+                      <h3 class="prog-detail-title" id="progDetailTitle">Programa</h3>
+                      <div class="prog-detail-actions">
+                        <button class="btn-icon-sm no-box-btn" onclick="renameActiveProgramPrompt()" title="Renombrar programa" aria-label="Renombrar programa">
+                          <svg viewBox="0 0 24 24" class="v-ico"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
+                        </button>
+                        <button class="btn-icon-sm no-box-btn btn-del-prog" onclick="deleteActiveProgramPrompt()" title="Eliminar programa" aria-label="Eliminar programa">
+                          <svg viewBox="0 0 24 24" class="v-ico"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="setlist-summary-row">
+                  <span class="setlist-summary" id="setlistSummary">Obras:</span>
+                  <div class="prog-score-search-wrap" id="progScoreSearchWrap">
+                    <div class="prog-score-search-box">
+                      <svg viewBox="0 0 24 24" class="v-ico"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+                      <input type="text" id="progScoreSearchInput" placeholder="Buscar obra para agregar..." oninput="filterProgramAddSuggestions()" onfocus="filterProgramAddSuggestions()" autocomplete="off" />
+                    </div>
+                    <div class="prog-score-suggestions hidden" id="progScoreSuggestions"></div>
+                  </div>
+                  <button type="button" class="mobile-add-score-btn" id="btnMobileOpenAddScoreSheet" onclick="openMobileAddScoreSheet()">
+                    <svg viewBox="0 0 24 24" class="v-ico" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                    <span>Agregar obra</span>
+                  </button>
+                </div>
+
+                <div class="setlist-items" id="setlistItems"></div>
+
+                <div class="setlist-foot">
+                  <button class="btn-launch-concert btn-save-prog-secondary" id="btnLaunchProgram" onclick="saveSetlistDrawerChanges()">
+                    <span>Guardar cambios</span>
+                  </button>
+                  <button type="button" class="btn-launch-concert btn-start-concert-sticky" id="btnStartProgramConcert" onclick="launchActiveProgramInConcert()">
+                    <svg viewBox="0 0 24 24" class="v-ico" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><polygon points="6 3 20 12 6 21 6 3"/></svg>
+                    <span>Iniciar Concierto</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+          </section>
+        </div>
+      </div>
+    </div>
+
+    <!-- ================================================================= -->
+    <!-- EDITOR DE COMPOSICIÓN DE PDF (Mesa de Trabajo / Lightbox Grid)    -->
+    <!-- ================================================================= -->
+    <div class="modal-backdrop hidden" id="pdfModal" onclick="requestClosePdfModal(event)">
+      <div class="linearity-inspector-modal workshop-wide pdf-struct-editor pdf-lightbox-editor" onclick="event.stopPropagation()">
+        <!-- A. Barra Superior (Header del Editor) -->
+        <header class="pdf-lightbox-header">
+          <button type="button" class="pdf-hdr-btn pdf-hdr-exit no-box-btn" onclick="requestClosePdfModal()">
+            <svg viewBox="0 0 24 24" class="v-ico" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+            <span>Salir</span>
+          </button>
+
+          <div class="pdf-hdr-title-wrap">
+            <h3 id="modalScoreTitle" class="pdf-hdr-title" title="Editar ficha técnica" onclick="openPdfMetadataModal(event)">Nocturno Op. 9 No. 2.pdf</h3>
+            <span class="pdf-page-count-pill" id="pdfModalPageCountBadge">4 págs.</span>
+            <button type="button" class="pdf-hdr-btn pdf-hdr-meta-btn" id="btnOpenPdfMetadata" onclick="openPdfMetadataModal(event)" title="Ficha técnica y metadatos">
+              <svg viewBox="0 0 24 24" class="v-ico" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>
+              <span>Datos</span>
+            </button>
+          </div>
+
+          <div class="pdf-hdr-right">
+            <button type="button" class="pdf-hdr-btn pdf-hdr-save" id="btnSavePdfChanges" onclick="commitAndSavePdfChanges()">
+              <svg viewBox="0 0 24 24" class="v-ico" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+              <span>Guardar</span>
+            </button>
+          </div>
+        </header>
+
+        <!-- B. Cuadrícula de Páginas (Lightbox / Mesa de Trabajo) -->
+        <div class="pdf-lightbox-workspace">
+          <div class="folio-strip real-pages-strip pdf-visual-grid pdf-lightbox-grid" id="workshopPagesStrip"></div>
+
+          <!-- Botón flotante sutil "Deshacer" y Toast de notificaciones -->
+          <div class="pdf-floating-feedback-wrap">
+            <button type="button" class="pdf-floating-undo-pill hidden" id="btnPdfUndo" onclick="undoLastPdfWorkshopAction()">
+              <svg viewBox="0 0 24 24" class="v-ico" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round"><path d="M9 14 4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 5.5 5.5v0a5.5 5.5 0 0 1-5.5 5.5H11"/></svg>
+              <span>Deshacer</span>
+            </button>
+            <div class="insp-feedback pdf-floating-toast" id="pdfToast"></div>
+          </div>
+        </div>
+
+        <!-- C. Barra de Acciones Inferior (Modo Normal) -->
+        <footer class="pdf-lightbox-footer" id="pdfNormalFooter" role="toolbar" aria-label="Acciones de composición PDF">
+          <button type="button" class="pdf-bottom-action-btn no-box-btn" onclick="addBlankPdfPage()">
+            <svg viewBox="0 0 24 24" class="v-ico" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><line x1="9" y1="15" x2="15" y2="15"/></svg>
+            <span>+ Hoja</span>
+          </button>
+          <button type="button" class="pdf-bottom-action-btn no-box-btn" onclick="document.getElementById('appendPdfFileInput').click()">
+            <svg viewBox="0 0 24 24" class="v-ico" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/><line x1="12" y1="11" x2="12" y2="17"/><line x1="9" y1="14" x2="15" y2="14"/></svg>
+            <span>+ PDF</span>
+          </button>
+          <button type="button" class="pdf-bottom-action-btn no-box-btn" id="btnEnterExtractMode" onclick="togglePdfExtractMode(true)">
+            <svg viewBox="0 0 24 24" class="v-ico" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round"><circle cx="6" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><line x1="20" y1="4" x2="8.12" y2="15.88"/><line x1="14.47" y1="14.48" x2="20" y2="20"/><line x1="8.12" y1="8.12" x2="12" y2="12"/></svg>
+            <span>Extraer</span>
+          </button>
+          <button type="button" class="pdf-bottom-action-btn no-box-btn" id="btnRevertPdfChanges" onclick="revertPdfWorkshopToInitial()">
+            <svg viewBox="0 0 24 24" class="v-ico" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg>
+            <span>Revertir</span>
+          </button>
+        </footer>
+
+        <!-- D. Barra de Acciones Inferior (Modo "Extraer") -->
+        <footer class="pdf-lightbox-footer pdf-extract-footer hidden" id="pdfExtractFooter" role="toolbar" aria-label="Extraer páginas a nuevo PDF">
+          <button type="button" class="pdf-bottom-action-btn pdf-extract-cancel no-box-btn" onclick="togglePdfExtractMode(false)">
+            <svg viewBox="0 0 24 24" class="v-ico" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            <span>Cancelar</span>
+          </button>
+          <button type="button" class="pdf-bottom-action-btn pdf-extract-confirm accent" id="btnCreateExtractedPdf" onclick="openExtractNewPdfModal()" disabled>
+            <svg viewBox="0 0 24 24" class="v-ico" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><path d="M12 18v-6"/><path d="m9 15 3-3 3 3"/></svg>
+            <span id="lblCreateExtractedPdf">Crear PDF (0)</span>
+          </button>
+        </footer>
+
+        <!-- Modal Ficha Técnica: Metadatos de la Partitura -->
+        <div class="pdf-submodal-backdrop hidden" id="pdfMetadataModalBackdrop" onclick="closePdfMetadataModal()">
+          <div class="pdf-submodal-card pdf-metadata-modal-card" onclick="event.stopPropagation()">
+            <div class="pdf-metadata-modal-head">
+              <h4 class="pdf-submodal-title">Metadatos de la Partitura</h4>
+              <button type="button" class="pdf-metadata-close-btn" onclick="closePdfMetadataModal()" aria-label="Cerrar metadatos">
+                <svg viewBox="0 0 24 24" class="v-ico" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+              </button>
+            </div>
+
+            <div class="pdf-metadata-fields">
+              <div class="pdf-meta-field">
+                <label for="wmTitleInput">TÍTULO</label>
+                <input type="text" id="wmTitleInput" class="pdf-submodal-input" placeholder="Ej. Nocturno Op. 9 No. 2" autocomplete="off" />
+              </div>
+              <div class="pdf-meta-field">
+                <label for="wmComposerInput">COMPOSITOR</label>
+                <input type="text" id="wmComposerInput" class="pdf-submodal-input" placeholder="Ej. Frédéric Chopin" autocomplete="off" />
+              </div>
+              <div class="pdf-meta-field">
+                <label for="wmPeriodInput">PERÍODO</label>
+                <input type="text" id="wmPeriodInput" class="pdf-submodal-input" placeholder="Ej. Romanticismo, Nacionalismo..." autocomplete="off" />
+              </div>
+              <div class="pdf-meta-field">
+                <label for="wmGroupInput">DOTACIÓN</label>
+                <input type="text" id="wmGroupInput" class="pdf-submodal-input" placeholder="Ej. Guitarra Sola, Trío con Clarinete..." autocomplete="off" />
+              </div>
+            </div>
+
+            <div class="pdf-submodal-actions">
+              <button type="button" class="pdf-submodal-btn pdf-meta-cancel-btn" onclick="closePdfMetadataModal()">Cancelar</button>
+              <button type="button" class="pdf-submodal-btn accent pdf-meta-apply-btn" onclick="applyPdfMetadataChanges()">Aplicar</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Modal Minimalista: Nuevo archivo (Modo Extraer) -->
+        <div class="pdf-submodal-backdrop hidden" id="pdfExtractModalBackdrop" onclick="closeExtractNewPdfModal()">
+          <div class="pdf-submodal-card" onclick="event.stopPropagation()">
+            <h4 class="pdf-submodal-title">Nuevo archivo</h4>
+            <input type="text" id="extractNewPdfNameInput" class="pdf-submodal-input" placeholder="Nombre del PDF..." autocomplete="off" />
+            <label class="pdf-submodal-check-row">
+              <input type="checkbox" id="extractRemoveFromCurrentChk" />
+              <span>Borrar del actual</span>
+            </label>
+            <div class="pdf-submodal-actions">
+              <button type="button" class="pdf-submodal-btn" onclick="closeExtractNewPdfModal()">Cancelar</button>
+              <button type="button" class="pdf-submodal-btn accent" onclick="confirmCreateExtractedPdf()">Guardar</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Modal Minimalista: Aviso breve al salir con modificaciones sin guardar -->
+        <div class="pdf-submodal-backdrop hidden" id="pdfExitConfirmBackdrop" onclick="closePdfExitConfirm()">
+          <div class="pdf-submodal-card pdf-exit-confirm-card" onclick="event.stopPropagation()">
+            <h4 class="pdf-submodal-title">¿Descartar cambios?</h4>
+            <p class="pdf-submodal-desc">Tienes modificaciones sin guardar en la mesa de trabajo.</p>
+            <div class="pdf-submodal-actions">
+              <button type="button" class="pdf-submodal-btn" onclick="closePdfExitConfirm()">Seguir editando</button>
+              <button type="button" class="pdf-submodal-btn danger" onclick="forceClosePdfModalDiscard()">Descartar y salir</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <!-- =================================================================== -->
+  <!-- 2. VISOR INTELIGENTE UNIFICADO (V90: ENSAYO ↔ CONCIERTO)            -->
+  <!-- =================================================================== -->
+  <main id="mode-performer" class="canvas-view is-study-mode">
+    <!-- BARRA SUPERIOR SOBRIA (Única fuente de título + chips vivos) -->
+    <header class="performer-top-bar study-tools" id="performerTopBar">
+      <div class="perf-top-left">
+        <div class="perf-top-left-row">
+          <button type="button" class="perf-back-btn" onclick="switchMode('library')" title="Volver a Biblioteca" aria-label="Volver a Biblioteca">
+            <svg viewBox="0 0 24 24" class="v-ico" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+            <span>Biblioteca</span>
+          </button>
+          <button type="button" class="perf-util-btn perf-editor-shortcut" onclick="switchMode('editor')" title="Abrir en Editor de Partitura" aria-label="Editor">
+            <svg viewBox="0 0 24 24" class="v-ico" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8h9M3 12h6M3 16h13M3 20h18"/><path d="M13.5 14.5L19.5 4.5l2.5 1.5-6 10-3 1.5z"/></svg>
+          </button>
+        </div>
+
+        <button class="bookmark-star-btn perf-top-star" id="btnPerformerBookmark" onclick="togglePageBookmark()" title="Marcar página favorita" aria-label="Favorito de página">
+          ☆
+        </button>
+
+        <!-- Selector de vista de página solo con iconos dinámicos -->
+        <button type="button" class="perf-util-btn perf-layout-btn" id="btnPerformerLayout" onclick="cyclePageLayout()" title="Vista: Página completa" aria-label="Vista: Página completa">
+          <span id="performerLayoutIcon" class="perf-layout-ico">
+            <svg viewBox="0 0 24 24" class="v-ico" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="3" width="14" height="18" rx="2"/><line x1="8" y1="8" x2="16" y2="8"/><line x1="8" y1="12" x2="16" y2="12"/><line x1="8" y1="16" x2="13" y2="16"/></svg>
+          </span>
+        </button>
+      </div>
+
+      <div class="perf-top-right">
+        <div class="perf-mode-switch" role="tablist" aria-label="Modo del visor">
+          <button type="button" class="perf-switch-btn active" id="perfSwitchStudy" onclick="setPerformanceMode('study')" role="tab" aria-selected="true">
+            <svg viewBox="0 0 24 24" class="v-ico" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
+            <span>Ensayo</span>
+          </button>
+          <button type="button" class="perf-switch-btn" id="perfSwitchConcert" onclick="setPerformanceMode('concert')" role="tab" aria-selected="false">
+            <svg viewBox="0 0 24 24" class="v-ico" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>
+            <span>Concierto</span>
+          </button>
+        </div>
+
+        <div class="perf-quick-utils">
+          <!-- Chip vivo de Metrónomo: icono lineal que parpadea al ritmo -->
+          <div class="perf-live-chip" id="metroLiveChip">
+            <button type="button" class="perf-chip-main" id="btnPerformerMetronome" onclick="toggleMetronomePlay()" title="Iniciar / Detener Metrónomo">
+              <svg viewBox="0 0 24 24" class="v-ico metro-flash-ico" id="metroTopIcon" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M6 20h12L14 4h-4L6 20Z"/><path d="M12 16l4-7"/></svg>
+              <span id="metroChipLabel">76</span>
+            </button>
+            <button type="button" class="perf-chip-caret" onclick="toggleMetronomePopover(event)" title="Ajustar BPM" aria-label="Ajustar BPM">▾</button>
+          </div>
+
+          <!-- Chip vivo de Afinador: al tocarlo se despliega y activa automáticamente -->
+          <div class="perf-live-chip" id="tunerLiveChip">
+            <button type="button" class="perf-chip-main" id="btnPerformerTuner" onclick="toggleTunerPopover(event)" title="Abrir Afinador">
+              <svg viewBox="0 0 24 24" class="v-ico" id="tunerTopIcon" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 3v7.5a3 3 0 0 0 6 0V3"/><path d="M12 13.5V21"/><circle cx="12" cy="21" r="1"/></svg>
+              <span id="tunerChipLabel">440</span>
+            </button>
+            <button type="button" class="perf-chip-caret" onclick="toggleTunerPopover(event)" title="Abrir Afinador" aria-label="Abrir Afinador">▾</button>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <!-- LIENZO UNIFICADO DE PARTITURA (1 PÁGINA O 2 PÁGINAS) -->
+    <div class="full-bleed-canvas performer-stage" id="performerStage">
+      <button class="invisible-page-zone left" onclick="turnPage(-1)" aria-label="Página anterior">‹</button>
+      <div class="page-turn-flash left" id="pageTurnFlashLeft" aria-hidden="true"></div>
+      <div class="page-turn-flash right" id="pageTurnFlashRight" aria-hidden="true"></div>
+
+      <div class="concert-spread-wrap performer-spread-wrap" id="performerSpreadWrap" onclick="handlePerformerStageTap(event)">
+        <!-- FOLIO PRINCIPAL -->
+        <div class="score-folio performer-folio" id="performerSheet">
+          <div class="folio-header" id="performerFolioHeader">
+            <span class="folio-meta" id="performerMetaLeft">transcr. David Russell</span>
+            <div class="folio-title">
+              <h2 id="performerTitleHeading">SONATE BWV 1034</h2>
+              <span id="performerSubHeading">I. Adagio ma non tanto</span>
+            </div>
+            <div class="study-head-right">
+              <span class="folio-meta" id="performerMetaRight">Pág. 1 / 10</span>
+            </div>
+          </div>
+
+          <div class="folio-staff-area" id="performerWrap">
+            <div class="folio-transform-layer" id="folioTransformLayer">
+              <canvas id="performerPdfRenderCanvas" class="pdf-page-canvas hidden"></canvas>
+              <div id="performerSvg" class="svg-layer"></div>
+              <canvas id="performerCanvas" class="draw-layer"></canvas>
+              <div id="performerMoldLayer" class="mold-layer"></div>
+            </div>
+          </div>
+
+          <div class="folio-footer" id="performerFolioFooter">
+            <span id="performerFooterLeft">Modo Ensayo • Pluma Activa</span>
+            <span id="performerFooterRight">Folio 1 / 10</span>
+          </div>
+        </div>
+
+        <!-- SEGUNDO FOLIO (Vista 2 Págs en tablet horizontal) -->
+        <div class="score-folio performer-folio hidden" id="performerSheetRight">
+          <div class="folio-header" id="performerFolioHeaderRight">
+            <span class="folio-meta" id="performerMetaLeftRight">Continuación</span>
+            <div class="folio-title">
+              <h2 id="performerTitleHeadingRight">SONATE BWV 1034</h2>
+              <span id="performerSubRight">Página siguiente</span>
+            </div>
+            <span class="folio-meta" id="performerPageNumRight">Pág. 2 / 10</span>
+          </div>
+
+          <div class="folio-staff-area" id="performerWrapRight">
+            <canvas id="performerPdfRenderCanvasRight" class="pdf-page-canvas hidden"></canvas>
+            <div id="performerSvgRight" class="svg-layer"></div>
+          </div>
+
+          <div class="folio-footer" id="performerFolioFooterRight">
+            <span id="performerFooterLeftRight">Vista 2 Páginas</span>
+            <span id="performerPageFooterRight">Folio 2</span>
+          </div>
+        </div>
+      </div>
+
+      <button class="invisible-page-zone right" onclick="turnPage(1)" aria-label="Siguiente página">›</button>
+    </div>
+
+    <!-- MICRO-INDICADOR FUGAZ DE PÁGINA EN CONCIERTO -->
+    <div class="performer-page-toast hidden" id="performerPageToast" aria-live="polite">1 / 10</div>
+
+    <!-- SCRUBBER INFERIOR PRECISO (NAVEGACIÓN EXACTA POR PÁGINA) -->
+    <div class="performer-scrubber-bar study-tools" id="performerScrubberBar">
+      <button type="button" class="scrub-nav-btn" onclick="turnPage(-1)" title="Página anterior" aria-label="Página anterior">‹</button>
+      <span class="scrubber-page-pill" id="scrubberPagePill">Pág. 1 / 10</span>
+      <div class="scrubber-track-wrap">
+        <div class="scrubber-track" id="performerPageScrubber">
+          <div class="scrubber-fill" id="scrubberFill"></div>
+          <div class="scrubber-bookmarks" id="scrubberBookmarks"></div>
+        </div>
+        <input type="range" class="scrubber-range-input" id="scrubberRangeInput" min="1" max="10" step="1" value="1"
+               oninput="previewScrubberPage(this.value)" onchange="commitScrubberPage(this.value)" aria-label="Selector de página" />
+        <span class="scrubber-hover-tip hidden" id="scrubberHoverTip">Pág. 1</span>
+      </div>
+      <button type="button" class="scrub-nav-btn" onclick="turnPage(1)" title="Siguiente página" aria-label="Siguiente página">›</button>
+    </div>
+
+    <!-- ANCLA FLOTANTE DE PLUMA FUENTE (BOTÓN + MENÚ DESPLEGABLE VERTICAL DEL MISMO ANCHO) -->
+    <div class="fountain-pen-anchor" id="fountainPenAnchor">
+      <button type="button" class="rail-collapse-tab" id="btnToggleToolRail" onclick="toggleToolRailCollapse()" title="Herramientas de anotación (se pliega tras 30s)" aria-label="Abrir herramientas de pluma">
+        <svg viewBox="0 0 24 24" class="v-ico" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19l7-7 3 3-7 7-3-3z"/><path d="M18 13l-1.5-7.5L2 2l3.5 14.5L13 18l5-5z"/><path d="M2 2l7.586 7.586"/><circle cx="11" cy="11" r="1.5"/></svg>
+      </button>
+
+      <!-- RAIL DE HERRAMIENTAS PLEGABLE (MISMO ANCHO QUE EL BOTÓN, LISTA VERTICAL, AUTO-PLIEGUE 30s) -->
+      <aside class="concepts-tool-rail rail-collapsed" id="performerToolRail">
+      <button class="rail-tool active" id="btnPen" onclick="setStudyTool('pen')" title="Pluma Fuente (sensible a presión)">
+        <svg viewBox="0 0 24 24" class="v-ico"><path d="M12 19l7-7 3 3-7 7-3-3z"/><path d="M18 13l-1.5-7.5L2 2l3.5 14.5L13 18l5-5z"/><path d="M2 2l7.586 7.586"/></svg>
+        <span class="rail-label">Pluma</span>
+      </button>
+
+      <button class="rail-tool" id="btnPencil" onclick="setStudyTool('pencil')" title="Lápiz de Grafito (opacidad 70%)">
+        <svg viewBox="0 0 24 24" class="v-ico"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/></svg>
+        <span class="rail-label">Lápiz</span>
+      </button>
+
+      <button class="rail-tool" id="btnMarker" onclick="setStudyTool('marker')" title="Resaltador Flotante">
+        <svg viewBox="0 0 24 24" class="v-ico"><path d="m9 11-6 6v3h9l3-3"/><path d="m22 12-4.6 4.6a2 2 0 0 1-2.8 0l-5.2-5.2a2 2 0 0 1 0-2.8L14 4"/></svg>
+        <span class="rail-label">Marcador</span>
+      </button>
+
+      <button class="rail-tool" id="btnEraser" onclick="setStudyTool('eraser')" title="Borrador Inteligente">
+        <svg viewBox="0 0 24 24" class="v-ico"><path d="m7 21-4.3-4.3c-1-1-1-2.5 0-3.4l9.6-9.6c1-1 2.5-1 3.4 0l5.6 5.6c1 1 1 2.5 0 3.4L13 21"/><path d="M22 21H7"/><path d="m5 11 9 9"/></svg>
+        <span class="rail-label">Borrar</span>
+      </button>
+
+      <button class="rail-tool" id="btnSmartText" onclick="setStudyTool('smarttext')" title="Texto / Tinta Smart Ink">
+        <svg viewBox="0 0 24 24" class="v-ico"><polyline points="4 7 4 4 20 4 20 7"/><line x1="9" y1="20" x2="15" y2="20"/><line x1="12" y1="4" x2="12" y2="20"/></svg>
+        <span class="rail-label">Texto</span>
+      </button>
+
+      <div class="rail-divider"></div>
+
+      <!-- Presets directos de tinta (1 toque) -->
+      <div class="rail-ink-presets" title="Acceso directo de tinta (toca para elegir, vuelve a tocar para grosor)">
+        <button type="button" class="ink-preset-dot active" style="background:#23426e" onclick="applyInkPreset('#23426e', 2.4, 'pen', this)" title="Azul Prusia (2.4px)"></button>
+        <button type="button" class="ink-preset-dot" style="background:#8c2f27" onclick="applyInkPreset('#8c2f27', 2.4, 'pen', this)" title="Carmín (2.4px)"></button>
+        <button type="button" class="ink-preset-dot" style="background:#201c19" onclick="applyInkPreset('#201c19', 1.8, 'pen', this)" title="Grafito fino (1.8px)"></button>
+        <button type="button" class="ink-preset-dot" style="background:#d4af37" onclick="applyInkPreset('#d4af37', 4.0, 'marker', this)" title="Marcador Ámbar"></button>
+      </div>
+
+      <button class="rail-tool" id="btnBrushStyle" onclick="toggleBrushPopover()" title="Ajuste fino de trazo y opacidad">
+        <span class="brush-swatch-dot" id="brushSwatchDot"></span>
+        <span class="rail-label">Grosor</span>
+      </button>
+
+      <div class="rail-divider"></div>
+
+      <button class="rail-tool" id="btnUndoStudy" onclick="undoStudyAction()" title="Deshacer último trazo">
+        <svg viewBox="0 0 24 24" class="v-ico"><path d="M9 14 4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 5.5 5.5v0a5.5 5.5 0 0 1-5.5 5.5H11"/></svg>
+        <span class="rail-label">Deshacer</span>
+      </button>
+
+      <button class="rail-tool" id="btnRedoStudy" onclick="redoStudyAction()" title="Rehacer trazo">
+        <svg viewBox="0 0 24 24" class="v-ico"><path d="m15 14 5-5-5-5"/><path d="M20 9H9.5A5.5 5.5 0 0 0 4 14.5v0A5.5 5.5 0 0 0 9.5 20H13"/></svg>
+        <span class="rail-label">Rehacer</span>
+      </button>
+
+      <button class="rail-tool" id="btnStamps" onclick="toggleStampPopover()" title="Sellos de digitación y agógica">
+        <svg viewBox="0 0 24 24" class="v-ico"><path d="M5 22h14"/><path d="M19.27 13.73A2.5 2.5 0 0 0 17.5 13h-11A2.5 2.5 0 0 0 4 15.5V17a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-1.5c0-.66-.26-1.3-.73-1.77Z"/><path d="M14 13V8.5C14 7 15 7 15 5a3 3 0 0 0-3-3c-1.66 0-3 1-3 3s1 2 1 3.5V13"/></svg>
+        <span class="rail-label">Sellos</span>
+      </button>
+
+      <button class="rail-tool subtle" id="btnClearStudy" onclick="confirmClearStudyLayer()" title="Limpiar anotaciones de esta página">
+        <svg viewBox="0 0 24 24" class="v-ico"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+      </button>
+    </aside>
+    </div>
+
+    <!-- POPOVER DE ESTILO DE TRAZO -->
+    <div class="concepts-popover brush-popover hidden" id="brushPopover">
+      <div class="brush-pop-section">
+        <span class="brush-pop-label">Color de tinta</span>
+        <div class="rail-inks horizontal">
+          <button class="ink-well blue active" onclick="setInk('#23426e', this)" title="Azul Prusia"></button>
+          <button class="ink-well red" onclick="setInk('#8c2f27', this)" title="Carmín"></button>
+          <button class="ink-well green" onclick="setInk('#2e5a44', this)" title="Verde Bosque"></button>
+          <button class="ink-well charcoal" onclick="setInk('#201c19', this)" title="Grafito"></button>
+        </div>
+      </div>
+      <div class="brush-pop-section">
+        <span class="brush-pop-label">Grosor: <strong id="brushWidthLabel">2.4 px</strong></span>
+        <input type="range" id="brushWidthRange" min="1.2" max="8" step="0.4" value="2.4" oninput="setBrushWidth(this.value)" />
+      </div>
+      <div class="brush-pop-section">
+        <span class="brush-pop-label">Opacidad: <strong id="brushOpacityLabel">100%</strong></span>
+        <input type="range" id="brushOpacityRange" min="25" max="100" step="5" value="100" oninput="setBrushOpacity(this.value)" />
+      </div>
+      <div class="brush-pop-section">
+        <span class="brush-pop-label">Modo borrador</span>
+        <div class="popover-segmented">
+          <button type="button" class="p-seg active" id="btnEraserStroke" onclick="setEraserMode('stroke', this)">Por trazo</button>
+          <button type="button" class="p-seg" id="btnEraserPixel" onclick="setEraserMode('pixel', this)">Precisión</button>
+        </div>
+      </div>
+      <div class="brush-pop-section">
+        <span class="brush-pop-label">Rechazo de palma</span>
+        <div class="popover-segmented">
+          <button type="button" class="p-seg active" id="btnPalmAuto" onclick="setFingerDrawAllowed(false, this)">Solo Stylus</button>
+          <button type="button" class="p-seg" id="btnPalmFinger" onclick="setFingerDrawAllowed(true, this)">Con dedo</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- PALETA FLOTANTE COMPACTA TIPO SIBELIUS (REUBICABLE) -->
+    <div class="concepts-popover stamp-floating-palette hidden" id="stampPopover" onclick="event.stopPropagation()">
+      <div class="stamp-palette-header" id="stampPaletteHeader">
+        <span class="stamp-drag-grip" aria-hidden="true">⋮⋮</span>
+        <span class="stamp-palette-title">Sellos</span>
+        <button type="button" class="stamp-palette-close" onclick="toggleStampPopover(false)" aria-label="Cerrar paleta de sellos">✕</button>
+      </div>
+      <select class="stamp-category-select" id="stampCategorySelect" onchange="switchStampTab(this.value)" aria-label="Categoría de sellos">
+        <option value="dynamics">Dinámicas</option>
+        <option value="agogic">Agógica y Tempo</option>
+        <option value="expression">Expresión</option>
+        <option value="articulation">Articulación</option>
+        <option value="strings">Cuerdas</option>
+        <option value="guitar">Guitarra</option>
+        <option value="piano">Piano</option>
+        <option value="winds">Vientos</option>
+      </select>
+      <div class="stamp-tokens stamp-grid-3col" id="stampGrid"></div>
+      <div class="stamp-ink-footer">
+        <div class="stamp-ink-dots">
+          <button type="button" class="stamp-ink-dot" style="background:#201c19" onclick="setStampInk('#201c19', this)" title="Grafito"></button>
+          <button type="button" class="stamp-ink-dot active" style="background:#23426e" onclick="setStampInk('#23426e', this)" title="Azul Prusia"></button>
+          <button type="button" class="stamp-ink-dot" style="background:#8c2f27" onclick="setStampInk('#8c2f27', this)" title="Carmín"></button>
+          <button type="button" class="stamp-ink-dot" style="background:#b8860b" onclick="setStampInk('#b8860b', this)" title="Ámbar"></button>
+        </div>
+      </div>
+    </div>
+
+    <!-- POPOVER COMPACTO DE METRÓNOMO ESPECIALIZADO -->
+    <div class="perf-utility-popover metro-pro-popover study-tools hidden" id="metronomePopover" onclick="event.stopPropagation()">
+      <div class="perf-pop-head metro-pop-head" id="metroPopoverHeader">
+        <div class="metro-title-group">
+          <span class="metro-drag-grip" aria-hidden="true">⋮⋮</span>
+          <span>Metrónomo</span>
+          <span class="metro-agogic-badge" id="metroAgogicLabel">Adagio</span>
+        </div>
+        <div class="metro-beats-strip" id="metroBeatsStrip" title="Toca un pulso para cambiar: Fuerte → Medio → Débil → Silencio">
+          <!-- Generado dinámicamente según el compás -->
+        </div>
+      </div>
+
+      <!-- Fila de BPM con ajuste fino (-5, -1, +1, +5) -->
+      <div class="metro-bpm-row">
+        <div class="metro-step-group">
+          <button type="button" class="metro-step-btn" onclick="stepMetronomeBpm(-5)" title="-5 BPM">-5</button>
+          <button type="button" class="metro-step-btn" onclick="stepMetronomeBpm(-1)" title="-1 BPM">-1</button>
+        </div>
+        <div class="metro-bpm-display" onclick="resetMetronomeTrainerBase()" title="Tempo actual">
+          <strong id="metroBpmValue">76</strong>
+          <small>BPM</small>
+        </div>
+        <div class="metro-step-group">
+          <button type="button" class="metro-step-btn" onclick="stepMetronomeBpm(1)" title="+1 BPM">+1</button>
+          <button type="button" class="metro-step-btn" onclick="stepMetronomeBpm(5)" title="+5 BPM">+5</button>
+        </div>
+      </div>
+
+      <!-- Slider + Botón Tap Tempo en la misma fila -->
+      <div class="metro-slider-tap-row">
+        <input type="range" id="metroBpmRange" min="30" max="240" step="1" value="76" oninput="setMetronomeBpm(this.value)" aria-label="Control deslizante de BPM" />
+        <button type="button" class="metro-tap-btn" id="btnMetroTap" onclick="tapMetronomeTempo()" title="Toca repetidamente para marcar el pulso">Tap</button>
+      </div>
+
+      <!-- Selector compacto de Compás -->
+      <div class="metro-compact-row">
+        <span class="metro-row-lbl">Compás</span>
+        <div class="metro-pills-group" id="metroMeterGroup">
+          <button type="button" class="metro-pill-btn" onclick="setMetronomeMeter('2/4', this)">2/4</button>
+          <button type="button" class="metro-pill-btn" onclick="setMetronomeMeter('3/4', this)">3/4</button>
+          <button type="button" class="metro-pill-btn active" onclick="setMetronomeMeter('4/4', this)">4/4</button>
+          <button type="button" class="metro-pill-btn" onclick="setMetronomeMeter('6/8', this)">6/8</button>
+          <button type="button" class="metro-pill-btn" onclick="setMetronomeMeter('5/4', this)">5/4</button>
+          <button type="button" class="metro-pill-btn" onclick="setMetronomeMeter('7/8', this)">7/8</button>
+        </div>
+      </div>
+
+      <!-- Selector compacto de Subdivisión -->
+      <div class="metro-compact-row">
+        <span class="metro-row-lbl">Pulso</span>
+        <div class="metro-pills-group" id="metroSubdivGroup">
+          <button type="button" class="metro-pill-btn active" onclick="setMetronomeSubdiv(1, this)" title="Negra (sin subdivisión)">♩</button>
+          <button type="button" class="metro-pill-btn" onclick="setMetronomeSubdiv(2, this)" title="Corcheas (2 por pulso)">♫</button>
+          <button type="button" class="metro-pill-btn" onclick="setMetronomeSubdiv(3, this)" title="Tresillos (3 por pulso)">🎶</button>
+          <button type="button" class="metro-pill-btn" onclick="setMetronomeSubdiv(4, this)" title="Semicorcheas (4 por pulso)">♬</button>
+          <button type="button" class="metro-pill-btn" onclick="setMetronomeSubdiv('dotted', this)" title="Ritmo con puntillo">♩.♪</button>
+        </div>
+      </div>
+
+      <!-- Timbre acústico + Destello visual discreto -->
+      <div class="metro-compact-row">
+        <span class="metro-row-lbl">Timbre</span>
+        <div class="metro-timbre-wrap">
+          <select class="metro-select-compact" id="metroSoundSelect" onchange="setMetronomeSound(this.value)" aria-label="Timbre del metrónomo">
+            <option value="wood">Madera Lutier</option>
+            <option value="mech">Mecánico Wittner</option>
+            <option value="soft">Fieltro Suave</option>
+            <option value="click">Estudio Seco</option>
+            <option value="silent">Silencio (Solo Visual)</option>
+          </select>
+          <button type="button" class="metro-visual-toggle" id="btnMetroVisualHalo" onclick="toggleMetronomeVisualHalo()" title="Destello visual sutil en el borde superior del atril" aria-label="Luz de pulso visual">
+            <svg viewBox="0 0 24 24" class="v-ico" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/></svg>
+          </button>
+        </div>
+      </div>
+
+      <!-- Acordeón plegable: Entrenador de Estudio (0 ruido visual cuando está cerrado) -->
+      <div class="metro-trainer-box">
+        <button type="button" class="metro-trainer-toggle" id="btnMetroTrainerToggle" onclick="toggleMetronomeTrainerPanel()">
+          <span id="metroTrainerCaret">▸</span>
+          <span>Entrenador de Estudio</span>
+          <span class="metro-trainer-status" id="metroTrainerBadge">Off</span>
+        </button>
+        <div class="metro-trainer-body hidden" id="metroTrainerBody">
+          <div class="metro-trainer-mode-pills">
+            <button type="button" class="metro-tmode-btn active" onclick="setMetronomeTrainerMode('off', this)">Apagado</button>
+            <button type="button" class="metro-tmode-btn" onclick="setMetronomeTrainerMode('ladder', this)" title="Aumenta el BPM automáticamente cada ciertos compases">Escalera</button>
+            <button type="button" class="metro-tmode-btn" onclick="setMetronomeTrainerMode('mute', this)" title="Silencia compases periódicamente para entrenar tu pulso interno">Compás Mudo</button>
+          </div>
+
+          <!-- Configuración Escalera Progresiva -->
+          <div class="metro-trainer-cfg hidden" id="metroCfgLadder">
+            <div class="metro-cfg-line">
+              <span>Subir</span>
+              <select class="metro-mini-sel" id="metroLadderStep" onchange="updateMetronomeTrainerParams()">
+                <option value="1">+1 BPM</option>
+                <option value="2" selected>+2 BPM</option>
+                <option value="4">+4 BPM</option>
+                <option value="5">+5 BPM</option>
+              </select>
+              <span>cada</span>
+              <select class="metro-mini-sel" id="metroLadderBars" onchange="updateMetronomeTrainerParams()">
+                <option value="2">2 comp.</option>
+                <option value="4" selected>4 comp.</option>
+                <option value="8">8 comp.</option>
+              </select>
+            </div>
+            <div class="metro-cfg-line">
+              <span>Meta:</span>
+              <input type="number" class="metro-mini-num" id="metroLadderTarget" min="40" max="240" value="108" onchange="updateMetronomeTrainerParams()" />
+              <span>BPM</span>
+            </div>
+          </div>
+
+          <!-- Configuración Compás Mudo (Pulso Interno) -->
+          <div class="metro-trainer-cfg hidden" id="metroCfgMute">
+            <div class="metro-cfg-line">
+              <span>Sonar</span>
+              <select class="metro-mini-sel" id="metroMutePlayBars" onchange="updateMetronomeTrainerParams()">
+                <option value="1">1 comp.</option>
+                <option value="2">2 comp.</option>
+                <option value="3" selected>3 comp.</option>
+                <option value="4">4 comp.</option>
+              </select>
+              <span>/ Callar</span>
+              <select class="metro-mini-sel" id="metroMuteSilentBars" onchange="updateMetronomeTrainerParams()">
+                <option value="1" selected>1 comp.</option>
+                <option value="2">2 comp.</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- Pre-cuenta opcional -->
+          <div class="metro-cfg-line metro-countin-line">
+            <span>Pre-cuenta:</span>
+            <div class="metro-pills-group">
+              <button type="button" class="metro-pill-btn active" onclick="setMetronomeCountIn(0, this)">0</button>
+              <button type="button" class="metro-pill-btn" onclick="setMetronomeCountIn(1, this)">1 comp.</button>
+              <button type="button" class="metro-pill-btn" onclick="setMetronomeCountIn(2, this)">2 comp.</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <button type="button" class="perf-pop-primary-btn" id="btnMetroPlay" onclick="toggleMetronomePlay()">Iniciar</button>
+    </div>
+
+    <!-- POPOVER COMPACTO DE AFINADOR TIPO PINZA (FENDER / DONNER CLIP-ON) -->
+    <div class="perf-utility-popover tuner-clip-popover study-tools hidden" id="tunerPopover" onclick="event.stopPropagation()">
+      <!-- Cabecera: [ - 440 Hz + ] a la izquierda y botón icono Diapasón a la derecha -->
+      <div class="tuner-clip-head">
+        <div class="tuner-hz-stepper">
+          <button type="button" class="tuner-hz-step-btn" onclick="stepTunerFreq(-1)" title="Bajar 1 Hz" aria-label="Bajar 1 Hz">−</button>
+          <button type="button" class="tuner-hz-readout" id="tunerHzLabel" onclick="cycleTunerPresetFreq()" title="Toca para alternar 440 / 442 / 415 Hz">440 Hz</button>
+          <button type="button" class="tuner-hz-step-btn" onclick="stepTunerFreq(1)" title="Subir 1 Hz" aria-label="Subir 1 Hz">+</button>
+        </div>
+        <button type="button" class="tuner-fork-icon-btn" id="btnTunerFork" onclick="toggleTunerForkTone()" title="Emitir tono de referencia La (A4)" aria-label="Diapasón">
+          <svg viewBox="0 0 24 24" class="v-ico" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M9 3v7.5a3 3 0 0 0 6 0V3"/>
+            <path d="M12 13.5V21"/>
+            <circle cx="12" cy="21" r="1.2"/>
+          </svg>
+        </button>
+      </div>
+
+      <!-- Pantalla LED estilo pinza: Segmentos + Nota gigante central -->
+      <div class="tuner-clip-screen" id="tunerClipScreen">
+        <div class="tuner-led-arc" id="tunerLedArc">
+          <span class="tuner-acc-sym">♭</span>
+          <div class="tuner-led-bars" id="tunerLedBars">
+            <span class="t-led" data-pos="-5"></span>
+            <span class="t-led" data-pos="-4"></span>
+            <span class="t-led" data-pos="-3"></span>
+            <span class="t-led" data-pos="-2"></span>
+            <span class="t-led" data-pos="-1"></span>
+            <span class="t-led center" data-pos="0"></span>
+            <span class="t-led" data-pos="1"></span>
+            <span class="t-led" data-pos="2"></span>
+            <span class="t-led" data-pos="3"></span>
+            <span class="t-led" data-pos="4"></span>
+            <span class="t-led" data-pos="5"></span>
+          </div>
+          <span class="tuner-acc-sym">♯</span>
+        </div>
+
+        <div class="tuner-note-stage" id="tunerNoteStage">
+          <span class="tuner-string-badge" id="tunerStringBadge"></span>
+          <div class="tuner-main-note-wrap">
+            <span class="tuner-main-note" id="tunerMainNote">—</span>
+            <span class="tuner-note-acc" id="tunerNoteAcc"></span>
+          </div>
+          <span class="tuner-cents-sub" id="tunerCentsSub">440.0 Hz</span>
+        </div>
+      </div>
+
+      <!-- Botón inferior único: cambia de instrumento (solo icono lineal minimalista) -->
+      <button type="button" class="tuner-instrument-cycle-btn" id="btnTunerInstrument" onclick="cycleTunerInstrument()" title="Instrumento: Guitarra" aria-label="Cambiar instrumento">
+        <span class="tuner-inst-icon-wrap" id="tunerInstrumentIcon">
+          <!-- Icono SVG inyectado dinámicamente -->
+        </span>
+      </button>
+    </div>
+
+    <!-- CONTROL SUPERIOR IZQUIERDO PARA REGRESAR A ENSAYO DESDE CONCIERTO -->
+    <div class="concert-exit-overlay" id="concertExitOverlay">
+      <button type="button" class="concert-return-btn" id="btnReturnToStudy" onclick="setPerformanceMode('study')" title="Volver al modo Ensayo">
+        <svg viewBox="0 0 24 24" class="v-ico" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+        <span>Ensayo</span>
+      </button>
+    </div>
+
+    <!-- RENGLÓN INFERIOR EN MODO CONCIERTO: CÁPSULA LINEAL + SATÉLITE ESCUCHA ACTIVA (MISMO RENGLÓN SIN COLISIÓN) -->
+    <div class="concert-bottom-row" id="concertBottomRow">
+      <!-- BARRA INFERIOR DE NAVEGACIÓN LINEAL EN CONCIERTO (MISMA DISPOSICIÓN QUE MODO ENSAYO) -->
+      <div class="glass-pill floating-bottom-bar concert-only-bar concert-linear-capsule" id="concertBottomBar">
+        <button type="button" class="bar-token-btn concert-macro-btn" id="btnPrevProgramPiece" onclick="stepProgramPiece(-1)" title="Obra anterior del programa" aria-label="Obra anterior">
+          <svg viewBox="0 0 24 24" class="v-ico" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><polygon points="19 20 9 12 19 4 19 20"/><line x1="5" y1="19" x2="5" y2="5"/></svg>
+          <span class="macro-btn-lbl">Obra ant.</span>
+        </button>
+
+        <div class="concert-scrubber-mirror">
+          <button type="button" class="scrub-nav-btn" onclick="turnPage(-1)" title="Página anterior" aria-label="Página anterior">‹</button>
+          <span class="scrubber-page-pill" id="concertProgressLabel">Pág. 1 / 10</span>
+          <div class="scrubber-track-wrap">
+            <div class="scrubber-track" id="concertProgressTrack">
+              <div class="scrubber-fill" id="concertProgressFill"></div>
+              <div class="scrubber-bookmarks" id="concertBookmarks"></div>
+            </div>
+            <input type="range" class="scrubber-range-input" id="concertProgressInput" min="1" max="10" step="1" value="1"
+                   oninput="previewScrubberPage(this.value)" onchange="commitScrubberPage(this.value)" aria-label="Selector de página en concierto" />
+            <span class="scrubber-hover-tip hidden" id="concertHoverTip">Pág. 1</span>
+          </div>
+          <button type="button" class="scrub-nav-btn" onclick="turnPage(1)" title="Siguiente página" aria-label="Siguiente página">›</button>
+        </div>
+
+        <button type="button" class="bar-token-btn concert-macro-btn" id="btnNextProgramPiece" onclick="stepProgramPiece(1)" title="Siguiente obra del programa" aria-label="Siguiente obra">
+          <span class="macro-btn-lbl">Sig. obra</span>
+          <svg viewBox="0 0 24 24" class="v-ico" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 4 15 12 5 20 5 4"/><line x1="19" y1="5" x2="19" y2="19"/></svg>
+        </button>
+      </div>
+
+      <!-- BOTÓN SATÉLITE INDEPENDIENTE DE ESCUCHA ACTIVA (OPCIÓN B: MISMO RENGLÓN A LA DERECHA) -->
+      <button type="button" class="concert-audio-satellite" id="btnAudioFollow" onclick="toggleAudioFollow()" title="Escucha Activa: paso de página automático">
+        <span class="pulse-ring"></span>
+        <svg viewBox="0 0 24 24" class="v-ico sat-mic-ico" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="22"/></svg>
+        <span id="audioFollowLabel">Escucha</span>
+      </button>
+    </div>
+  </main>
+
+  <!-- =================================================================== -->
+  <!-- 4. MODO EDITOR (StaffPad + Sibelius Touch)                          -->
+  <!-- =================================================================== -->
+  <main id="mode-editor" class="canvas-view">
+    <div class="full-bleed-canvas">
+      <div class="score-folio staffpad-folio">
+        <div class="folio-header">
+          <span class="folio-meta">6ª en Re • ♩ = 68</span>
+          <div class="folio-title">
+            <h2 contenteditable="true">Preludio en Re menor</h2>
+            <span>Traza en el pentagrama para previsualizar notación y tablatura</span>
+          </div>
+          <span class="folio-meta badge-engraving" id="editorStatusPill">✦ StaffPad Ink → Molde (Prototipo)</span>
+        </div>
+
+        <div class="folio-staff-area staffpad-grid-bg" id="editorWrap">
+          <div id="editorSvg" class="svg-layer"></div>
+          <canvas id="editorCanvas" class="draw-layer"></canvas>
+        </div>
+
+        <div class="folio-footer">
+          <span>Notación + Tablatura Dinámica (Propuesta visual)</span>
+          <span>Voz 1</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="glass-pill floating-bottom-bar staffpad-dock">
+      <div class="sp-group">
+        <button class="sp-note-btn" onclick="pickDuration('𝅝', 'Redonda', this)" title="Redonda">𝅝</button>
+        <button class="sp-note-btn" onclick="pickDuration('𝅗𝅥', 'Blanca', this)" title="Blanca">𝅗𝅥</button>
+        <button class="sp-note-btn active" onclick="pickDuration('♩', 'Negra', this)" title="Negra">♩</button>
+        <button class="sp-note-btn" onclick="pickDuration('♪', 'Corchea', this)" title="Corchea">♪</button>
+        <button class="sp-note-btn" onclick="pickDuration('♬', 'Semicorchea', this)" title="Semicorchea">♬</button>
+      </div>
+
+      <div class="rail-divider-v"></div>
+
+      <div class="sp-group">
+        <button class="sp-note-btn" onclick="pickAccidental('♯', this)" title="Sostenido">♯</button>
+        <button class="sp-note-btn" onclick="pickAccidental('♭', this)" title="Bemol">♭</button>
+        <button class="sp-note-btn" onclick="pickAccidental('♮', this)" title="Becuadro">♮</button>
+      </div>
+
+      <div class="rail-divider-v"></div>
+
+      <button class="bar-token-btn" onclick="insertSampleChord()">＋ Cejilla / Acorde</button>
+
+      <button class="bar-icon-btn" onclick="undoEditorNote()" title="Deshacer última nota">
+        <svg viewBox="0 0 24 24" class="v-ico"><path d="M9 14 4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 5.5 5.5v0a5.5 5.5 0 0 1-5.5 5.5H11"/></svg>
+      </button>
+
+      <button class="bar-pill-cta play" onclick="playEditorNotes()">
+        <svg viewBox="0 0 24 24" class="v-ico"><polygon points="5 3 19 12 5 21 5 3" fill="currentColor"/></svg>
+        <span>Escuchar</span>
+      </button>
+
+      <button class="bar-icon-btn" onclick="resetEditorNotes()" title="Restablecer compás">
+        <svg viewBox="0 0 24 24" class="v-ico"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
+      </button>
+    </div>
+  </main>
+
+  <!-- =================================================================== -->
+  <!-- BACHGPT SIMPLIFICADO (Avatar Pixel Art 8-Bits, sin barras saturadas)-->
+  <!-- =================================================================== -->
+  <div class="bachgpt-widget-root" id="bachWidgetRoot">
+    <aside class="bachgpt-chat-window hidden" id="bachGptWindow">
+      <div class="bach-chat-header">
+        <div class="bach-avatar-badge" id="bachHeaderAvatar"></div>
+        <div class="bach-header-info">
+          <div class="bach-name-row">
+            <strong>BachGPT</strong>
+            <span class="bach-8bit-tag" id="bachModeTag">GENERAL</span>
+          </div>
+          <span class="bach-status-sub" id="bachCurrentWorkLabel">Teoría, historia y guía de la app</span>
+        </div>
+        <button class="bach-voice-toggle hidden" id="bachVoiceToggleBtn" onclick="toggleBachVoiceOutput()" title="Activar o silenciar voz de BachGPT">
+          🔇 Muda
+        </button>
+        <button class="btn-circle-ghost" onclick="toggleBachGptChat(false)" aria-label="Cerrar BachGPT">✕</button>
+      </div>
+
+      <!-- Selector único de contexto -->
+      <div class="bach-context-switcher" id="bachContextBar">
+        <button class="bctx-tab active" id="bctxGeneralBtn" onclick="openBachGptGeneralMode()">General</button>
+        <button class="bctx-tab" id="bctxWorkBtn" onclick="openBachGptSpecificWorkMode(activeScore ? activeScore.id : 1)">Obra actual</button>
+        <button class="bctx-tab" id="bctxNotebookBtn" onclick="openBachGptNotebookMode()">Libro PDF</button>
+      </div>
+
+      <!-- Sub-barra compacta solo cuando se elige Obra o Libro -->
+      <div class="bach-work-context-bar hidden" id="bachWorkSelectRow">
+        <label for="bachWorkSelect">Obra:</label>
+        <select id="bachWorkSelect" onchange="changeBachConversationWork(this.value)"></select>
+      </div>
+
+      <div class="bach-notebook-bar hidden" id="bachNotebookBar">
+        <div class="nb-info">
+          <span id="nbLoadedBookName">Sin libro cargado (PDF de teoría)</span>
+        </div>
+        <button class="nb-upload-btn" onclick="document.getElementById('theoryBookPdfInput').click()">
+          ＋ Subir PDF
+        </button>
+      </div>
+
+      <!-- Área principal de conversación -->
+      <div class="bach-chat-messages" id="bachChatMessages"></div>
+
+      <!-- Pistas discretas solo cuando sea necesario (se ocultan si ya hay conversación) -->
+      <div class="bach-quick-prompts hidden" id="bachQuickPrompts"></div>
+
+      <!-- Barra de entrada -->
+      <div class="bach-chat-input-bar">
+        <button class="bach-mic-btn" id="bachMicBtn" onclick="toggleBachSpeechRecognition()" title="Dictar por voz a BachGPT" aria-label="Dictado por voz">
+          <svg viewBox="0 0 24 24" class="v-ico" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3z"/>
+            <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
+            <line x1="12" y1="19" x2="12" y2="22"/>
+          </svg>
+        </button>
+        <input type="text" id="bachUserInput" placeholder="Pregunta a BachGPT..." onkeydown="if(event.key==='Enter') sendUserMessageToBach()" />
+        <button class="bach-send-btn" onclick="sendUserMessageToBach()" aria-label="Enviar">➤</button>
+      </div>
+    </aside>
+
+  </div>
+
+  <!-- DOCK INFERIOR CENTRADO: 4 MODOS (SOLO ICONOS) + BACHGPT EN ESQUINA DERECHA -->
+  <div class="bottom-nav-dock" id="bottomNavDock">
+    <nav class="glass-pill mode-segmented bottom-mode-capsule" aria-label="Modos de la aplicación">
+      <button class="seg-btn active" data-mode="library" data-label="Biblioteca"
+              onclick="switchMode('library')"
+              onpointerdown="startModeLongPress(this)" onpointerup="endModeLongPress()" onpointerleave="endModeLongPress()" onpointercancel="endModeLongPress()"
+              title="Biblioteca" aria-label="Biblioteca">
+        <!-- 3 libros apilados -->
+        <svg viewBox="0 0 24 24" class="v-ico">
+          <rect x="4" y="4" width="14" height="4" rx="1"/>
+          <rect x="6" y="10" width="14" height="4" rx="1"/>
+          <rect x="4" y="16" width="14" height="4" rx="1"/>
+        </svg>
+      </button>
+      <button class="seg-btn" data-mode="performer" data-label="Partitura"
+              onclick="switchMode('performer')"
+              onpointerdown="startModeLongPress(this)" onpointerup="endModeLongPress()" onpointerleave="endModeLongPress()" onpointercancel="endModeLongPress()"
+              title="Visor (Ensayo / Concierto)" aria-label="Visor de Partitura">
+        <!-- Corchea y pluma unificadas -->
+        <svg viewBox="0 0 24 24" class="v-ico">
+          <ellipse cx="8.5" cy="17.5" rx="3.2" ry="2.4" transform="rotate(-18 8.5 17.5)"/>
+          <path d="M11.5 16.8V4.5c2.2 1.2 4.6 2.3 5.1 5 .3 1.6-.4 3-1.4 3.9"/>
+        </svg>
+      </button>
+      <button class="seg-btn" data-mode="editor" data-label="Editor"
+              onclick="switchMode('editor')"
+              onpointerdown="startModeLongPress(this)" onpointerup="endModeLongPress()" onpointerleave="endModeLongPress()" onpointercancel="endModeLongPress()"
+              title="Editor" aria-label="Editor">
+        <!-- Pentagrama con lápiz diagonal -->
+        <svg viewBox="0 0 24 24" class="v-ico">
+          <path d="M3 8h9M3 12h6M3 16h13M3 20h18"/>
+          <path d="M13.5 14.5L19.5 4.5l2.5 1.5-6 10-3 1.5z"/>
+        </svg>
+      </button>
+    </nav>
+    <div class="mode-longpress-tip hidden" id="modeLongPressTip"></div>
+  </div>
+
+  <!-- BOTÓN FLOTANTE REDONDO (+) EN ESQUINA INFERIOR IZQUIERDA (SOLO ICONOS PDF / CARPETA) -->
+  <div class="import-popover-wrap floating-import-fab-wrap" id="importPopoverWrap">
+    <div class="import-floating-menu import-icons-only hidden" id="importPdfMenu" onclick="event.stopPropagation()">
+      <button class="import-opt-btn" onclick="triggerSinglePdfImport()" title="Importar PDF" aria-label="Importar PDF">
+        <svg viewBox="0 0 24 24" class="v-ico"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+      </button>
+      <button class="import-opt-btn" onclick="triggerFolderPdfImport()" title="Importar carpeta" aria-label="Importar carpeta">
+        <svg viewBox="0 0 24 24" class="v-ico"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
+      </button>
+    </div>
+    <button class="floating-import-fab" id="floatingImportFab" onclick="toggleImportMenu(event)" title="Agregar PDF o carpeta" aria-label="Agregar archivos">
+      <svg viewBox="0 0 24 24" class="v-ico"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+    </button>
+  </div>
+
+  <!-- PÍLDORA BACHGPT INDEPENDIENTE EN ESQUINA INFERIOR DERECHA (MISMA ALTURA QUE MODOS) -->
+  <button class="bachgpt-fab" id="bachGptFab" onclick="handleMainBachFabClick()" title="BachGPT — Asistente Musical">
+    <div class="bach-8bit-icon" id="bachFabIcon"></div>
+    <span class="bach-fab-label">BachGPT</span>
+    <span class="bach-fab-sparkle" aria-hidden="true">✦</span>
+  </button>
+
+  <!-- Pestaña mínima para mostrar de nuevo el dock inferior tras ocultarse al escribir -->
+  <button class="dock-reveal-handle hidden" id="dockRevealHandle" onclick="revealBottomNavDock()" title="Mostrar barra de modos" aria-label="Mostrar barra de modos">
+    <span></span>
+  </button>
+
+  <!-- MENÚ LATERAL SUPERPUESTO DE CONFIGURACIÓN (ENGRANAJE) -->
+  <aside class="settings-drawer hidden" id="settingsDrawer" onclick="event.stopPropagation()">
+    <div class="settings-head">
+      <span class="settings-title">Configuración</span>
+      <button class="btn-bare-x" onclick="toggleSettingsDrawer(false)" aria-label="Cerrar configuración">✕</button>
+    </div>
+
+    <div class="settings-section">
+      <span class="settings-label">Paleta de colores</span>
+      <div class="settings-palette-list" id="paletteMenu">
+        <button class="palette-opt" data-palette="palette-luthier" onclick="setPalette('palette-luthier', this, 'Lutier')">
+          <span class="pal-circle pc-luthier"></span>
+          <span>Lutier &amp; Ébano</span>
+        </button>
+        <button class="palette-opt" data-palette="palette-henle" onclick="setPalette('palette-henle', this, 'Henle')">
+          <span class="pal-circle pc-henle"></span>
+          <span>Henle Urtext</span>
+        </button>
+        <button class="palette-opt active" data-palette="palette-linen" onclick="setPalette('palette-linen', this, 'Lino')">
+          <span class="pal-circle pc-linen"></span>
+          <span>Papel Lino</span>
+        </button>
+        <button class="palette-opt" data-palette="palette-velvet" onclick="setPalette('palette-velvet', this, 'Grafito')">
+          <span class="pal-circle pc-velvet"></span>
+          <span>Grafito Studio</span>
+        </button>
+        <button class="palette-opt" data-palette="palette-cadenza" onclick="setPalette('palette-cadenza', this, 'Burdeos')">
+          <span class="pal-circle pc-cadenza"></span>
+          <span>Burdeos &amp; Marfil</span>
+        </button>
+      </div>
+    </div>
+  </aside>
+
+  <!-- MENÚ FLOTANTE COMPACTO DE ACCIONES POR OBRA (•••) -->
+  <div class="work-actions-menu hidden" id="workActionsMenu" onclick="event.stopPropagation()"></div>
+  <!-- MENÚ DESPLEGABLE COMPARTIDO DE FILTROS (COMPOSITOR / PERIODO / DOTACIÓN) -->
+  <div class="filter-dd-menu hidden" id="sharedFilterMenu" onclick="event.stopPropagation()"></div>
+
+  <!-- CINTILLO FLOTANTE INFERIOR PARA SELECCIÓN MÚLTIPLE -->
+  <div class="glass-pill multi-select-bar hidden" id="multiSelectBar" onclick="event.stopPropagation()">
+    <span class="ms-count" id="multiSelectCount">1 seleccionada</span>
+    <div class="ms-actions">
+      <button class="ms-btn" id="msAddProgBtn" onclick="openProgramQuickMenuForSelection(event)" title="Agregar seleccionadas a programa" aria-label="Agregar a programa">
+        <svg viewBox="0 0 24 24" class="v-ico"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+      </button>
+      <button class="ms-btn ms-del" onclick="deleteSelectedScores()" title="Eliminar seleccionadas" aria-label="Eliminar seleccionadas">
+        <svg viewBox="0 0 24 24" class="v-ico"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+      </button>
+      <button class="btn-bare-x ms-cancel" onclick="exitMultiSelectMode()" title="Salir de selección" aria-label="Cerrar selección">✕</button>
+    </div>
+  </div>
+
+  <!-- MENÚ FLOTANTE DISCRETO PARA AGREGAR/ORDENAR EN PROGRAMA -->
+  <div class="prog-quick-popover hidden" id="progQuickPopover" onclick="event.stopPropagation()"></div>
+
+  <!-- MENÚ CONTEXTUAL RÁPIDO POR OBRA EN PROGRAMA (⋯) -->
+  <div class="work-actions-menu setlist-ctx-menu hidden" id="setlistItemContextMenu" onclick="event.stopPropagation()"></div>
+
+  <!-- BOTTOM SHEET MÓVIL: AGREGAR OBRA AL PROGRAMA -->
+  <div class="prog-bottom-sheet-backdrop hidden" id="progAddScoreBottomSheet" onclick="closeMobileAddScoreSheet()">
+    <div class="prog-bottom-sheet-card" onclick="event.stopPropagation()">
+      <div class="prog-sheet-grabber" aria-hidden="true"></div>
+      <div class="prog-sheet-head">
+        <span class="prog-sheet-title">Agregar obra al programa</span>
+        <button type="button" class="pdf-metadata-close-btn" onclick="closeMobileAddScoreSheet()" aria-label="Cerrar">
+          <svg viewBox="0 0 24 24" class="v-ico" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+      <div class="prog-sheet-search">
+        <svg viewBox="0 0 24 24" class="v-ico" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+        <input type="text" id="mobileProgSheetSearchInput" placeholder="Buscar por título o compositor..." oninput="renderMobileAddScoreSheetList()" autocomplete="off" />
+      </div>
+      <div class="prog-sheet-list" id="mobileProgSheetScoreList"></div>
+    </div>
+  </div>
+
+  <!-- MODAL LIGERO: VISTA PREVIA RÁPIDA (QUICK PEEK) DE OBRA EN PROGRAMA -->
+  <div class="modal-backdrop hidden" id="progQuickPeekModal" onclick="closeProgramQuickPeek()">
+    <div class="prog-quick-peek-card" onclick="event.stopPropagation()">
+      <div class="prog-peek-head">
+        <div class="prog-peek-meta">
+          <h4 id="progPeekTitle">Partitura</h4>
+          <small id="progPeekSub">Compositor</small>
+        </div>
+        <button type="button" class="pdf-metadata-close-btn" onclick="closeProgramQuickPeek()" aria-label="Cerrar vista previa">
+          <svg viewBox="0 0 24 24" class="v-ico" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+      <div class="prog-peek-preview-box" id="progPeekPreviewBox"></div>
+      <div class="prog-peek-foot">
+        <button type="button" class="pdf-submodal-btn" onclick="closeProgramQuickPeek()">Cerrar</button>
+        <button type="button" class="pdf-submodal-btn accent" id="progPeekOpenStudyBtn">Abrir en Estudio</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL LIGERO: NOTA RÁPIDA PARA PIEZA DEL SETLIST -->
+  <div class="modal-backdrop hidden" id="progPieceNoteModal" onclick="closeProgramPieceNoteModal()">
+    <div class="pdf-submodal-card prog-note-modal-card" onclick="event.stopPropagation()">
+      <div class="pdf-metadata-modal-head">
+        <h4 class="pdf-submodal-title" id="progNoteModalTitle">Nota rápida</h4>
+        <button type="button" class="pdf-metadata-close-btn" onclick="closeProgramPieceNoteModal()" aria-label="Cerrar">
+          <svg viewBox="0 0 24 24" class="v-ico" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+      <input type="text" id="progPieceNoteInput" class="pdf-submodal-input" placeholder='Ej. "Sin repeticiones", "Entrada en c. 32"...' autocomplete="off" onkeydown="if(event.key==='Enter') saveProgramPieceNote()" />
+      <div class="pdf-submodal-actions">
+        <button type="button" class="pdf-submodal-btn" onclick="closeProgramPieceNoteModal()">Cancelar</button>
+        <button type="button" class="pdf-submodal-btn accent" onclick="saveProgramPieceNote()">Guardar nota</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ANIMACIÓN DE CARGA DE PDFs (> 2s) CON BACHGPT CUERPO COMPLETO -->
+  <div class="pdf-loading-overlay hidden" id="pdfLoadingOverlay" aria-live="polite">
+    <div class="pdf-loading-sprite" id="pdfLoadingSprite"></div>
+    <span class="pdf-loading-text">Cargando...</span>
+  </div>
+
+  <script src="app.js?v=111"></script>
+</body>
+</html>

@@ -1,0 +1,63 @@
+# PROMPT DE IMPLEMENTACIÓN: PERFECCIONAMIENTO DEL MODO CONCIERTO, HUD HUD-ISLAND Y ESCUCHA ACTIVA (CADENZA)
+
+Actúa como Ingeniero Senior Frontend y Diseñador UX/UI de Software Musical de Alta Gama en Cadenza (`prototype/index.html`, `prototype/styles.css`, `prototype/app.js`).
+
+Tu objetivo es implementar el rediseño final del **Modo Concierto (Zen Stage)** y la integración armónica de la **Cápsula Monolítica Flotante** integrando el control de páginas y la **Escucha Activa**.
+
+---
+
+### 1. NAVEGACIÓN SUPERIOR EN MODO CONCIERTO (CABECERA ZEN)
+En Modo Concierto, los controles superiores se reducen a dos extremos sutiles, translúcidos y no invasivos para el escenario:
+
+1. **Esquina Superior Izquierda — Botón Volver a Ensayo:**
+   - Un botón circular/pastilla translúcido con icono de flecha hacia la izquierda/retorno (`←` o flecha curva):
+     `[ ← Ensayo ]` (o simplemente el icono lineal estilizado).
+   - Al tocarlo, regresa instantáneamente al Modo Ensayo desplegando la barra de herramientas y controles de estudio.
+
+2. **Esquina Superior Derecha — Botón de Herramientas de Escritura:**
+   - El botón flotante de pluma fuente (`#btnToggleToolRail` / ancla de pluma) se reubica en la **esquina superior derecha**.
+   - Mantiene intactas todas sus funciones actuales: al tocarlo despliega la paleta vertical estilizada de herramientas de escritura (con auto-cierre y opciones completas), permitiendo al músico hacer una anotación rápida en un ensayo general o concierto sin tener que salir del modo inmersivo.
+
+---
+
+### 2. INTEGRACIÓN DE LA CÁPSULA INFERIOR EN MODO CONCIERTO (PÁGINAS + ESCUCHA ACTIVA)
+Eliminar la barra vieja dispersa (`#concertBottomBar`) e integrar sus funciones dentro de la **Cápsula Monolítica Flotante de Cristal**, manteniendo el lenguaje visual de alta gama:
+
+```
+┌────────────────────────────────────────────────────────────────────────────────────────┐
+│ [ ⏮ Ant. ] │ ‹ Pág. 1 / 10 ════●════ 10 › │ [ 🟢 Escucha ] │ [ 1 Pág ▾ ] │ [ Sig. ⏭ ]  │
+└────────────────────────────────────────────────────────────────────────────────────────┘
+```
+
+#### Elementos del Módulo Inferior de Concierto:
+1. **Navegación de Obra (Setlist):**
+   - Extremo izquierdo: `[ ⏮ ]` (Obra anterior del programa).
+   - Extremo derecho: `[ ⏭ ]` (Siguiente obra del programa).
+2. **Scrubber Central de Páginas:**
+   - Botón `‹`, pastilla con `1 / 10`, línea ultrafina con perla de progreso y botón `›`.
+3. **Chip Vivo de "Escucha Activa" (Active Listening):**
+   - Botón integrado elegante con indicador de pulso luminoso sutil:
+     * Cuando está inactivo: `[ (icono oreja/micro) Escucha ]` (tono neutro tenue).
+     * Cuando está activo: El anillo o punto destella suavemente en verde/dorado esmeralda (`pulse-ring`), indicando que el algoritmo está escuchando para pasar la página automáticamente al llegar al final del sistema.
+4. **Selector de Folio (`1 Pág` / `2 Págs`):**
+   - Botón compacto para alternar entre vista vertical de 1 página o doble página en tablet horizontal.
+
+---
+
+### 3. COMPORTAMIENTO EN ESCENARIO (INMERSIÓN Y AUTO-OCULTAMIENTO)
+- **Estado Reposado (Tocar la música):**
+  - La Cápsula Inferior y los botones superiores se mantienen **100% invisibles** (`opacity: 0; pointer-events: none;`) para que nada distraiga la vista ni al público.
+- **Estado Activo (Al toque de emergencia):**
+  - Al dar un toque suave en el centro de la partitura (o deslizar desde el borde inferior):
+    - Emerge la Cápsula Inferior con la Escucha Activa y páginas.
+    - Aparecen el botón `[ ← Ensayo ]` en la esquina superior izquierda y el de pluma en la esquina superior derecha.
+  - **Auto-desvanecimiento:** Si pasan 3.5 segundos sin interacción táctil, todo se desvanece suavemente a pantalla completa limpia.
+
+---
+
+### 4. PASO DE PÁGINA TÁCTIL EN ESCENARIO
+- Lateral derecho (70% de la pantalla): Avanza a la siguiente página (o activa la animación de paso de página).
+- Lateral izquierdo (30% de la pantalla): Retrocede a la página anterior.
+- Al pasar página, destella por 1.2 segundos en la esquina inferior un micro-toast translúcido con el número de página (`3 / 10`) y desaparece.
+
+Por favor, revisa `prototype/index.html`, `prototype/styles.css` y `prototype/app.js` e implementa este flujo refinado.

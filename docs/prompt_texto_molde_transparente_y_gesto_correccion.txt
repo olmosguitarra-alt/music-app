@@ -1,0 +1,55 @@
+# PROMPT DE IMPLEMENTACIÓN: INTEGRACIÓN VISUAL LIMPIA Y CORRECCIÓN POR GESTOS DEL LÁPIZ (CADENZA)
+
+Actúa como Ingeniero Senior Frontend y Diseñador UX/UI de Cadenza (`prototype/styles.css`, `prototype/app.js`).
+
+Tu objetivo es perfeccionar el sistema de texto de molde digital en dos aspectos fundamentales:
+1. **Integración visual pura (cero fondos ni recuadros cuando no está seleccionado).**
+2. **Corrección gestual natural con el lápiz (tachar/sobrescribir) sin añadir botones, ventanas ni menús adicionales.**
+
+---
+
+### 1. INTEGRACIÓN VISUAL LIMPIA (ESTADO NO SELECCIONADO)
+- **El Problema Actual:** En `styles.css`, la clase `.mold-item` y `.editorial-note` tienen `background: rgba(255, 255, 255, 0.35);`, `box-shadow` y relleno que parecen una calcomanía o etiqueta sobre la partitura.
+- **El Cambio Requerido:**
+  - Cuando el texto **NO** esté seleccionado, debe integrarse al 100% con el papel de la partitura:
+    * `background: transparent !important;`
+    * `box-shadow: none !important;`
+    * `border: 1px solid transparent !important;`
+    * `padding: 0 !important;`
+  - Solo debe verse la **tinta tipográfica pura** (en su color original de tinta/grafito), como si hubiera sido impresa directamente en la edición de la partitura.
+  - Al tocar el texto (estado `.selected-mold`), entonces sí se revela el recuadro punteado suave con:
+    * El botón `[ ✕ ]` en la esquina para borrar.
+    * La manija `[ ⤡ ]` en la esquina inferior para escalar tamaño.
+    * Los bordes para moverlo libremente.
+
+---
+
+### 2. CORRECCIÓN Y REESCRITURA POR GESTO DEL LÁPIZ (SIN MENÚS NI BOTONES)
+
+Para que el músico edite o corrija una palabra con la misma naturalidad que en un papel físico, implementar detección de **gestos nativos de stylus**:
+
+#### Gesto A: "Tachar para Borrar y Reemplazar" (Scratch-out Gesture)
+- **Comportamiento:**
+  - Si el usuario dibuja un garabato o zigzag rápido horizontal (un tachón de ida y vuelta $\sim 2-3$ oscilaciones rápidas) directamente sobre un texto de molde existente:
+    1. El sistema detecta la colisión del trazo con el área del texto (`bounding box`).
+    2. El texto existente se desvanece de inmediato (se borra).
+    3. Si el usuario escribe inmediatamente a continuación una nueva palabra en ese mismo lugar, se convierte al nuevo texto de molde limpio en esa posición.
+
+#### Gesto B: "Doble Toque con Stylus / Reescritura Directa"
+- **Comportamiento alternativo fluido:**
+  - Si el usuario hace doble toque rápido sobre el texto con la pluma, la palabra se subraya sutilmente y entra en "modo edición rápida":
+    * Puede escribir la corrección encima con el lápiz y al levantar se actualiza el texto.
+    * O se despliega el cursor nativo discreto para corregir una letra sin ventanas ni popups.
+
+---
+
+### 3. REQUISITOS TÉCNICOS EN `app.js` Y `styles.css`
+1. **En `styles.css`:**
+   - Modificar `.mold-item.editorial-note` para que sea completamente transparente por defecto.
+   - Mantener el marco punteado únicamente bajo la clase `.selected-mold`.
+2. **En `app.js`:**
+   - En el detector de trazos (`onPointerUp` o durante el procesamiento del trazo), comprobar si los puntos del trazo intersectan el rectángulo de algún elemento en `studyPageMoldItems`:
+     * Si el trazo tiene un patrón de zigzag/tachón (cambios rápidos de signo en velocidad horizontal $\Delta x$ dentro de los límites del texto), eliminar automáticamente el item del arreglo y del DOM, llamando a `pushStudyUndoSnapshot()`.
+3. Persistir los cambios en `localStorage` mediante `saveStudyAnnotationsForCurrentPage()`.
+
+Por favor, revisa `prototype/styles.css` y `prototype/app.js` y aplica esta integración transparente y el gesto de tachar/corregir.

@@ -1,0 +1,56 @@
+# PROMPT DE IMPLEMENTACIÓN: ZOOM A DOS DEDOS (PINCH-TO-ZOOM), PANEO Y ANCLAJE PROPORCIONAL DE ANOTACIONES (CADENZA)
+
+Actúa como Ingeniero Senior de Gráficos Web y Especialista en Interacción Táctil en Cadenza (`prototype/index.html`, `prototype/styles.css`, `prototype/app.js`).
+
+Tu objetivo es implementar en el visor de partituras (`#mode-performer`):
+1. **Gesto nativo de Zoom a dos dedos (Pinch-to-zoom) y Desplazamiento/Paneo (Two-finger Pan).**
+2. **Anclaje proporcional absoluto (100% fijo):** Garantizar que todas las anotaciones (trazos de lápiz, notas de molde, sellos musicales) mantengan su posición y escala milimétricamente exacta sobre el PDF sin importar cuánto zoom o paneo se aplique.
+
+---
+
+### 1. ARQUITECTURA DE CONTENEDOR TRANSFORMABLE (GPU ACCELERATED)
+Para que el zoom sea fluido a 60-120 FPS sin recalcular punto por punto:
+- Agrupar el canvas del PDF (`performerPdfRenderCanvas`), el canvas de trazos (`performerCanvas`), la capa SVG y la capa de molde (`performerMoldLayer`) dentro de un único subcontenedor:
+  `.folio-transform-layer` dentro de `#performerSheet`.
+- Aplicar las transformaciones de zoom y desplazamiento directamente sobre este contenedor mediante CSS transform acelerado por hardware:
+  ```css
+  .folio-transform-layer {
+    transform-origin: 0 0;
+    will-change: transform;
+    touch-action: none;
+  }
+  ```
+- **Resultado Inmediato:** Al escalar este contenedor común, el PDF, los trazos, las notas de molde y los sellos crecen y se desplazan en perfecta sincronía sin desfasarse ni un solo píxel.
+
+---
+
+### 2. GESTIÓN DE EVENTOS: SEPARACIÓN ESTRICTA LÁPIZ VS DEDOS
+Escuchar eventos unificados con la **Web Pointer Events API** gestionando una lista de punteros activos (`activePointers` map):
+1. **1 Puntero Stylus (`pointerType === 'pen'`):**
+   - Dibuja, escribe o estampa con sensibilidad a la presión.
+   - NO activa zoom ni desplazamiento.
+2. **1 Puntero Táctil (`pointerType === 'touch'`):**
+   - Si se toca en los extremos, pasa de página.
+   - Si se toca una nota de molde, la selecciona.
+3. **2 Punteros Táctiles simultáneos (`pointerType === 'touch'`):**
+   - **Pinch-to-zoom:** Calcular la distancia euclidiana entre ambos puntos $d = \sqrt{(x_2 - x_1)^2 + (y_2 - y_1)^2}$. La relación entre la distancia actual y la inicial ajusta el factor de escala `currentScale`.
+   - **Pan (Paneo):** El punto medio entre los dos dedos desplaza la vista (`translateX`, `translateY`).
+   - Rango de zoom: Mínimo $1.0\times$ (página completa encajada), Máximo $3.5\times$.
+   - **Reinicio rápido:** Un doble toque con dos dedos restaura la vista a escala $1.0\times$ y centrada.
+
+---
+
+### 3. SISTEMA DE COORDENADAS NORMALIZADO PARA ESCRITURA EN ZOOM
+Cuando el usuario dibuja o inserta texto con la partitura ampliada (por ejemplo, con zoom a $2\times$):
+- Las coordenadas de entrada del puntero deben convertirse a **coordenadas locales del documento** antes de pintar:
+  $$x_{\text{doc}} = \frac{x_{\text{pantalla}} - \text{pan}_X}{\text{scale}}$$
+  $$y_{\text{doc}} = \frac{y_{\text{pantalla}} - \text{pan}_Y}{\text{scale}}$$
+- De esta manera, si el músico escribe con el zoom al máximo en un compás pequeño, al volver a la vista normal ($1.0\times$), el trazo queda nítido, perfectamente proporcionado y anclado al compás.
+
+---
+
+### 4. RE-RENDERIZADO DE ALTA NITIDEZ (PDF.JS ADAPTIVE RESCALE)
+- Durante el pellizco continuo, la transformación se hace por GPU para máxima fluidez.
+- Al soltar los dedos (`pointerup`) tras un debounce de 250ms, si la escala es significativamente mayor a $1.2\times$, disparar un re-renderizado vectorial en segundo plano de `pdf.js` al nuevo `devicePixelRatio` para que los pentagramas y notas mantengan bordes nítidos de imprenta sin pixelado.
+
+Por favor, revisa `prototype/index.html`, `prototype/styles.css` y `prototype/app.js` e implementa este motor de zoom táctil proporcional.

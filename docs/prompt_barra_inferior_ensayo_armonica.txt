@@ -1,0 +1,81 @@
+# PROMPT DE IMPLEMENTACIÓN: CONVIVENCIA ARMÓNICA DE BARRA INFERIOR EN MODO ENSAYO (CADENZA)
+
+Actúa como Ingeniero Senior Frontend y Diseñador UX/UI de Cadenza (`prototype/index.html`, `prototype/styles.css`, `prototype/app.js`).
+
+Tu objetivo es resolver el conflicto de superposición y visibilidad en la parte inferior del visor inteligente durante el **Modo Ensayo (`.is-study-mode`)**, de modo que **convivan perfectamente**:
+1. Los **Modos Principales** (`#bottomNavDock` con Biblioteca, Partitura, Editor).
+2. La **Barra de Páginas** (`.performer-scrubber-bar`).
+3. El botón flotante de **BachGPT** (`#bachGptFab`).
+
+> ⚠️ **REGLA ESTRICTA:** No toques ni modifiques el comportamiento actual del **Modo Concierto**. Todas las modificaciones aplican exclusivamente al visor en **Modo Ensayo**.
+
+---
+
+### 1. DIAGNÓSTICO DEL PROBLEMA ACTUAL
+En `styles.css` existe una regla agresiva que oculta el dock y a BachGPT en el visor:
+```css
+body.mode-performer-active #bottomNavDock,
+body.mode-performer-active #bachGptFab {
+  opacity: 0 !important;
+  pointer-events: none !important;
+}
+```
+Esto provoca que el usuario quede atrapado sin ver los modos de la app ni a BachGPT mientras estudia la partitura. Además, el scrubber de páginas fue desplazado con márgenes forzados (`right: 180px !important`).
+
+---
+
+### 2. SOLUCIÓN UX/UI: "BARRA INFERIOR UNIFICADA EN 3 BLOQUES HORIZONTALES"
+En **Modo Ensayo**, organizar la base de la pantalla en una sola línea horizontal armoniosa, limpia y sin colisiones:
+
+```
+┌────────────────────────────────────────────────────────────────────────────┐
+│                              PARTITURA ACTIVA                              │
+├────────────────────────────────────────────────────────────────────────────┤
+│  [ 📚  🎼  ✏️ ]  │  ‹ Pág. 1 / 10  [═════════●═════════]  10 ›  │  [ 🤖 Bach ] │
+│  (Bloque Izq)   │              (Bloque Central)                │ (Bloque Der) │
+└────────────────────────────────────────────────────────────────────────────┘
+```
+
+#### A. Bloque Izquierdo (Modos Principales):
+- Restablecer la visibilidad de `#bottomNavDock` en `body.mode-performer-active.is-study-mode` (`opacity: 1; pointer-events: auto;`).
+- Ubicar la cápsula de modos (`.bottom-mode-capsule`) anclada a la izquierda:
+  * `left: 14px;`
+  * `bottom: max(10px, env(safe-area-inset-bottom));`
+  * `transform: none;` (eliminar el centrado forzado `translateX(-50%)`).
+  * Altura estándar cómoda: `34px - 36px`.
+
+#### B. Bloque Central (Barra Scrubber de Páginas):
+- La barra `.performer-scrubber-bar` debe ocupar el espacio libre central entre el Dock de Modos y BachGPT:
+  * En tablets/desktop: `left: 160px; right: 64px; margin: 0 auto; width: auto; max-width: 580px;`.
+  * Altura y estilo alineado: `34px - 36px`, fondo translúcido con `backdrop-filter: blur(12px)`, esquinas redondeadas suaves (`border-radius: 18px`).
+  * Centrado vertical idéntico al dock y a BachGPT para que se lea como una sola suite de control inferior.
+
+#### C. Bloque Derecho (BachGPT FAB):
+- Restablecer la visibilidad de `#bachGptFab` en `body.mode-performer-active.is-study-mode` (`opacity: 1; pointer-events: auto; display: flex !important;`).
+- Anclado en la esquina inferior derecha:
+  * `right: 14px;`
+  * `bottom: max(10px, env(safe-area-inset-bottom));`
+  * Tamaño ergonómico y alineado: `38px x 38px`.
+
+---
+
+### 3. CONMUTADOR "ENSAYO ↔ CONCIERTO"
+Para no saturar la base ni encimar controles:
+- Mover el switch `#mode-performer .perf-bottom-right-switch` a la **Barra Superior (`performer-top-bar`)** en el bloque derecho junto a los chips de Metrónomo y Afinador, liberando por completo la esquina inferior derecha para BachGPT.
+
+---
+
+### 4. RESPONSIVE MÓVIL (`max-width: 760px`)
+En pantallas estrechas de teléfono donde el ancho no permite los 3 bloques juntos en un solo renglón:
+- El Scrubber de páginas se eleva sutilmente a un segundo piso justo encima del dock:
+  * `.performer-scrubber-bar`: `bottom: 54px; left: 12px; right: 12px; width: auto;`.
+  * `#bottomNavDock`: centrado abajo con `bottom: 10px;`.
+  * `#bachGptFab`: a la derecha con `bottom: 10px; right: 10px;`.
+
+---
+
+### 5. LÍNEA EDITORIAL Y ESTÉTICA
+- Respetar la identidad visual sobria de Cadenza: fondos tipo cristal translúcido (`backdrop-filter`), bordes sutiles de 1px en color token (`var(--glass-border)`), iconos lineales limpios (trazo 1.5px).
+- Transiciones fluidas en opacidad y posición (`transition: opacity 0.2s ease, transform 0.2s ease`).
+
+Por favor, revisa `prototype/index.html` y `prototype/styles.css` e implementa esta distribución armónica en Modo Ensayo sin alterar Modo Concierto.

@@ -1,0 +1,73 @@
+# PROMPT DE IMPLEMENTACIÓN: SECUENCIA LINEAL DE CONCIERTO Y BOTÓN SATÉLITE DE ESCUCHA ACTIVA (CADENZA)
+
+Actúa como Ingeniero Senior Frontend y Diseñador UX/UI de Software Musical de Alta Gama en Cadenza (`prototype/index.html`, `prototype/styles.css`, `prototype/app.js`).
+
+Tu objetivo es implementar la distribución exacta de controles para el **Modo Concierto**, siguiendo una secuencia de lectura estrictamente intuitiva y lineal, junto con el botón independiente de **Escucha Activa**.
+
+---
+
+### 1. CABECERA SUPERIOR EN MODO CONCIERTO (ZEN STAGE)
+- **Esquina Superior Izquierda:**
+  - Botón sutil translúcido `[ ← Ensayo ]` (o flecha lineal de retorno).
+  - Al pulsarlo, regresa al Modo Ensayo desplegando la barra de herramientas y controles de estudio.
+- **Esquina Superior Derecha:**
+  - El botón flotante de herramientas de pluma/escritura (`#btnToggleToolRail`), accesible con el mismo comportamiento actual para hacer anotaciones rápidas en vivo sin salir del modo concierto.
+
+---
+
+### 2. BARRA INFERIOR DE NAVEGACIÓN LINEAL (CÁPSULA CONCIERTO)
+En la base de la pantalla, la cápsula adopta una secuencia lógica perfecta de izquierda a derecha (Macro-retroceso ➔ Micro-retroceso ➔ Progreso ➔ Micro-avance ➔ Macro-avance):
+
+```
+┌────────────────────────────────────────────────────────────────────────┐
+│  [ ⏮ Obra ant. ]   [ ‹ Pág. ant. ]   [ ═══●═══ 3/10 ]   [ Pág. sig. › ]   [ Sig. obra ⏭ ]  │
+└────────────────────────────────────────────────────────────────────────┘
+```
+
+#### Elementos en orden exacto:
+1. `[ ⏮ ]` **Obra anterior** (salta a la pieza anterior del setlist/programa).
+2. `[ ‹ ]` **Página anterior** (retrocede una página en el PDF actual).
+3. **Barra de Progreso del PDF:**
+   - Línea ultrafina y fluida con perla de posición + indicador textual compacto (ej: `3 / 10`).
+4. `[ › ]` **Página siguiente** (avanza una página en el PDF actual).
+5. `[ ⏭ ]` **Obra siguiente** (salta a la siguiente pieza del setlist/programa).
+
+---
+
+### 3. BOTÓN SATÉLITE INDEPENDIENTE DE "ESCUCHA ACTIVA"
+El botón de **Escucha Activa** no va metido dentro de la barra de navegación: es un **botón flotante satélite independiente**, ubicado de forma estratégica (por ejemplo, en la esquina inferior derecha o flotando sutilmente sobre la cápsula):
+
+```
+                                              ┌──────────────────┐
+                                              │ 🟢 Escucha Activa│
+                                              └──────────────────┘
+┌────────────────────────────────────────────────────────────────────────┐
+│  [ ⏮ ]   [ ‹ ]           [ ═══●═══ 3/10 ]           [ › ]   [ ⏭ ]      │
+└────────────────────────────────────────────────────────────────────────┘
+```
+
+#### Comportamiento del Botón de Escucha Activa:
+- **Diseño:** Pastilla compacta de cristal esmerilado con icono de onda sonora/micrófono y pulso sutil (`pulse-ring`).
+- **Estado Inactivo:** Tono neutro translúcido `[ 🎙️ Escucha ]`.
+- **Estado Activo:** El halo/anillo pulsa con una suave respiración luminosa en verde esmeralda (`#2e7d32` / `#4caf50`), indicando que el algoritmo está escuchando el instrumento para pasar la página automáticamente al final de la hoja.
+- Un solo toque enciende o apaga la escucha sin alterar la partitura.
+
+---
+
+### 4. INMERSIÓN EN ESCENARIO Y AUTO-DESVANECIMIENTO
+- **Durante la ejecución (En reposo):**
+  - Tanto la barra inferior lineal, como el botón satélite de Escucha Activa, como los botones superiores, se mantienen **100% invisibles** (`opacity: 0; pointer-events: none;`).
+- **Al toque del músico (HUD de Emergencia):**
+  - Al tocar suavemente el centro de la partitura (o deslizar desde la base):
+    - Emerge suavemente la barra inferior lineal y el botón de Escucha Activa.
+    - Aparecen el botón `[ ← Ensayo ]` a la izquierda y el de pluma a la derecha.
+  - **Temporizador de Auto-desvanecimiento:** Tras 3.5 segundos sin toques, todos los controles se desvanecen automáticamente a pantalla completa limpia.
+
+---
+
+### 5. PASO DE PÁGINA TÁCTIL EN EL FOLIO
+- Lateral derecho (70% de la pantalla): Avanza a la siguiente página con animación de folio.
+- Lateral izquierdo (30% de la pantalla): Retrocede a la página anterior.
+- Micro-toast fugaz en la esquina inferior con el número de página (`3 / 10`) que dura 1.2 segundos y desaparece.
+
+Por favor, revisa `prototype/index.html`, `prototype/styles.css` y `prototype/app.js` e implementa este acomodo lineal y el botón satélite de Escucha Activa.

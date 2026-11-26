@@ -1,0 +1,65 @@
+# PROMPT DE IMPLEMENTACIÓN: SIMPLIFICACIÓN DEL RAIL DE ESCRITURA Y CAJAS INTERACTIVAS DE TEXTO DIGITAL (CADENZA)
+
+Actúa como Ingeniero Senior Frontend y Diseñador UX/UI de Cadenza (`prototype/index.html`, `prototype/styles.css`, `prototype/app.js`).
+
+Tu objetivo es pulir la experiencia de escritura y anotación en el visor unificado (`#mode-performer`), aplicando dos cambios concretos:
+1. **Limpieza del menú lateral de pluma (eliminar botones redundantes de estrella/IA).**
+2. **Conversión directa de trazo a texto digital (sin ventanas intermedias) con una caja de selección interactiva (mover, redimensionar y borrar).**
+
+---
+
+### 1. LIMPIEZA DEL MENÚ DESPLEGABLE DE ESCRITURA (`#performerToolRail`)
+
+En el rail vertical de herramientas (`performerToolRail`):
+- **Eliminar el botón `#btnMoldToggle`** (icono de cuatro estrellas / "A Molde").
+- **Eliminar el botón `#btnRailBachGpt`** (icono de estrella IA / "BachGPT").
+  *(Nota: BachGPT ya tiene su acceso oficial y permanente en el botón flotante inferior `#bachGptFab`, por lo que duplicarlo en el rail satura la lista).*
+- La herramienta de **Texto / Molde** debe ser una herramienta estándar de escritura en el rail con un icono tipográfico lineal limpio (por ejemplo, `[ T ]` o `[ Abc ]`), ubicada junto al lápiz, marcador y borrador.
+
+---
+
+### 2. CONVERSIÓN DIRECTA: TRAZO ➔ LETRA DE MOLDE (SIN POPUPS NI VENTANAS)
+
+- **Flujo Inmediato:**
+  1. Con la herramienta de Texto activa (o pluma en modo molde), el usuario escribe a mano sobre la partitura (ej. *"Coda"*, *"Rit."*, *"pizz."*).
+  2. Al levantar el lápiz/dedo (tras una pausa sutil de 600-800ms sin más trazos):
+     - El trazo manuscrito se convierte **directamente en texto digital editorial**, en el mismo lugar exacto donde se escribió.
+     - **CERO ventanas, modales o popups de confirmación:** La conversión es fluida, silenciosa e instantánea.
+
+---
+
+### 3. CAJA INTERACTIVA DE MANIPULACIÓN DEL TEXTO (BOUNDING BOX)
+
+Al tocar o hacer clic sobre cualquier texto en letra de molde existente, se activa su **recuadro de selección interactivo**:
+
+```
+        (Borde superior: Arrastrar para mover)
+     ┌────────────────────────────────────────[ ✕ ] Borrar
+     │                                          │
+     │                 R I T .                  │
+     │                                          │
+     └────────────────────────────────────────[ ⤡ ] Escalar / Tamaño
+```
+
+1. **Esquina Superior Derecha — Botón Eliminar `[ ✕ ]`:**
+   - Un botón circular o cuadrado sutil con una `✕`.
+   - Al tocarlo, elimina inmediatamente esa anotación de texto del lienzo y de los datos guardados.
+
+2. **Esquina Inferior Derecha — Manija de Escala `[ ⤡ ]`:**
+   - Un control táctil de arrastre (resize handle).
+   - Al arrastrarlo hacia afuera o adentro, manipula dinámicamente el tamaño de la tipografía y del recuadro.
+
+3. **Bordes del Recuadro — Mover / Reubicar (Drag to Move):**
+   - Al arrastrar desde cualquier borde o área del recuadro, el texto se desplaza libremente por la pantalla para reposicionarlo con precisión sobre el pentagrama.
+
+4. **Desactivar Selección:**
+   - Al tocar en cualquier área vacía de la partitura, el recuadro interactivo y los controles se ocultan, dejando únicamente la tipografía limpia sobre la hoja.
+
+---
+
+### 4. REGLAS TÉCNICAS Y ESTÉTICA
+- Integrar la lógica sobre el contenedor existente `#performerMoldLayer`.
+- Las transformaciones (posición `x, y`, tamaño de fuente y contenido) deben persistir en el registro de anotaciones de la página actual (`studyPageMoldItems` o estructura equivalente) en `localStorage`.
+- Los controles de la caja (borde punteado suave, botón `✕`, manija `⤡`) deben seguir el diseño minimalista de Cadenza (líneas delgadas de 1px, acento discreto, sin colores estridentes).
+
+Por favor, revisa `prototype/index.html`, `prototype/styles.css` y `prototype/app.js` e implementa este comportamiento.

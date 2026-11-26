@@ -1,0 +1,58 @@
+# PROMPT DE IMPLEMENTACIÓN: INTEGRACIÓN VISUAL LIMPIA Y GRAMÁTICA GESTUAL DEL LÁPIZ (CADENZA)
+
+Actúa como Ingeniero Senior Frontend y Especialista en Interacción Stylus/Pen en Cadenza (`prototype/styles.css`, `prototype/app.js`).
+
+Tu objetivo es perfeccionar el sistema de texto de molde digital en dos aspectos fundamentales:
+1. **Integración visual pura:** El texto de molde debe verse como tinta tipográfica grabada sobre el papel (cero fondos, bordes o sombras mientras no esté seleccionado).
+2. **Gramática completa de gestos con el lápiz (Pen Gestures):** Permitir tachar/borrar, insertar espacios, añadir acentos y signos de puntuación de forma orgánica con el movimiento natural de la pluma.
+
+---
+
+### 1. INTEGRACIÓN VISUAL LIMPIA (ESTADO NO SELECCIONADO)
+- En `styles.css`, asegurar que `.mold-item` y `.editorial-note`:
+  * Sean completamente transparentes: `background: transparent !important; border: 1px solid transparent !important; box-shadow: none !important; padding: 0 !important;`.
+  * La tipografía se perciba como parte original de la partitura.
+- Al tocar el texto con el dedo o hacer clic (`.selected-mold`), se activa el recuadro punteado de selección:
+  * Esquina superior derecha: Botón `[ ✕ ]` para borrar de un toque.
+  * Esquina inferior derecha: Manija `[ ⤡ ]` para escalar tamaño de tipografía.
+  * Bordes: Arrastrar para mover y reposicionar sobre el pentagrama.
+
+---
+
+### 2. GRAMÁTICA COMPLETA DE GESTOS CON EL LÁPIZ (PEN GESTURES SYSTEM)
+
+El motor debe reconocer gestos rápidos trazados directamente sobre o cerca de una palabra en letra de molde existente:
+
+#### Gesto 1: Tachar para Borrar (Scratch-out / Zigzag)
+- **Trazo:** Un garabato rápido en zigzag horizontal sobre la palabra (2 o más cambios de dirección en el eje horizontal $\Delta x$).
+- **Acción:** Elimina instantáneamente el texto de molde del lienzo y del almacenamiento (con snapshot para deshacer).
+
+#### Gesto 2: Insertar Espacio (Línea Vertical Descendente / Slash)
+- **Trazo:** Trazar una línea vertical recta de arriba hacia abajo (`|`) entre dos letras de una palabra existente.
+- **Acción:** Separa las letras e inserta un espacio en blanco en esa posición exacta (ej: convierte `"solmenor"` en `"sol menor"`).
+
+#### Gesto 3: Añadir Acentos (Tilde / Diacrítico Natural)
+- **Trazo:** Trazar una pequeña línea oblicua descendente rápida (`´`) sobre una vocal existente de la palabra.
+- **Acción:** Transforma la vocal base en su versión acentuada (ej: trazo sobre la `o` en `"allegro moderato"` ➔ `"allegro moderató"`, o `"compas"` ➔ `"compás"`).
+
+#### Gesto 4: Puntuación Directa con la Pluma (Puntos y Comas)
+- **Trazo:** 
+  * Un toque puntual firme con el lápiz inmediatamente después de la última letra (con radio de movimiento $< 3\text{px}$) añade un punto `.` (ideal para abreviaturas musicales como *"rit."*, *"cresc."*, *"dim."*).
+  * Un punto seguido de un pequeño arco descendente añade una coma `,`.
+
+#### Gesto 5: Unir Palabras (Arco Inferior / Ligadura)
+- **Trazo:** Trazar un pequeño arco o curva hacia arriba `‿` por debajo de dos palabras separadas.
+- **Acción:** Elimina el espacio entre ellas uniéndolas en una sola palabra.
+
+---
+
+### 3. IMPLEMENTACIÓN TÉCNICA EN `app.js`
+1. Al dispararse `onPointerUp` (levantar la pluma):
+   - Calcular la caja delimitadora del trazo recién dibujado.
+   - Si colisiona con el área de algún elemento en `studyPageMoldItems`:
+     * Evaluar si cumple las características geométricas de los gestos (Zigzag $\rightarrow$ Tachar; Línea vertical $\rightarrow$ Espacio; Oblicua sobre vocal $\rightarrow$ Acento; Tap corto $\rightarrow$ Punto).
+     * Si coincide con un gesto, aplicar la modificación al texto del objeto, cancelar el dibujo del trazo en el canvas y actualizar el `<span>` tipográfico en el DOM.
+     * Si no coincide con un gesto de edición, procesar como nuevo trazo o escritura libre normal.
+2. Persistir automáticamente el estado actualizado en `studyPageMoldItems` y `localStorage`.
+
+Por favor, revisa `prototype/styles.css` y `prototype/app.js` e integra esta gramática de gestos naturales para stylus.

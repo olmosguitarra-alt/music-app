@@ -1,0 +1,149 @@
+# PROMPT DE IMPLEMENTACIÓN: CORRECCIÓN DE OPACIDAD, CLASIFICACIÓN MUSICAL Y PALETA FLOTANTE VERTICAL TIPO SIBELIUS (CADENZA)
+
+Actúa como Ingeniero Senior Frontend, Especialista en Gráficos Web Canvas y Diseñador UX/UI de Software Musical (`prototype/index.html`, `prototype/styles.css`, `prototype/app.js`).
+
+Tu objetivo es resolver cuatro problemas concretos de precisión visual y ergonomía en Cadenza:
+
+---
+
+### 1. OPACIDAD REAL AL 100% EN EL TRAZO LIBRE (CERO TRANSPARENCIA RESIDUAL)
+- **Problema Actual:** Aunque la opacidad esté fijada al 100% (`brushOpacity = 1.0`), el trazo sigue mostrando transparencia o falta de cobertura sólida en el canvas.
+- **Causa Raíz en `app.js`:**
+  - En la función de renderizado de trazos (`applyStrokeStyle` o al rellenar la espina Bézier), se está aplicando mezcla de capas indebida o se atenúa el canal alfa:
+    * Asegurar que para la pluma (`pen`):
+      ```javascript
+      ctx.globalCompositeOperation = "source-over";
+      ctx.globalAlpha = Math.min(1.0, Math.max(0.1, stroke.opacity ?? 1.0));
+      ```
+    * Si la herramienta es pluma (`pen`) y la opacidad es 100%, la tinta debe ser **100% opaca y sólida** (cobertura total sobre el PDF y trazos previos).
+    * Al rellenar los polígonos del trazo Bézier continuo, asegurar que el color RGB/Hexadecimal no tenga canales alfa reducidos en formato `rgba(...)`.
+
+---
+
+### 2. CORRECCIÓN Y RECLASIFICACIÓN RIGUROSA DE SELLOS MUSICALES
+Reordenar el objeto `stampProfiles` en `prototype/app.js` siguiendo la taxonomía estándar de teoría musical (separando estrictamente dinámicas de volumen vs agógica de tiempo/pulso):
+
+```javascript
+const stampProfiles = {
+  // DINÁMICAS (Intensidad y volumen sonoro exclusivamente):
+  dynamics: [
+    "ppp", "pp", "p", "mp", "mf", "f", "ff", "fff", 
+    "sfz", "sfp", "fp", "rfz",
+    "<", ">", // horquillas de crescendo y diminuendo
+    "sub. p", "sub. f"
+  ],
+
+  // AGÓGICA Y TEMPO (Velocidad, pulso y modificaciones de tiempo):
+  agogic: [
+    "rit.", "rall.", "accel.", "a tempo", 
+    "meno mosso", "più mosso", "rubato", "ad lib.",
+    "𝄐", "𝄑", // calderón normal y calderón largo
+    "//", "’", // cesura y respiración
+    "𝄋", "𝄌", "D.C.", "Fine" // segno, coda, da capo
+  ],
+
+  // EXPRESIÓN Y CARÁCTER:
+  expression: [
+    "dolce", "espress.", "cantab.", "legato", 
+    "pesante", "leggiero", "sotto voce", "marcato"
+  ],
+
+  // ARTICULACIÓN Y ACENTOS:
+  articulation: [
+    "•", "▾", "—", "•—", // staccato, staccatissimo, tenuto, portato
+    ">", "⋀", // acento, martellato
+    "tr~", "𝆝", "𝆞", "gliss." // trino, mordentes, glissando
+  ],
+
+  // FAMILIAS INSTRUMENTALES:
+  strings: ["⨅", "⋁", "0", "1", "2", "3", "4", "I Pos.", "II Pos.", "III Pos.", "IV Pos.", "V Pos.", "pizz.", "arco", "con sord.", "◇"],
+  guitar: ["p", "i", "m", "a", "e", "1", "2", "3", "4", "0", "C.I", "C.II", "C.III", "C.IV", "C.V", "C.VI", "C.VII", "C.VIII", "C.IX", "½C", "①", "②", "③", "④", "⑤", "⑥", "rasg.", "apoy.", "tir.", "tamb."],
+  piano: ["Ped.", "^", "*", "u.c.", "t.c.", "m.d.", "m.s.", "1", "2", "3", "4", "5"],
+  winds: ["’", "O", "T-K", "frull.", "+", "○"]
+};
+```
+
+---
+
+### 3. FORMATEO VERTICAL COMPACTO TIPO TECLADO/PALETA SIBELIUS
+Reestructurar la paleta `#stampPopover.stamp-floating-palette` para que adopte el formato **esbelto, vertical y compacto** de la ventana de notas flotante de Sibelius (Keypad):
+- **Dimensiones:** Ancho reducido tipo torre: `width: 170px - 180px; max-width: 180px;`.
+- **Selector de Categoría:** En lugar de un carrusel ancho de botones, usar un selector desplegable o fila compacta de iconos en la parte superior.
+- **Grid de Botones Compacto (3 columnas en lugar de 5):**
+  - Botones estilizados tipo tecla de 48px de ancho x 36px de alto.
+  - **Alineación de Texto (Sin desbordes):**
+    ```css
+    .stamp-btn {
+      width: 100%;
+      height: 36px;
+      padding: 0 4px;
+      font-size: 13px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+    }
+    /* Para términos más largos como 'espress.' o 'II Pos.' reducir a 11px automáticamente */
+    .stamp-btn[data-long="true"], .stamp-btn:has(span.long-text) {
+      font-size: 11px;
+    }
+    ```
+
+---
+
+### 4. REPARACIÓN TOTAL DEL ARRASTRE FLOTANTE (ESTILO SIBELIUS)
+- **Problema Actual:** La paleta flotante no se puede desplazar porque faltaba el ciclo completo de eventos de puntero (`pointerup` / `pointercancel`) o el `pointerdown` en la cabecera no propaga el desplazamiento al contenedor con estilo `fixed`.
+- **Implementación Robusta del Arrastre:**
+  ```javascript
+  function initStampPaletteDrag() {
+    const pop = document.getElementById("stampPopover");
+    const header = document.getElementById("stampPaletteHeader");
+    if (!pop || !header) return;
+
+    let isDragging = false;
+    let startX = 0, startY = 0;
+    let initialLeft = 0, initialTop = 0;
+
+    header.onpointerdown = (e) => {
+      if (e.target.closest("button")) return; // permitir cerrar con la X
+      isDragging = true;
+      header.setPointerCapture(e.pointerId);
+
+      const rect = pop.getBoundingClientRect();
+      initialLeft = rect.left;
+      initialTop = rect.top;
+      startX = e.clientX;
+      startY = e.clientY;
+      e.preventDefault();
+    };
+
+    header.onpointermove = (e) => {
+      if (!isDragging) return;
+      const dx = e.clientX - startX;
+      const dy = e.clientY - startY;
+      
+      const newX = Math.max(10, Math.min(window.innerWidth - pop.offsetWidth - 10, initialLeft + dx));
+      const newY = Math.max(10, Math.min(window.innerHeight - pop.offsetHeight - 10, initialTop + dy));
+
+      pop.style.left = `${newX}px`;
+      pop.style.top = `${newY}px`;
+      pop.style.right = "auto";
+      pop.style.bottom = "auto";
+      pop.style.transform = "none"; // Evita conflictos con translate3d
+    };
+
+    const stopDrag = (e) => {
+      if (isDragging) {
+        isDragging = false;
+        try { header.releasePointerCapture(e.pointerId); } catch (_) {}
+      }
+    };
+
+    header.onpointerup = stopDrag;
+    header.onpointercancel = stopDrag;
+  }
+  ```
+
+Por favor, revisa `prototype/index.html`, `prototype/styles.css` y `prototype/app.js` y aplica estas 4 correcciones puntuales.

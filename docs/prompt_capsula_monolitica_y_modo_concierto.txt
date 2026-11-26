@@ -1,0 +1,62 @@
+# PROMPT DE IMPLEMENTACIÓN: CÁPSULA INFERIOR MONOLÍTICA Y REDISEÑO DEL MODO CONCIERTO (CADENZA)
+
+Actúa como Ingeniero Senior Frontend y Diseñador UX/UI de Software Musical de Alta Gama en Cadenza (`prototype/index.html`, `prototype/styles.css`, `prototype/app.js`).
+
+Tu objetivo es implementar dos rediseños esenciales de estética y experiencia:
+1. **La Cápsula Monolítica Flotante Inferior:** Unificar los modos, el scrubber de páginas y BachGPT en una sola pieza de cristal central, eliminando las islas fragmentadas.
+2. **El Rediseño del Modo Concierto (Zen Stage):** Crear una experiencia de escenario inmersiva, limpia al 100%, con protección de trazos accidentales y un HUD emergente no invasivo idéntico al Modo Ensayo.
+
+---
+
+### 1. LA CÁPSULA INFERIOR MONOLÍTICA (MODO ENSAYO)
+
+En `prototype/index.html` y `prototype/styles.css`, fusionar los contenedores inferiores en una **única cápsula flotante centrada**:
+
+```
+┌────────────────────────────────────────────────────────────────────────┐
+│ [ 📚  🎼  ✏️ ]  │  ‹  Pág. 1 / 10  ══════●══════  10  ›  │   [ 🤖 Bach ] │
+└────────────────────────────────────────────────────────────────────────┘
+```
+
+#### Especificaciones de Diseño:
+- **Contenedor Principal (`#performerUnifiedHud` o `.performer-capsule-hud`):**
+  - Ubicación: `position: fixed; bottom: max(12px, env(safe-area-inset-bottom)); left: 50%; transform: translateX(-50%);`.
+  - Altura y forma: `height: 40px; border-radius: 22px; padding: 0 12px; display: flex; align-items: center; gap: 12px;`.
+  - Estética de Cristal: `background: color-mix(in srgb, var(--card-bg) 82%, transparent); backdrop-filter: blur(20px) saturate(140%); border: 1px solid var(--glass-border); box-shadow: 0 8px 28px rgba(0,0,0,0.22); z-index: 85;`.
+- **Bloque 1 (Modos Principales):**
+  - Los 3 iconos de modos (`Biblioteca`, `Partitura`, `Editor`) integrados sin cápsula externa propia.
+- **Separador:**
+  - Línea vertical divisoria de 1px: `height: 18px; width: 1px; background: color-mix(in srgb, var(--glass-border) 80%, transparent);`.
+- **Bloque 2 (Navegación / Scrubber de Páginas):**
+  - Botón `‹`, pastilla con página `Pág. 1 / 10`, slider ultrafino con perla dorada de arrastre, y botón `›`.
+- **Separador:**
+  - Segunda línea vertical divisoria idéntica.
+- **Bloque 3 (BachGPT):**
+  - Botón integrado de BachGPT a ras de la cápsula (`width: 32px; height: 32px; border-radius: 50%;`).
+
+---
+
+### 2. REDISEÑO DEL MODO CONCIERTO (EXPERIENCIA DE ESCENARIO "ZEN")
+
+Al alternar el switch a **`[ 🎭 Concierto ]`**:
+
+#### A. Inmersión Total (Zero-Chrome):
+- **Ocultamiento Suave:** La barra superior, la cápsula inferior monolítica y la barra lateral de herramientas se desvanecen automáticamente con `transition: opacity 0.3s ease; opacity: 0; pointer-events: none;`.
+- **Partitura al 100%:** La hoja de la partitura se expande sin márgenes residuales.
+- **Anotaciones Intactas pero Protegidas:**
+  - Todos los trazos, textos de molde y sellos añadidos en Modo Ensayo permanecen visibles sobre la música.
+  - La interacción de dibujo se desactiva estrictamente (`pointer-events: none` en la capa de dibujo) para que el músico pueda apoyar las manos o el atril sin rayar la partitura.
+
+#### B. Paso de Página Táctil Seguro en Vivo:
+- **Mitad Derecha (70% del ancho):** Un toque avanza a la siguiente página.
+- **Margen Izquierdo (30% del ancho):** Un toque retrocede a la página anterior.
+- **Toast Fugaz de Página:** Al pasar de página, destella en una esquina un micro-indicador sutil (`3 / 10`) durante 1.2 segundos y desaparece por completo.
+
+#### C. HUD de Emergencia / Auto-Desvanecimiento:
+- Si el músico toca el centro de la partitura (o desliza suavemente hacia arriba desde la base):
+  - La **Cápsula Monolítica** emerge suavemente desde abajo (`opacity: 1; transform: translateX(-50%) translateY(0);`).
+  - En la esquina superior derecha de la pantalla se revela un botón translúcido minimalista:
+    `[ ✏️ Volver a Ensayo ]`.
+  - **Temporizador de Inactividad (Auto-Hide):** Si pasan 3.5 segundos sin toques sobre los controles, la cápsula y el botón se desvanecen automáticamente volviendo al modo escenario limpio.
+
+Por favor, revisa `prototype/index.html`, `prototype/styles.css` y `prototype/app.js` e implementa este rediseño armónico y profesional.
