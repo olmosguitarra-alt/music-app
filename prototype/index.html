@@ -11,7 +11,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:wght@600;700&display=swap" />
-  <link rel="stylesheet" href="styles.css?v=111" />
+  <link rel="stylesheet" href="styles.css?v=112" />
   <!-- Motores Oficiales para Renderizar (PDF.js) y Particionar/Editar PDFs Reales (pdf-lib) -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf-lib/1.17.1/pdf-lib.min.js"></script>
@@ -140,6 +140,8 @@
         <!-- CONTENEDOR DESLIZANTE CONTINUO: BIBLIOTECA <-> PROGRAMAS -->
         <div class="library-slides-viewport" id="librarySlidesViewport">
           <div class="library-slide catalog-slide" id="libraryCatalogSlide">
+            <!-- BANDEJA SUPERIOR: CONTINUAR ESTUDIANDO (FASE A - C1) -->
+            <div class="continue-studying-banner hidden" id="continueStudyingBanner" aria-label="Continuar estudiando"></div>
             <div id="libraryCatalogContainer">
               <div class="folio-grid" id="scoreList"></div>
             </div>
@@ -497,8 +499,12 @@
           </div>
 
           <div class="folio-staff-area" id="performerWrapRight">
-            <canvas id="performerPdfRenderCanvasRight" class="pdf-page-canvas hidden"></canvas>
-            <div id="performerSvgRight" class="svg-layer"></div>
+            <div class="folio-transform-layer" id="folioTransformLayerRight">
+              <canvas id="performerPdfRenderCanvasRight" class="pdf-page-canvas hidden"></canvas>
+              <div id="performerSvgRight" class="svg-layer"></div>
+              <canvas id="performerCanvasRight" class="draw-layer"></canvas>
+              <div id="performerMoldLayerRight" class="mold-layer"></div>
+            </div>
           </div>
 
           <div class="folio-footer" id="performerFolioFooterRight">
@@ -1139,6 +1145,21 @@
         </button>
       </div>
     </div>
+
+    <div class="settings-section">
+      <span class="settings-label">Atajos &amp; Pedal Bluetooth</span>
+      <div class="settings-pedal-hint">
+        <span>Pedal Izq / Der (← →, RePág / AvPág, Espacio) activos en Ensayo y Concierto.</span>
+      </div>
+    </div>
+
+    <div class="settings-section">
+      <span class="settings-label">Cadenza AI (Gemini API Key opcional)</span>
+      <div class="settings-apikey-wrap">
+        <input type="password" id="settingsGeminiKeyInput" class="pdf-submodal-input settings-apikey-input" placeholder="AIza... (vacío = motor local costo cero)" autocomplete="off" onchange="saveCustomGeminiApiKey(this.value)" />
+        <small class="settings-apikey-note">Guardada solo en este dispositivo.</small>
+      </div>
+    </div>
   </aside>
 
   <!-- MENÚ FLOTANTE COMPACTO DE ACCIONES POR OBRA (•••) -->
@@ -1227,6 +1248,6 @@
     <span class="pdf-loading-text">Cargando...</span>
   </div>
 
-  <script src="app.js?v=111"></script>
+  <script src="app.js?v=112"></script>
 </body>
 </html>

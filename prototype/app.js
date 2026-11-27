@@ -463,12 +463,96 @@ function showPilotBanner(msg) {
 // RENDERIZADO DE PÁGINAS EN EL VISOR INTELIGENTE UNIFICADO (ENSAYO / CONCIERTO)
 // ==========================================================================
 let performanceMode = "study"; // 'study' | 'concert'
+const LAST_SESSION_STORAGE_KEY = "cadenza_last_study_session_v1";
 
-async function openScoreById(scoreId, targetMode = "study") {
+function saveLastStudySessionState() {
+  if (!activeScore) return;
+  try {
+    const payload = {
+      scoreId: activeScore.id,
+      pageNum: pageNum || 1,
+      totalPages: activeScore.pageCount || 10,
+      bpm: typeof metroBpm === "number" ? metroBpm : 76,
+      performanceMode: performanceMode || "study",
+      updatedAt: Date.now()
+    };
+    localStorage.setItem(LAST_SESSION_STORAGE_KEY, JSON.stringify(payload));
+  } catch (_) {}
+}
+
+function loadLastStudySessionState() {
+  try {
+    const raw = localStorage.getItem(LAST_SESSION_STORAGE_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw);
+    if (!parsed || !parsed.scoreId) return null;
+    return parsed;
+  } catch (_) {
+    return null;
+  }
+}
+
+async function resumeLastStudySession(scoreId, targetPage = 1) {
+  await openScoreById(scoreId, "study", targetPage);
+}
+
+function renderContinueStudyingBanner() {
+  const banner = document.getElementById("continueStudyingBanner");
+  if (!banner) return;
+
+  const session = loadLastStudySessionState();
+  let targetScore = session ? scores.find((s) => s.id === Number(session.scoreId)) : null;
+  let targetPage = session ? Math.max(1, Number(session.pageNum) || 1) : 1;
+  let targetBpm = session && session.bpm ? Number(session.bpm) : null;
+
+  if (!targetScore) {
+    const recentIds = Object.keys(recentScoreTimes || {})
+      .map(Number)
+      .sort((a, b) => (recentScoreTimes[b] || 0) - (recentScoreTimes[a] || 0));
+    if (recentIds.length > 0) {
+      targetScore = scores.find((s) => s.id === recentIds[0]);
+    }
+  }
+
+  if (!targetScore || currentClassification !== "all") {
+    banner.classList.add("hidden");
+    return;
+  }
+
+  const totalPages = Math.max(1, targetScore.pageCount || 10);
+  targetPage = Math.min(totalPages, targetPage);
+  const title = targetScore.clean || targetScore.title;
+  const composer = (targetScore.composer || "").split("(")[0].trim();
+  const bpmBadge = targetBpm ? `<span class="cs-meta-pill">♩ = ${targetBpm} BPM</span>` : "";
+
+  banner.innerHTML = `
+    <div class="cs-banner-left">
+      <span class="cs-eyebrow">CONTINUAR ESTUDIANDO</span>
+      <div class="cs-work-row">
+        <strong class="cs-work-title">${title}</strong>
+        <span class="cs-work-composer">${composer}</span>
+      </div>
+      <div class="cs-meta-row">
+        <span class="cs-meta-pill">Pág. ${targetPage} de ${totalPages}</span>
+        ${bpmBadge}
+        <span class="cs-meta-pill subtle">${targetScore.period || "Clásico"} • ${targetScore.group || "Solo"}</span>
+      </div>
+    </div>
+    <div class="cs-banner-actions">
+      <button type="button" class="cs-resume-btn" onclick="resumeLastStudySession(${targetScore.id}, ${targetPage})">
+        <svg viewBox="0 0 24 24" class="v-ico"><polygon points="6 3 20 12 6 21 6 3"/></svg>
+        <span>Continuar en Pág. ${targetPage}</span>
+      </button>
+    </div>
+  `;
+  banner.classList.remove("hidden");
+}
+
+async function openScoreById(scoreId, targetMode = "study", initialPage = 1) {
   const found = scores.find((s) => s.id === Number(scoreId));
   if (!found) return;
   activeScore = found;
-  pageNum = 1;
+  pageNum = Math.max(1, parseInt(initialPage, 10) || 1);
   markScoreRecent(found.id);
 
   const displayTitle = found.clean || found.title;
@@ -572,6 +656,7 @@ async function renderActiveScorePage() {
 
   setupStudyCanvas();
   restoreStudyAnnotationsForCurrentPage();
+  saveLastStudySessionState();
   if (typeof updateBookmarkButton === "function") updateBookmarkButton();
   if (typeof renderStudyPageScrubber === "function") renderStudyPageScrubber();
 }
@@ -2358,6 +2443,7 @@ function toggleFavoriteScore(scoreId) {
 }
 
 function renderLibrary() {
+  renderContinueStudyingBanner();
   const container = document.getElementById("libraryCatalogContainer");
   const q = (document.getElementById("searchInput").value || "").toLowerCase();
 
@@ -2709,10 +2795,31 @@ let bachNotebookInitialized = false;
 let bachLastInitializedWorkId = null;
 let bachSpokenMessagesHistory = [];
 
-// Llave de Gemini API integrada para Voz Neuronal Realista (Charon) + Cerebro Real de BachGPT
-const _gkParts = ["AQ.Ab8RN6LPUtB6Nioi", "-pSXytceVM2YCGkxYy2", "BM3OYpwUUnTIcmg"];
+// Configuración segura de Gemini API Key (sin claves expuestas en repositorio)
+const GEMINI_KEY_STORAGE = "CADENZA_GEMINI_API_KEY";
 function getGeminiApiKey() {
-  return localStorage.getItem("ATRIL_GEMINI_KEY") || _gkParts.join("");
+  return (
+    localStorage.getItem(GEMINI_KEY_STORAGE) ||
+    localStorage.getItem("ATRIL_GEMINI_KEY") ||
+    ""
+  ).trim();
+}
+
+function saveCustomGeminiApiKey(val) {
+  const clean = (val || "").trim();
+  try {
+    if (clean) {
+      localStorage.setItem(GEMINI_KEY_STORAGE, clean);
+    } else {
+      localStorage.removeItem(GEMINI_KEY_STORAGE);
+      localStorage.removeItem("ATRIL_GEMINI_KEY");
+    }
+  } catch (_) {}
+}
+
+function syncSettingsGeminiKeyInput() {
+  const inp = document.getElementById("settingsGeminiKeyInput");
+  if (inp) inp.value = getGeminiApiKey();
 }
 
 // Estado del Libro de Texto / Teoría (Modo NotebookLM)
@@ -3976,8 +4083,22 @@ const studyUndoStacks = {};
 const studyRedoStacks = {};
 const studyBookmarks = {};
 
-function getStudyPageKey() {
-  return `${activeScore ? activeScore.id : 1}:${pageNum}`;
+let activeAnnotationOffset = 0; // 0 = folio izquierdo (pageNum), 1 = folio derecho (pageNum + 1)
+
+function getStudyPageKey(pageOffset = activeAnnotationOffset) {
+  const targetPage = Math.max(1, (pageNum || 1) + (pageOffset || 0));
+  return `${activeScore ? activeScore.id : 1}:${targetPage}`;
+}
+
+function getFolioElements(pageOffset = 0) {
+  const isRight = pageOffset === 1;
+  return {
+    pageOffset: isRight ? 1 : 0,
+    wrap: document.getElementById(isRight ? "performerWrapRight" : "performerWrap"),
+    transformLayer: document.getElementById(isRight ? "folioTransformLayerRight" : "folioTransformLayer"),
+    canvas: document.getElementById(isRight ? "performerCanvasRight" : "performerCanvas"),
+    moldLayer: document.getElementById(isRight ? "performerMoldLayerRight" : "performerMoldLayer")
+  };
 }
 
 function loadStudyAnnotationsFromStorage() {
@@ -4006,8 +4127,17 @@ function isWritingAllowed() {
 }
 
 let committedLayerCanvas = null;
+let committedLayerCanvasRight = null;
 
-function ensureCommittedLayer(width, height) {
+function ensureCommittedLayer(width, height, pageOffset = 0) {
+  if (pageOffset === 1) {
+    if (!committedLayerCanvasRight) committedLayerCanvasRight = document.createElement("canvas");
+    if (committedLayerCanvasRight.width !== width || committedLayerCanvasRight.height !== height) {
+      committedLayerCanvasRight.width = width;
+      committedLayerCanvasRight.height = height;
+    }
+    return committedLayerCanvasRight;
+  }
   if (!committedLayerCanvas) committedLayerCanvas = document.createElement("canvas");
   if (committedLayerCanvas.width !== width || committedLayerCanvas.height !== height) {
     committedLayerCanvas.width = width;
@@ -4138,15 +4268,15 @@ function renderStrokeToCtx(ctx, stroke) {
   ctx.globalCompositeOperation = "source-over";
 }
 
-function redrawStudyCanvas() {
-  const canvas = document.getElementById("performerCanvas");
-  if (!canvas) return;
+function redrawSingleFolioCanvas(pageOffset = 0) {
+  const { canvas } = getFolioElements(pageOffset);
+  if (!canvas || canvas.width === 0 || canvas.height === 0) return;
   const ctx = canvas.getContext("2d");
-  const cache = ensureCommittedLayer(canvas.width, canvas.height);
+  const cache = ensureCommittedLayer(canvas.width, canvas.height, pageOffset);
   const cCtx = cache.getContext("2d");
   cCtx.clearRect(0, 0, cache.width, cache.height);
 
-  const key = getStudyPageKey();
+  const key = getStudyPageKey(pageOffset);
   const list = studyPageStrokes[key] || [];
   for (let i = 0; i < list.length; i++) {
     renderStrokeToCtx(cCtx, list[i]);
@@ -4156,32 +4286,43 @@ function redrawStudyCanvas() {
   ctx.drawImage(cache, 0, 0);
 }
 
-function renderMoldLayer() {
-  const layer = document.getElementById("performerMoldLayer");
-  if (!layer) return;
-  layer.innerHTML = "";
-  const key = getStudyPageKey();
+function redrawStudyCanvas() {
+  redrawSingleFolioCanvas(0);
+  redrawSingleFolioCanvas(1);
+}
+
+function renderSingleMoldLayer(pageOffset = 0) {
+  const { moldLayer } = getFolioElements(pageOffset);
+  if (!moldLayer) return;
+  moldLayer.innerHTML = "";
+  const key = getStudyPageKey(pageOffset);
   const items = studyPageMoldItems[key] || [];
   items.forEach((item) => {
-    const el = createEditorialMoldElement(item);
-    layer.appendChild(el);
+    const el = createEditorialMoldElement(item, pageOffset);
+    moldLayer.appendChild(el);
   });
+}
+
+function renderMoldLayer() {
+  renderSingleMoldLayer(0);
+  renderSingleMoldLayer(1);
 }
 
 let selectedMoldId = null;
 
 function selectMoldItem(moldId) {
   selectedMoldId = moldId;
-  document.querySelectorAll("#performerMoldLayer .mold-item").forEach((el) => {
+  document.querySelectorAll("#performerMoldLayer .mold-item, #performerMoldLayerRight .mold-item").forEach((el) => {
     el.classList.toggle("selected-mold", el.dataset.moldId === moldId);
   });
 }
 
-function createEditorialMoldElement(item) {
+function createEditorialMoldElement(item, pageOffset = 0) {
   const el = document.createElement("div");
   el.className = "mold-item editorial-note";
   if (selectedMoldId === item.id) el.classList.add("selected-mold");
   el.dataset.moldId = item.id;
+  el.dataset.pageOffset = String(pageOffset);
   el.style.left = `${item.x}px`;
   el.style.top = `${item.y}px`;
   el.style.color = item.color || inkColor;
@@ -4201,8 +4342,9 @@ function createEditorialMoldElement(item) {
   delBtn.addEventListener("pointerdown", (e) => e.stopPropagation());
   delBtn.addEventListener("click", (e) => {
     e.stopPropagation();
-    pushStudyUndoSnapshot();
-    const key = getStudyPageKey();
+    activeAnnotationOffset = pageOffset;
+    pushStudyUndoSnapshot(pageOffset);
+    const key = getStudyPageKey(pageOffset);
     studyPageMoldItems[key] = (studyPageMoldItems[key] || []).filter((m) => m.id !== item.id);
     if (selectedMoldId === item.id) selectedMoldId = null;
     renderMoldLayer();
@@ -4328,25 +4470,27 @@ function restoreStudyAnnotationsForCurrentPage() {
   renderMoldLayer();
 }
 
-function clonePageSnapshot() {
-  const key = getStudyPageKey();
+function clonePageSnapshot(pageOffset = activeAnnotationOffset) {
+  const key = getStudyPageKey(pageOffset);
   return {
+    pageOffset,
     strokes: JSON.parse(JSON.stringify(studyPageStrokes[key] || [])),
     molds: JSON.parse(JSON.stringify(studyPageMoldItems[key] || []))
   };
 }
 
-function pushStudyUndoSnapshot() {
-  const key = getStudyPageKey();
+function pushStudyUndoSnapshot(pageOffset = activeAnnotationOffset) {
+  const key = getStudyPageKey(pageOffset);
   if (!studyUndoStacks[key]) studyUndoStacks[key] = [];
-  studyUndoStacks[key].push(clonePageSnapshot());
+  studyUndoStacks[key].push(clonePageSnapshot(pageOffset));
   if (studyUndoStacks[key].length > 30) studyUndoStacks[key].shift();
   studyRedoStacks[key] = [];
 }
 
-function applyStudySnapshot(snap) {
+function applyStudySnapshot(snap, pageOffset = activeAnnotationOffset) {
   if (!snap) return;
-  const key = getStudyPageKey();
+  const targetOffset = typeof snap.pageOffset === "number" ? snap.pageOffset : pageOffset;
+  const key = getStudyPageKey(targetOffset);
   studyPageStrokes[key] = JSON.parse(JSON.stringify(snap.strokes || []));
   studyPageMoldItems[key] = JSON.parse(JSON.stringify(snap.molds || []));
   redrawStudyCanvas();
@@ -4355,23 +4499,23 @@ function applyStudySnapshot(snap) {
 }
 
 function undoStudyAction() {
-  const key = getStudyPageKey();
+  const key = getStudyPageKey(activeAnnotationOffset);
   const stack = studyUndoStacks[key];
   if (!stack || stack.length === 0) return;
   if (!studyRedoStacks[key]) studyRedoStacks[key] = [];
-  studyRedoStacks[key].push(clonePageSnapshot());
+  studyRedoStacks[key].push(clonePageSnapshot(activeAnnotationOffset));
   const prev = stack.pop();
-  applyStudySnapshot(prev);
+  applyStudySnapshot(prev, activeAnnotationOffset);
 }
 
 function redoStudyAction() {
-  const key = getStudyPageKey();
+  const key = getStudyPageKey(activeAnnotationOffset);
   const rStack = studyRedoStacks[key];
   if (!rStack || rStack.length === 0) return;
   if (!studyUndoStacks[key]) studyUndoStacks[key] = [];
-  studyUndoStacks[key].push(clonePageSnapshot());
+  studyUndoStacks[key].push(clonePageSnapshot(activeAnnotationOffset));
   const next = rStack.pop();
-  applyStudySnapshot(next);
+  applyStudySnapshot(next, activeAnnotationOffset);
 }
 
 function toggleBrushPopover() {
@@ -4586,13 +4730,14 @@ function setInk(color, btn) {
 }
 
 function setupStudyCanvas() {
-  const canvas = document.getElementById("performerCanvas");
-  const wrap = document.getElementById("performerWrap");
-  if (!canvas || !wrap) return;
-  if (wrap.clientWidth > 0 && wrap.clientHeight > 0) {
-    canvas.width = wrap.clientWidth;
-    canvas.height = wrap.clientHeight;
-  }
+  [0, 1].forEach((offset) => {
+    const { canvas, wrap } = getFolioElements(offset);
+    if (!canvas || !wrap) return;
+    if (wrap.clientWidth > 0 && wrap.clientHeight > 0) {
+      canvas.width = wrap.clientWidth;
+      canvas.height = wrap.clientHeight;
+    }
+  });
 }
 
 // Smart Ink Box state
@@ -4602,8 +4747,8 @@ let smartInkTimer = null;
 let smartInkBBox = null;
 let editingMoldItem = null;
 
-function eraseAtPoint(pt) {
-  const key = getStudyPageKey();
+function eraseAtPoint(pt, pageOffset = activeAnnotationOffset) {
+  const key = getStudyPageKey(pageOffset);
   const list = studyPageStrokes[key];
   if (!list || list.length === 0) return false;
   const radius = 16;
@@ -4644,7 +4789,7 @@ function eraseAtPoint(pt) {
     if (changed) studyPageStrokes[key] = nextList;
   }
 
-  if (changed) redrawStudyCanvas();
+  if (changed) redrawSingleFolioCanvas(pageOffset);
   return changed;
 }
 
@@ -4795,15 +4940,14 @@ function dismissSmartInkBox() {
   smartInkBBox = null;
 }
 
-function tryApplyPenGesture(stroke) {
+function tryApplyPenGesture(stroke, pageOffset = activeAnnotationOffset) {
   if (!stroke || !stroke.points || stroke.points.length === 0) return false;
   if (stroke.tool !== "pen" && stroke.tool !== "pencil" && stroke.tool !== "smarttext") return false;
 
-  const canvas = document.getElementById("performerCanvas");
-  const layer = document.getElementById("performerMoldLayer");
+  const { canvas, moldLayer: layer } = getFolioElements(pageOffset);
   if (!canvas || !layer) return false;
 
-  const key = getStudyPageKey();
+  const key = getStudyPageKey(pageOffset);
   const items = studyPageMoldItems[key] || [];
   if (items.length === 0) return false;
 
@@ -4977,8 +5121,13 @@ let pdfZoomSharpTimer = null;
 
 function applyFolioTransform() {
   const layer = document.getElementById("folioTransformLayer");
-  if (!layer) return;
-  layer.style.transform = `translate3d(${panX}px, ${panY}px, 0) scale(${zoomScale})`;
+  if (layer) {
+    layer.style.transform = `translate3d(${panX}px, ${panY}px, 0) scale(${zoomScale})`;
+  }
+  const layerRight = document.getElementById("folioTransformLayerRight");
+  if (layerRight) {
+    layerRight.style.transform = `translate3d(${panX}px, ${panY}px, 0) scale(${zoomScale})`;
+  }
 }
 
 function resetFolioZoom() {
@@ -4988,8 +5137,8 @@ function resetFolioZoom() {
   applyFolioTransform();
 }
 
-function getDocPtFromClient(clientX, clientY) {
-  const wrap = document.getElementById("performerWrap");
+function getDocPtFromClient(clientX, clientY, pageOffset = 0) {
+  const { wrap } = getFolioElements(pageOffset);
   if (!wrap) return { x: 0, y: 0 };
   const r = wrap.getBoundingClientRect();
   return {
@@ -5006,6 +5155,12 @@ function scheduleAdaptivePdfSharpness() {
       const page = await currentPdfDocInstance.getPage(pageNum);
       const pdfCanvas = document.getElementById("performerPdfRenderCanvas");
       await renderPdfPageToCanvas(page, pdfCanvas, document.getElementById("performerWrap"), zoomScale);
+      const isTwoPages = layouts[layoutIdx] === "2 Págs";
+      if (isTwoPages && pageNum + 1 <= (activeScore.pageCount || 10)) {
+        const page2 = await currentPdfDocInstance.getPage(pageNum + 1);
+        const pdfCanvasRight = document.getElementById("performerPdfRenderCanvasRight");
+        await renderPdfPageToCanvas(page2, pdfCanvasRight, document.getElementById("performerWrapRight"), zoomScale);
+      }
     } catch (_) {}
   }, 250);
 }
@@ -5102,9 +5257,20 @@ function initFolioZoomAndPan() {
   wrap.addEventListener("pointercancel", endTouch);
 }
 
-function initStudyInteraction() {
-  const canvas = document.getElementById("performerCanvas");
-  const stage = document.getElementById("performerStage");
+let palmRejectionToastShown = false;
+
+function showPalmRejectionAutoToast() {
+  if (palmRejectionToastShown) return;
+  palmRejectionToastShown = true;
+  document.getElementById("btnPalmAuto")?.classList.add("active");
+  document.getElementById("btnPalmFinger")?.classList.remove("active");
+  const fl = document.getElementById("performerFooterLeft");
+  if (fl && performanceMode === "study") {
+    fl.textContent = "Stylus detectado • Rechazo de palma activo";
+  }
+}
+
+function bindFolioCanvasDrawing(canvas, pageOffset = 0) {
   if (!canvas) return;
   let drawing = false;
   let activeStroke = null;
@@ -5113,7 +5279,7 @@ function initStudyInteraction() {
   let lastPressure = 0.5;
   let rafDrawPending = false;
 
-  const getPt = (e) => getDocPtFromClient(e.clientX, e.clientY);
+  const getPt = (e) => getDocPtFromClient(e.clientX, e.clientY, pageOffset);
 
   const computePressure = (e, pt) => {
     if (e.pointerType === "pen" && typeof e.pressure === "number" && e.pressure > 0) {
@@ -5137,7 +5303,7 @@ function initStudyInteraction() {
     rafDrawPending = false;
     if (!activeStroke) return;
     const ctx = canvas.getContext("2d");
-    const cache = ensureCommittedLayer(canvas.width, canvas.height);
+    const cache = ensureCommittedLayer(canvas.width, canvas.height, pageOffset);
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     ctx.drawImage(cache, 0, 0);
     renderStrokeToCtx(ctx, activeStroke);
@@ -5146,10 +5312,15 @@ function initStudyInteraction() {
   const down = (e) => {
     if (!isWritingAllowed()) return;
 
-    // Rechazo de Palma Nativo (Palm Rejection)
-    if (e.pointerType === "pen") strictPenMode = true;
-    if (strictPenMode && !fingerDrawAllowed && e.pointerType === "touch") return;
+    // Rechazo de Palma Nativo Automático (Tablet-First L1)
+    if (e.pointerType === "pen") {
+      strictPenMode = true;
+      fingerDrawAllowed = false;
+      showPalmRejectionAutoToast();
+    }
+    if ((strictPenMode || !fingerDrawAllowed) && e.pointerType === "touch") return;
 
+    activeAnnotationOffset = pageOffset;
     if (selectedMoldId) selectMoldItem(null);
 
     resetToolRailInactivityTimer();
@@ -5166,17 +5337,17 @@ function initStudyInteraction() {
     document.getElementById("brushPopover")?.classList.add("hidden");
 
     const pt = getPt(e);
-    pushStudyUndoSnapshot();
+    pushStudyUndoSnapshot(pageOffset);
 
     if (studyTool === "stamp" && selectedStamp) {
-      addMoldBadge(pt.x, pt.y, selectedStamp, inkColor);
+      addMoldBadge(pt.x, pt.y, selectedStamp, inkColor, pageOffset);
       saveStudyAnnotationsForCurrentPage();
       return;
     }
 
     if (studyTool === "eraser") {
       drawing = true;
-      eraseAtPoint(pt);
+      eraseAtPoint(pt, pageOffset);
       return;
     }
 
@@ -5198,7 +5369,7 @@ function initStudyInteraction() {
       points: [{ x: pt.x, y: pt.y, p, t: relT }]
     };
 
-    ensureCommittedLayer(canvas.width, canvas.height);
+    ensureCommittedLayer(canvas.width, canvas.height, pageOffset);
     drawing = true;
     flushActiveStrokeFrame();
   };
@@ -5206,12 +5377,12 @@ function initStudyInteraction() {
   const move = (e) => {
     if (!drawing || e.pointerId !== activePointerId) return;
     if (!isWritingAllowed()) return;
-    if (strictPenMode && !fingerDrawAllowed && e.pointerType === "touch") return;
+    if ((strictPenMode || !fingerDrawAllowed) && e.pointerType === "touch") return;
 
     e.preventDefault();
 
     if (studyTool === "eraser") {
-      eraseAtPoint(getPt(e));
+      eraseAtPoint(getPt(e), pageOffset);
       return;
     }
     if (!activeStroke) return;
@@ -5243,23 +5414,23 @@ function initStudyInteraction() {
       const completed = activeStroke;
       activeStroke = null;
 
-      if (tryApplyPenGesture(completed)) {
+      if (tryApplyPenGesture(completed, pageOffset)) {
         if (smartInkTimer) {
           clearTimeout(smartInkTimer);
           smartInkTimer = null;
         }
         smartBatchId = null;
-        redrawStudyCanvas();
+        redrawSingleFolioCanvas(pageOffset);
         lastPt = null;
         resetToolRailInactivityTimer();
         return;
       }
 
-      const key = getStudyPageKey();
+      const key = getStudyPageKey(pageOffset);
       if (!studyPageStrokes[key]) studyPageStrokes[key] = [];
       studyPageStrokes[key].push(completed);
 
-      const cache = ensureCommittedLayer(canvas.width, canvas.height);
+      const cache = ensureCommittedLayer(canvas.width, canvas.height, pageOffset);
       renderStrokeToCtx(cache.getContext("2d"), completed);
       const ctx = canvas.getContext("2d");
       ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -5279,6 +5450,14 @@ function initStudyInteraction() {
   canvas.addEventListener("pointermove", move);
   canvas.addEventListener("pointerup", up);
   canvas.addEventListener("pointercancel", up);
+}
+
+function initStudyInteraction() {
+  const canvasLeft = document.getElementById("performerCanvas");
+  const canvasRight = document.getElementById("performerCanvasRight");
+  const stage = document.getElementById("performerStage");
+  bindFolioCanvasDrawing(canvasLeft, 0);
+  bindFolioCanvasDrawing(canvasRight, 1);
 
   // Gestos táctiles en Modo Concierto: swipe lateral (página) y swipe desde la base (emerger HUD)
   if (stage) {
@@ -5306,8 +5485,8 @@ function initStudyInteraction() {
   }
 }
 
-function addMoldBadge(x, y, text, color) {
-  const key = getStudyPageKey();
+function addMoldBadge(x, y, text, color, pageOffset = activeAnnotationOffset) {
+  const key = getStudyPageKey(pageOffset);
   if (!studyPageMoldItems[key]) studyPageMoldItems[key] = [];
   studyPageMoldItems[key].push({
     id: `m-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
@@ -5958,11 +6137,6 @@ function selectProgramAddSuggestion(scoreId) {
   const box = document.getElementById("progScoreSuggestions");
   if (input) input.value = "";
   if (box) box.classList.add("hidden");
-}
-
-function moveProgramItem(idx, delta) {
-  const targetIdx = idx + delta;
-  reorderSetlist(idx, targetIdx);
 }
 
 let progSidebarFilter = "all";
@@ -6710,6 +6884,7 @@ function setMetronomeBpm(val, { fromTrainer = false } = {}) {
   if (agogicLbl) agogicLbl.textContent = getClassicalAgogicName(metroBpm);
   if (!fromTrainer) {
     saveMetronomePresetForCurrentScore();
+    saveLastStudySessionState();
   }
 }
 
@@ -8126,6 +8301,7 @@ window.addEventListener("DOMContentLoaded", async () => {
   initMetronomePopover();
   initClipTuner();
   initFolioZoomAndPan();
+  syncSettingsGeminiKeyInput();
   const perfSvg = document.getElementById("performerSvg");
   if (perfSvg) perfSvg.innerHTML = buildPortraitScoreSvg(-1);
   initStudyInteraction();
@@ -8143,6 +8319,53 @@ window.addEventListener("DOMContentLoaded", async () => {
       el.addEventListener("input", resetToolRailInactivityTimer);
     }
   });
+});
+
+// Soporte nativo para Pedales Bluetooth de Atril (PageFlip, AirTurn, iRig) y Atajos de Teclado (Fase A - O1)
+window.addEventListener("keydown", (e) => {
+  const activeTag = (document.activeElement?.tagName || "").toUpperCase();
+  const isEditingInput =
+    activeTag === "INPUT" ||
+    activeTag === "TEXTAREA" ||
+    activeTag === "SELECT" ||
+    document.activeElement?.isContentEditable;
+  if (isEditingInput) return;
+
+  const performerView = document.getElementById("mode-performer");
+  if (!performerView || !performerView.classList.contains("active")) return;
+
+  // Deshacer / Rehacer con Ctrl+Z / Ctrl+Y en Modo Ensayo
+  if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "z") {
+    e.preventDefault();
+    if (e.shiftKey) redoStudyAction();
+    else undoStudyAction();
+    return;
+  }
+  if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "y") {
+    e.preventDefault();
+    redoStudyAction();
+    return;
+  }
+
+  // Pedal Derecho / Avanzar página
+  if (e.key === "ArrowRight" || e.key === "PageDown" || (e.key === " " && !e.shiftKey)) {
+    e.preventDefault();
+    turnPage(1);
+    return;
+  }
+
+  // Pedal Izquierdo / Retroceder página
+  if (e.key === "ArrowLeft" || e.key === "PageUp" || (e.key === " " && e.shiftKey)) {
+    e.preventDefault();
+    turnPage(-1);
+    return;
+  }
+
+  // Alternar Metrónomo con tecla M en Modo Ensayo
+  if (e.key.toLowerCase() === "m" && performanceMode === "study") {
+    e.preventDefault();
+    toggleMetronomePlay();
+  }
 });
 
 window.addEventListener("resize", () => {

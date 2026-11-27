@@ -14359,3 +14359,235 @@ body.concert-immersion #mode-performer.is-concert-mode .concert-bottom-row #btnA
     font-size: 11px !important;
   }
 }
+
+/* ==========================================================================
+   V112 (FASE A) — ATRIL PURO, BANDEJA "CONTINUAR ESTUDIANDO", TINTE DE PAPEL
+   URTEXT/LINO EN PDFs REALES, ANOTACIÓN EN DOBLE FOLIO Y TABLET-FIRST
+   ========================================================================== */
+
+/* 1. C1 — Bandeja "Continuar Estudiando" en Biblioteca */
+.continue-studying-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 14px 18px;
+  margin-bottom: 16px;
+  border-radius: 18px;
+  background: color-mix(in srgb, var(--card-bg) 92%, var(--accent) 8%);
+  border: 1px solid color-mix(in srgb, var(--accent) 28%, var(--glass-border));
+  box-shadow: 0 10px 26px rgba(0, 0, 0, 0.12);
+  transition: transform 0.2s ease, border-color 0.2s ease;
+}
+
+.continue-studying-banner:hover {
+  border-color: color-mix(in srgb, var(--accent) 48%, var(--glass-border));
+}
+
+.cs-banner-left {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.cs-eyebrow {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.11em;
+  text-transform: uppercase;
+  color: var(--accent);
+}
+
+.cs-work-row {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.cs-work-title {
+  font-family: "Playfair Display", Georgia, serif;
+  font-size: 17px;
+  font-weight: 700;
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.cs-work-composer {
+  font-size: 13px;
+  color: var(--text-secondary);
+  font-weight: 500;
+}
+
+.cs-meta-row {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 2px;
+}
+
+.cs-meta-pill {
+  font-size: 11.5px;
+  font-weight: 600;
+  padding: 2px 9px;
+  border-radius: 99px;
+  background: color-mix(in srgb, var(--accent) 15%, transparent);
+  color: var(--text-primary);
+}
+
+.cs-meta-pill.subtle {
+  background: color-mix(in srgb, var(--text-secondary) 12%, transparent);
+  color: var(--text-secondary);
+  font-weight: 500;
+}
+
+.cs-resume-btn {
+  height: 40px;
+  padding: 0 16px;
+  border-radius: 13px;
+  border: none;
+  background: var(--accent);
+  color: var(--accent-ink);
+  font-size: 13px;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  white-space: nowrap;
+  flex-shrink: 0;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.16);
+  transition: transform 0.15s ease, filter 0.15s ease;
+}
+
+.cs-resume-btn:hover {
+  filter: brightness(1.06);
+}
+
+.cs-resume-btn:active {
+  transform: scale(0.97);
+}
+
+.cs-resume-btn .v-ico {
+  width: 14px;
+  height: 14px;
+  fill: currentColor;
+}
+
+/* 2. D1 & B2 — Protagonismo 100% en PDFs Reales y Tinte de Papel Urtext/Lino por Tema */
+body.palette-luthier {
+  --pdf-paper-filter: sepia(0.16) brightness(0.95) contrast(0.98);
+}
+
+body.palette-henle {
+  --pdf-paper-filter: sepia(0.09) brightness(0.98) contrast(0.99);
+}
+
+body.palette-linen {
+  --pdf-paper-filter: sepia(0.11) brightness(0.99) contrast(0.99);
+}
+
+body.palette-velvet {
+  --pdf-paper-filter: sepia(0.12) brightness(0.94) contrast(0.98);
+}
+
+body.palette-cadenza {
+  --pdf-paper-filter: sepia(0.08) brightness(0.99) contrast(1);
+}
+
+#mode-performer .score-folio.folio-real-pdf-clean {
+  padding: 4px !important;
+  background: var(--paper-bg) !important;
+}
+
+#mode-performer .score-folio.folio-real-pdf-clean .folio-staff-area {
+  height: 100% !important;
+  flex: 1 1 100% !important;
+}
+
+#mode-performer .pdf-page-canvas {
+  filter: var(--pdf-paper-filter, none);
+  transition: filter 0.25s ease;
+}
+
+/* 3. E1 — Simetría de Capas de Dibujo y Molde en Folio Derecho (Vista 2 Páginas) */
+#performerWrapRight .folio-transform-layer {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  transform-origin: 0 0;
+}
+
+#performerWrapRight #performerCanvasRight.draw-layer,
+#performerWrapRight #performerMoldLayerRight.mold-layer {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+/* 4. J2 & O1 — Sección de Pedal Bluetooth y Gemini API Key en Configuración */
+.settings-pedal-hint {
+  font-size: 12px;
+  line-height: 1.45;
+  color: var(--text-secondary);
+  background: color-mix(in srgb, var(--bg-canvas) 55%, transparent);
+  border: 1px solid var(--glass-border);
+  border-radius: 11px;
+  padding: 9px 11px;
+}
+
+.settings-apikey-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.settings-apikey-input {
+  width: 100%;
+  height: 36px;
+  font-size: 12.5px;
+  padding: 0 10px;
+  border-radius: 10px;
+}
+
+.settings-apikey-note {
+  font-size: 11px;
+  color: var(--text-secondary);
+}
+
+/* 5. L1 — Ergonomía Tablet-First (10-14 pulgadas: controles cómodos en atril) */
+@media (min-width: 900px) {
+  #mode-performer .rail-collapse-tab {
+    width: 40px !important;
+    height: 40px !important;
+    border-radius: 14px !important;
+  }
+  #mode-performer .concepts-tool-rail {
+    width: 42px !important;
+    min-width: 42px !important;
+    max-width: 42px !important;
+    padding: 8px 0 !important;
+  }
+  #mode-performer .concepts-tool-rail .rail-tool {
+    width: 34px !important;
+    height: 34px !important;
+  }
+}
+
+@media (max-width: 640px) {
+  .continue-studying-banner {
+    flex-direction: column;
+    align-items: stretch;
+    padding: 12px 14px;
+    gap: 10px;
+  }
+  .cs-resume-btn {
+    width: 100%;
+    justify-content: center;
+  }
+}
