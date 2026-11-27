@@ -93,18 +93,22 @@ let currentPdfDocInstance = null;
 let pageNum = 1;
 
 // ==========================================================================
-// BASE DE DATOS PERSISTENTE EN TABLET (IndexedDB para guardar PDFs Reales)
+// BASE DE DATOS PERSISTENTE EN TABLET (IndexedDB para PDFs Reales + Anotaciones Ilimitadas)
 // ==========================================================================
 const DB_NAME = "AtrilRealPdfPilotDB";
 const STORE_NAME = "realPdfs";
+const ANNOTATIONS_IDB_STORE = "studyAnnotations";
 
 function openPilotDb() {
   return new Promise((resolve, reject) => {
-    const req = indexedDB.open(DB_NAME, 1);
+    const req = indexedDB.open(DB_NAME, 2);
     req.onupgradeneeded = (e) => {
       const db = e.target.result;
       if (!db.objectStoreNames.contains(STORE_NAME)) {
         db.createObjectStore(STORE_NAME, { keyPath: "id" });
+      }
+      if (!db.objectStoreNames.contains(ANNOTATIONS_IDB_STORE)) {
+        db.createObjectStore(ANNOTATIONS_IDB_STORE, { keyPath: "id" });
       }
     };
     req.onsuccess = () => resolve(req.result);
@@ -4254,17 +4258,56 @@ function getFolioElements(pageOffset = 0) {
   };
 }
 
-function loadStudyAnnotationsFromStorage() {
+async function loadStudyAnnotationsFromStorage() {
+  // 1. Cargar primero de localStorage por retrocompatibilidad inmediata
   try {
     const raw = localStorage.getItem(ANNOTATIONS_STORAGE_KEY);
-    if (!raw) return;
-    const parsed = JSON.parse(raw);
-    if (parsed && parsed.strokes) Object.assign(studyPageStrokes, parsed.strokes);
-    if (parsed && parsed.molds) Object.assign(studyPageMoldItems, parsed.molds);
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (parsed && parsed.strokes) Object.assign(studyPageStrokes, parsed.strokes);
+      if (parsed && parsed.molds) Object.assign(studyPageMoldItems, parsed.molds);
+    }
+  } catch (_) {}
+
+  // 2. Hidratar desde IndexedDB (Fase D - E2: capacidad ilimitada de páginas anotadas)
+  try {
+    const db = await openPilotDb();
+    await new Promise((resolve) => {
+      const tx = db.transaction(ANNOTATIONS_IDB_STORE, "readonly");
+      const req = tx.objectStore(ANNOTATIONS_IDB_STORE).get("master_annotations_v1");
+      req.onsuccess = () => {
+        const record = req.result;
+        if (record) {
+          if (record.strokes) Object.assign(studyPageStrokes, record.strokes);
+          if (record.molds) Object.assign(studyPageMoldItems, record.molds);
+        } else if (Object.keys(studyPageStrokes).length > 0 || Object.keys(studyPageMoldItems).length > 0) {
+          // Migrar automáticamente datos existentes de localStorage hacia IndexedDB
+          persistStudyAnnotationsToStorage();
+        }
+        resolve();
+      };
+      req.onerror = () => resolve();
+    });
   } catch (_) {}
 }
 
 function persistStudyAnnotationsToStorage() {
+  const payload = {
+    id: "master_annotations_v1",
+    strokes: studyPageStrokes,
+    molds: studyPageMoldItems,
+    updatedAt: Date.now()
+  };
+
+  // Guardar en IndexedDB sin límite de 5MB
+  openPilotDb()
+    .then((db) => {
+      const tx = db.transaction(ANNOTATIONS_IDB_STORE, "readwrite");
+      tx.objectStore(ANNOTATIONS_IDB_STORE).put(payload);
+    })
+    .catch(() => {});
+
+  // Espejo ligero en localStorage mientras quepa en cuota
   try {
     localStorage.setItem(
       ANNOTATIONS_STORAGE_KEY,
@@ -5981,29 +6024,64 @@ function handlePerformerStageTap(e) {
   }
 }
 
-function toggleAudioFollow() {
+let acousticMicTriggerEnabled = true;
+let acousticTriggerSensitivity = "med"; // 'low' | 'med' | 'high'
+let acousticTriggerStream = null;
+let acousticTriggerRaf = null;
+let isWaitingForFirstNote = false;
+
+function toggleAcousticMicTriggerPref(enabled) {
+  acousticMicTriggerEnabled = Boolean(enabled);
+}
+
+function setAcousticTriggerSensitivity(level, btn) {
+  acousticTriggerSensitivity = level || "med";
+  document.querySelectorAll("#acousticSensGroup .metro-pill-btn").forEach((b) => {
+    b.classList.toggle("active", b === btn);
+  });
+}
+
+function stopAcousticMicTriggerWait() {
+  isWaitingForFirstNote = false;
+  if (acousticTriggerRaf) {
+    cancelAnimationFrame(acousticTriggerRaf);
+    acousticTriggerRaf = null;
+  }
+  if (acousticTriggerStream) {
+    acousticTriggerStream.getTracks().forEach((t) => t.stop());
+    acousticTriggerStream = null;
+  }
+  const pill = document.getElementById("acousticMicStatusPill");
+  if (pill) {
+    pill.textContent = "Listo";
+    pill.classList.remove("is-waiting", "is-triggered");
+  }
+}
+
+function startActiveScoreFollowLoop() {
   const btn = document.getElementById("btnAudioFollow");
   const lbl = document.getElementById("audioFollowLabel");
   const svgEl = document.getElementById("performerSvg");
-
-  if (audioTimer) {
-    clearInterval(audioTimer);
-    audioTimer = null;
-    if (btn) btn.classList.remove("listening");
-    if (lbl) lbl.textContent = "Escucha";
-    if (!activeScore.isRealPdf && svgEl) {
-      svgEl.innerHTML = buildPortraitScoreSvg(-1);
-    }
-    return;
-  }
+  const pill = document.getElementById("acousticMicStatusPill");
 
   if (btn) btn.classList.add("listening");
+  if (pill) {
+    pill.textContent = "En seguimiento";
+    pill.classList.remove("is-waiting");
+    pill.classList.add("is-triggered");
+  }
+
   followedSys = 0;
   if (lbl) lbl.textContent = "Compás 1";
   if (!activeScore.isRealPdf && svgEl) {
     svgEl.innerHTML = buildPortraitScoreSvg(followedSys);
   }
 
+  // Avance calculado según el BPM real de la obra (3 compases de 4/4 por sistema)
+  const effectiveBpm = Math.max(40, Math.min(220, metroBpm || 76));
+  const msPerSystem = Math.round((60000 / effectiveBpm) * (metroBeatsPerBar || 4) * 2.5);
+
+  if (audioTimer) clearInterval(audioTimer);
   audioTimer = setInterval(() => {
     followedSys = (followedSys + 1) % 6;
     if (lbl) lbl.textContent = `Compás ${followedSys * 3 + 1}`;
@@ -6013,9 +6091,84 @@ function toggleAudioFollow() {
     if (followedSys === 5) {
       setTimeout(() => {
         if (audioTimer) turnPage(1);
-      }, 1000);
+      }, 900);
     }
-  }, 2000);
+  }, msPerSystem);
+}
+
+async function toggleAudioFollow() {
+  const btn = document.getElementById("btnAudioFollow");
+  const lbl = document.getElementById("audioFollowLabel");
+  const svgEl = document.getElementById("performerSvg");
+  const pill = document.getElementById("acousticMicStatusPill");
+
+  if (audioTimer || isWaitingForFirstNote) {
+    if (audioTimer) {
+      clearInterval(audioTimer);
+      audioTimer = null;
+    }
+    stopAcousticMicTriggerWait();
+    if (btn) btn.classList.remove("listening");
+    if (lbl) lbl.textContent = "Escucha";
+    if (!activeScore.isRealPdf && svgEl) {
+      svgEl.innerHTML = buildPortraitScoreSvg(-1);
+    }
+    return;
+  }
+
+  // Si está activo el Disparo Acústico por Micrófono (Fase D - H2), esperar en silencio la 1ª nota real
+  if (acousticMicTriggerEnabled && navigator.mediaDevices?.getUserMedia) {
+    try {
+      acousticTriggerStream = await navigator.mediaDevices.getUserMedia({
+        audio: { echoCancellation: false, noiseSuppression: false, autoGainControl: false }
+      });
+      const ctx = getPerformerAudioCtx();
+      const source = ctx.createMediaStreamSource(acousticTriggerStream);
+      const analyser = ctx.createAnalyser();
+      analyser.fftSize = 1024;
+      source.connect(analyser);
+      const buf = new Float32Array(analyser.fftSize);
+
+      isWaitingForFirstNote = true;
+      if (btn) btn.classList.add("listening");
+      if (lbl) lbl.textContent = "Esperando 1ª nota...";
+      if (pill) {
+        pill.textContent = "Escuchando entrada...";
+        pill.classList.add("is-waiting");
+      }
+
+      const thresholds = { low: 0.045, med: 0.022, high: 0.01 };
+      const rmsTarget = thresholds[acousticTriggerSensitivity] || 0.022;
+
+      const checkAcousticOnset = () => {
+        if (!isWaitingForFirstNote) return;
+        analyser.getFloatTimeDomainData(buf);
+        let sumSq = 0;
+        for (let i = 0; i < buf.length; i++) {
+          sumSq += buf[i] * buf[i];
+        }
+        const rms = Math.sqrt(sumSq / buf.length);
+        if (rms >= rmsTarget) {
+          stopAcousticMicTriggerWait();
+          startActiveScoreFollowLoop();
+          const ctxBtn = document.getElementById("btnStudyAudioFollowToggle");
+          if (ctxBtn) {
+            ctxBtn.textContent = "Detener Seguimiento";
+            ctxBtn.classList.add("active");
+          }
+          return;
+        }
+        acousticTriggerRaf = requestAnimationFrame(checkAcousticOnset);
+      };
+
+      acousticTriggerRaf = requestAnimationFrame(checkAcousticOnset);
+      return;
+    } catch (_) {
+      // Si el usuario deniega el micrófono, iniciar bucle por tempo directamente
+    }
+  }
+
+  startActiveScoreFollowLoop();
 }
 
 // ==========================================================================
@@ -8943,7 +9096,7 @@ window.addEventListener("DOMContentLoaded", async () => {
   loadScoreMetadataOverrides();
   loadFavoritesState();
   loadProgramsState();
-  loadStudyAnnotationsFromStorage();
+  await loadStudyAnnotationsFromStorage();
   initBachGptWidget();
   renderLibrary();
   renderSetlistDrawer();
@@ -8953,6 +9106,7 @@ window.addEventListener("DOMContentLoaded", async () => {
   initClipTuner();
   initFolioZoomAndPan();
   syncSettingsGeminiKeyInput();
+  initCadenzaPwaServiceWorker();
   const perfSvg = document.getElementById("performerSvg");
   if (perfSvg) perfSvg.innerHTML = buildPortraitScoreSvg(-1);
   initStudyInteraction();
@@ -9027,3 +9181,169 @@ window.addEventListener("resize", () => {
   restoreStudyAnnotationsForCurrentPage();
   setupEditorCanvas();
 });
+
+// ==========================================================================
+// FASE D (P1 & P2): RESPALDO / RESTAURACIÓN COMPLETA (.cadenza-backup.json) Y PWA ITERATIVA
+// ==========================================================================
+async function exportCadenzaFullBackup() {
+  const noteEl = document.getElementById("backupStatusNote");
+  try {
+    const backupPayload = {
+      app: "Cadenza",
+      version: "V115",
+      exportedAt: new Date().toISOString(),
+      annotations: {
+        strokes: studyPageStrokes,
+        molds: studyPageMoldItems
+      },
+      programsState,
+      favorites: [...favoriteScoreIds],
+      recents: recentScoreTimes,
+      scoresMetadata: JSON.parse(localStorage.getItem(SCORES_META_STORAGE_KEY) || "{}"),
+      metronomePresets: JSON.parse(localStorage.getItem(METRO_STORAGE_KEY) || "{}"),
+      rehearsalPassages: rehearsalPassagesByScore,
+      rehearsalSessions: JSON.parse(localStorage.getItem(REHEARSAL_SESSIONS_STORAGE_KEY) || "[]"),
+      lastStudySession: loadLastStudySessionState()
+    };
+
+    const jsonStr = JSON.stringify(backupPayload, null, 2);
+    const blob = new Blob([jsonStr], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    const dateTag = new Date().toISOString().slice(0, 10);
+    a.href = url;
+    a.download = `respaldo-${dateTag}.cadenza-backup.json`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+    if (noteEl) noteEl.textContent = "✓ Respaldo exportado correctamente.";
+  } catch (err) {
+    console.warn("Error al exportar respaldo:", err);
+    if (noteEl) noteEl.textContent = "Error al generar el archivo de respaldo.";
+  }
+}
+
+async function importCadenzaBackupFile(fileList) {
+  if (!fileList || fileList.length === 0) return;
+  const file = fileList[0];
+  const noteEl = document.getElementById("backupStatusNote");
+
+  try {
+    const text = await file.text();
+    const data = JSON.parse(text);
+    if (!data || data.app !== "Cadenza") {
+      if (noteEl) noteEl.textContent = "El archivo no es un respaldo válido de Cadenza.";
+      return;
+    }
+
+    if (data.annotations) {
+      if (data.annotations.strokes) {
+        Object.keys(studyPageStrokes).forEach((k) => delete studyPageStrokes[k]);
+        Object.assign(studyPageStrokes, data.annotations.strokes);
+      }
+      if (data.annotations.molds) {
+        Object.keys(studyPageMoldItems).forEach((k) => delete studyPageMoldItems[k]);
+        Object.assign(studyPageMoldItems, data.annotations.molds);
+      }
+      persistStudyAnnotationsToStorage();
+    }
+
+    if (data.programsState && Array.isArray(data.programsState.list)) {
+      programsState = data.programsState;
+      saveProgramsState();
+    }
+
+    if (Array.isArray(data.favorites)) {
+      favoriteScoreIds = new Set(data.favorites.map(Number));
+      saveFavoritesState();
+    }
+
+    if (data.recents && typeof data.recents === "object") {
+      recentScoreTimes = data.recents;
+      localStorage.setItem(RECENTS_STORAGE_KEY, JSON.stringify(recentScoreTimes));
+    }
+
+    if (data.scoresMetadata && typeof data.scoresMetadata === "object") {
+      localStorage.setItem(SCORES_META_STORAGE_KEY, JSON.stringify(data.scoresMetadata));
+      loadScoreMetadataOverrides();
+    }
+
+    if (data.metronomePresets && typeof data.metronomePresets === "object") {
+      localStorage.setItem(METRO_STORAGE_KEY, JSON.stringify(data.metronomePresets));
+    }
+
+    if (data.rehearsalPassages && typeof data.rehearsalPassages === "object") {
+      rehearsalPassagesByScore = data.rehearsalPassages;
+      saveRehearsalPassagesState();
+    }
+
+    if (Array.isArray(data.rehearsalSessions)) {
+      localStorage.setItem(REHEARSAL_SESSIONS_STORAGE_KEY, JSON.stringify(data.rehearsalSessions));
+    }
+
+    if (data.lastStudySession) {
+      localStorage.setItem(LAST_SESSION_STORAGE_KEY, JSON.stringify(data.lastStudySession));
+    }
+
+    renderLibrary();
+    renderSetlistDrawer();
+    restoreStudyAnnotationsForCurrentPage();
+    syncRehearsalContextBanner();
+    if (noteEl) noteEl.textContent = `✓ Respaldo "${file.name}" restaurado con éxito.`;
+  } catch (err) {
+    console.warn("Error al importar respaldo:", err);
+    if (noteEl) noteEl.textContent = "Error al leer el archivo de respaldo.";
+  } finally {
+    const inp = document.getElementById("cadenzaBackupFileInput");
+    if (inp) inp.value = "";
+  }
+}
+
+let deferredPwaInstallPrompt = null;
+
+window.addEventListener("beforeinstallprompt", (e) => {
+  e.preventDefault();
+  deferredPwaInstallPrompt = e;
+  document.getElementById("btnInstallCadenzaPwa")?.classList.remove("hidden");
+});
+
+async function triggerCadenzaPwaInstall() {
+  if (!deferredPwaInstallPrompt) return;
+  deferredPwaInstallPrompt.prompt();
+  try {
+    await deferredPwaInstallPrompt.userChoice;
+  } catch (_) {}
+  deferredPwaInstallPrompt = null;
+  document.getElementById("btnInstallCadenzaPwa")?.classList.add("hidden");
+}
+
+function initCadenzaPwaServiceWorker() {
+  if (!("serviceWorker" in navigator)) return;
+  navigator.serviceWorker
+    .register("./sw.js?v=115", { updateViaCache: "none" })
+    .then((reg) => {
+      reg.update().catch(() => {});
+    })
+    .catch((err) => {
+      console.warn("Service Worker registro omitido:", err);
+    });
+}
+
+async function forceRefreshCadenzaVersion() {
+  try {
+    if ("serviceWorker" in navigator) {
+      const regs = await navigator.serviceWorker.getRegistrations();
+      for (const r of regs) {
+        await r.update();
+      }
+    }
+    if ("caches" in window) {
+      const keys = await caches.keys();
+      for (const k of keys) {
+        await caches.delete(k);
+      }
+    }
+  } catch (_) {}
+  window.location.reload();
+}

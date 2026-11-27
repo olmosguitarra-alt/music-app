@@ -1,0 +1,19 @@
+{
+  "name": "Cadenza — Estación de Trabajo Musical",
+  "short_name": "Cadenza",
+  "description": "Lectura, anotación, ensayo e interpretación de partituras para tablets y móvil.",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#161311",
+  "theme_color": "#6b172b",
+  "icons": [
+    {
+      "src": "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'%3E%3Crect width='512' height='512' rx='112' fill='%236b172b'/%3E%3Cpath d='M32 272c128-80 272 64 448-32M32 304c128-80 272 64 448-32M32 336c128-80 272 64 448-32' stroke='%23f7efe7' stroke-opacity='.45' stroke-width='12' fill='none'/%3E%3Ctext x='144' y='360' font-family='Georgia,serif' font-size='304' fill='%23fcf8f4'%3EC%3C/text%3E%3C/svg%3E",
+      "sizes": "192x192 512x512",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

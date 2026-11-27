@@ -15102,3 +15102,87 @@ body.palette-cadenza {
   background: rgba(156, 39, 176, 0.18);
   color: #ce93d8;
 }
+
+/* ==========================================================================
+   V115 (FASE D) — DISPARO ACÚSTICO POR MICRÓFONO, RESPALDO JSON Y PWA ITERATIVA
+   ========================================================================== */
+
+.acoustic-trigger-box {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 8px 10px;
+  border-radius: var(--cds-radius-sm, 10px);
+  background: color-mix(in srgb, var(--bg-canvas) 48%, transparent);
+  border: 1px solid var(--glass-border);
+}
+
+.acoustic-trigger-row,
+.acoustic-sens-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 11px;
+}
+
+.acoustic-chk-lbl {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: 600;
+  color: var(--text-primary);
+  cursor: pointer;
+}
+
+.acoustic-chk-lbl input {
+  accent-color: var(--accent);
+}
+
+.acoustic-status-pill {
+  font-size: 10px;
+  font-weight: 700;
+  padding: 2px 7px;
+  border-radius: 99px;
+  background: color-mix(in srgb, var(--text-secondary) 16%, transparent);
+  color: var(--text-secondary);
+}
+
+.acoustic-status-pill.is-waiting {
+  background: rgba(255, 167, 38, 0.22);
+  color: #ffb74d;
+}
+
+.acoustic-status-pill.is-triggered {
+  background: rgba(76, 175, 80, 0.24);
+  color: #66bb6a;
+}
+
+.settings-backup-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin-bottom: 5px;
+}
+
+.settings-backup-btn,
+.settings-pwa-btn {
+  height: 34px;
+  font-size: 12px;
+  font-weight: 600;
+  border-radius: 10px;
+  width: 100%;
+  justify-content: center;
+}
+
+.settings-pwa-box {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+
+.settings-pwa-version {
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--accent);
+}
