@@ -9321,7 +9321,7 @@ async function triggerCadenzaPwaInstall() {
 function initCadenzaPwaServiceWorker() {
   if (!("serviceWorker" in navigator)) return;
   navigator.serviceWorker
-    .register("./sw.js?v=115", { updateViaCache: "none" })
+    .register("./sw.js?v=116", { updateViaCache: "none" })
     .then((reg) => {
       reg.update().catch(() => {});
     })
