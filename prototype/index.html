@@ -11,7 +11,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:wght@600;700&display=swap" />
-  <link rel="stylesheet" href="styles.css?v=112" />
+  <link rel="stylesheet" href="styles.css?v=113" />
   <!-- Motores Oficiales para Renderizar (PDF.js) y Particionar/Editar PDFs Reales (pdf-lib) -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf-lib/1.17.1/pdf-lib.min.js"></script>
@@ -232,7 +232,11 @@
                 <div class="setlist-items" id="setlistItems"></div>
 
                 <div class="setlist-foot">
-                  <button class="btn-launch-concert btn-save-prog-secondary" id="btnLaunchProgram" onclick="saveSetlistDrawerChanges()">
+                  <span class="setlist-autosave-pill" id="setlistAutosavePill" aria-live="polite">
+                    <svg viewBox="0 0 24 24" class="v-ico" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                    <span id="setlistAutosaveLabel">Guardado automáticamente</span>
+                  </span>
+                  <button class="btn-launch-concert btn-save-prog-secondary hidden" id="btnLaunchProgram" onclick="saveSetlistDrawerChanges()">
                     <span>Guardar cambios</span>
                   </button>
                   <button type="button" class="btn-launch-concert btn-start-concert-sticky" id="btnStartProgramConcert" onclick="launchActiveProgramInConcert()">
@@ -401,7 +405,7 @@
             <svg viewBox="0 0 24 24" class="v-ico" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
             <span>Biblioteca</span>
           </button>
-          <button type="button" class="perf-util-btn perf-editor-shortcut" onclick="switchMode('editor')" title="Abrir en Editor de Partitura" aria-label="Editor">
+          <button type="button" class="perf-util-btn perf-editor-shortcut hidden" onclick="switchMode('editor')" title="Abrir en Editor de Partitura" aria-label="Editor">
             <svg viewBox="0 0 24 24" class="v-ico" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8h9M3 12h6M3 16h13M3 20h18"/><path d="M13.5 14.5L19.5 4.5l2.5 1.5-6 10-3 1.5z"/></svg>
           </button>
         </div>
@@ -417,6 +421,29 @@
           </span>
         </button>
       </div>
+
+      <!-- BARRA CONTEXTUAL DE REVELACIÓN PROGRESIVA (FASE B - A1 & A2): ✎ Anotar | ▶ Ensayar | ♪ Escuchar | ✦ IA | ⋮ Más -->
+      <nav class="glass-pill perf-context-toolbar" id="perfContextToolbar" aria-label="Contexto de estudio">
+        <button type="button" class="pctx-btn" id="btnCtxAnnotate" data-pctx="annotate" onclick="togglePerformerContext('annotate', event)" title="Modo Anotar (Pluma, Lápiz, Marcador, Sellos)">
+          <span class="pctx-sym" aria-hidden="true">✎</span>
+          <span class="pctx-lbl">Anotar</span>
+        </button>
+        <button type="button" class="pctx-btn" id="btnCtxRehearse" data-pctx="rehearse" onclick="togglePerformerContext('rehearse', event)" title="Modo Ensayar (Metrónomo, Entrenador y Afinador)">
+          <span class="pctx-sym" aria-hidden="true">▶</span>
+          <span class="pctx-lbl">Ensayar</span>
+        </button>
+        <button type="button" class="pctx-btn" id="btnCtxListen" data-pctx="listen" onclick="togglePerformerContext('listen', event)" title="Modo Escuchar (Seguimiento y Escucha Activa)">
+          <span class="pctx-sym" aria-hidden="true">♪</span>
+          <span class="pctx-lbl">Escuchar</span>
+        </button>
+        <button type="button" class="pctx-btn" id="btnCtxAi" data-pctx="ai" onclick="togglePerformerContext('ai', event)" title="Cadenza AI / BachGPT contextualizado en esta obra">
+          <span class="pctx-sym" aria-hidden="true">✦</span>
+          <span class="pctx-lbl">IA</span>
+        </button>
+        <button type="button" class="pctx-btn pctx-more-btn" id="btnCtxMore" data-pctx="more" onclick="togglePerformerContext('more', event)" title="Más opciones de partitura" aria-label="Más opciones">
+          <span class="pctx-sym" aria-hidden="true">⋮</span>
+        </button>
+      </nav>
 
       <div class="perf-top-right">
         <div class="perf-mode-switch" role="tablist" aria-label="Modo del visor">
@@ -670,16 +697,30 @@
       </div>
     </div>
 
-    <!-- POPOVER COMPACTO DE METRÓNOMO ESPECIALIZADO -->
+    <!-- POPOVER COMPACTO DE METRÓNOMO ESPECIALIZADO -> ESPACIO DE ENSAYO CONTEXTUAL (FASE B - F1 & G1) -->
     <div class="perf-utility-popover metro-pro-popover study-tools hidden" id="metronomePopover" onclick="event.stopPropagation()">
       <div class="perf-pop-head metro-pop-head" id="metroPopoverHeader">
         <div class="metro-title-group">
           <span class="metro-drag-grip" aria-hidden="true">⋮⋮</span>
-          <span>Metrónomo</span>
+          <span>Ensayo</span>
           <span class="metro-agogic-badge" id="metroAgogicLabel">Adagio</span>
         </div>
+        <div class="metro-session-timer-pill" id="metroSessionTimerPill" title="Tiempo de práctica activa en esta sesión">00:00</div>
         <div class="metro-beats-strip" id="metroBeatsStrip" title="Toca un pulso para cambiar: Fuerte → Medio → Débil → Silencio">
           <!-- Generado dinámicamente según el compás -->
+        </div>
+      </div>
+
+      <!-- Cabecera Contextual de Obra y Progresión de Tempo (68 → 76 BPM) -->
+      <div class="rehearsal-context-banner" id="rehearsalContextBanner">
+        <div class="rcb-work-info">
+          <strong id="rehearsalWorkTitle">J. S. Bach — BWV 1034</strong>
+          <span id="rehearsalPageLabel">Pág. 1</span>
+        </div>
+        <div class="rcb-tempo-goal" id="rehearsalTempoGoalPill" title="Progresión de tempo hacia tu meta">
+          <span id="rehearsalStartBpmLbl">68</span>
+          <span class="rcb-arrow">→</span>
+          <strong id="rehearsalTargetBpmLbl">76 BPM</strong>
         </div>
       </div>
 
@@ -812,10 +853,45 @@
               <button type="button" class="metro-pill-btn" onclick="setMetronomeCountIn(2, this)">2 comp.</button>
             </div>
           </div>
+
+          <!-- Registro Real de Pasajes y Sesiones de Estudio (Fase B - G1) -->
+          <div class="rehearsal-passages-box" id="rehearsalPassagesBox">
+            <div class="rp-head">
+              <span class="rp-title">Pasajes de estudio en esta obra</span>
+              <button type="button" class="rp-add-btn" onclick="addRehearsalPassageForCurrentPage()" title="Guardar pasaje en la página actual con el BPM y meta actual">＋ Guardar pasaje</button>
+            </div>
+            <div class="rp-list" id="rehearsalPassagesList"></div>
+          </div>
         </div>
       </div>
 
-      <button type="button" class="perf-pop-primary-btn" id="btnMetroPlay" onclick="toggleMetronomePlay()">Iniciar</button>
+      <button type="button" class="perf-pop-primary-btn" id="btnMetroPlay" onclick="toggleMetronomePlay()">▶ Iniciar ensayo</button>
+    </div>
+
+    <!-- POPOVER CONTEXTUAL: MODO ESCUCHAR (♪) Y MENÚ MÁS (⋮) (FASE B - A1) -->
+    <div class="perf-utility-popover perf-listen-popover study-tools hidden" id="performerListenPopover" onclick="event.stopPropagation()">
+      <div class="perf-pop-head">
+        <span>♪ Escucha y Seguimiento</span>
+      </div>
+      <p class="perf-ctx-desc">Activa el seguimiento de compases o prepara el paso de página asistido para esta obra.</p>
+      <button type="button" class="perf-pop-primary-btn" id="btnStudyAudioFollowToggle" onclick="toggleAudioFollowFromContext()">
+        Activar Escucha Activa
+      </button>
+    </div>
+
+    <div class="perf-utility-popover perf-more-popover study-tools hidden" id="performerMorePopover" onclick="event.stopPropagation()">
+      <button type="button" class="perf-more-item" onclick="cyclePageLayout(); closePerformerMorePopover();">
+        <span>Cambiar disposición (1 Pág / Media / 2 Págs)</span>
+      </button>
+      <button type="button" class="perf-more-item" onclick="openCurrentScoreInPdfWorkshop()">
+        <span>Mesa de Trabajo PDF (Páginas y Metadatos)</span>
+      </button>
+      <button type="button" class="perf-more-item" onclick="switchMode('editor'); closePerformerMorePopover();">
+        <span>Cuaderno de Notación / Tablatura</span>
+      </button>
+      <button type="button" class="perf-more-item" onclick="toggleSettingsDrawer(true); closePerformerMorePopover();">
+        <span>Temas visuales y Configuración</span>
+      </button>
     </div>
 
     <!-- POPOVER COMPACTO DE AFINADOR TIPO PINZA (FENDER / DONNER CLIP-ON) -->
@@ -1248,6 +1324,6 @@
     <span class="pdf-loading-text">Cargando...</span>
   </div>
 
-  <script src="app.js?v=112"></script>
+  <script src="app.js?v=113"></script>
 </body>
 </html>

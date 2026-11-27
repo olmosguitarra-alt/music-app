@@ -657,6 +657,7 @@ async function renderActiveScorePage() {
   setupStudyCanvas();
   restoreStudyAnnotationsForCurrentPage();
   saveLastStudySessionState();
+  if (typeof syncRehearsalContextBanner === "function") syncRehearsalContextBanner();
   if (typeof updateBookmarkButton === "function") updateBookmarkButton();
   if (typeof renderStudyPageScrubber === "function") renderStudyPageScrubber();
 }
@@ -4120,10 +4121,129 @@ function persistStudyAnnotationsToStorage() {
   } catch (_) {}
 }
 
-function isWritingAllowed() {
-  if (performanceMode === "study") return true;
+let activePerformerContext = "read"; // 'read' | 'annotate' | 'rehearse' | 'listen' | 'ai' | 'more'
+
+function syncPerformerContextButtonsUI() {
+  const map = {
+    annotate: "btnCtxAnnotate",
+    rehearse: "btnCtxRehearse",
+    listen: "btnCtxListen",
+    ai: "btnCtxAi",
+    more: "btnCtxMore"
+  };
+  Object.entries(map).forEach(([ctxKey, btnId]) => {
+    const btn = document.getElementById(btnId);
+    if (btn) btn.classList.toggle("active", activePerformerContext === ctxKey);
+  });
   const performer = document.getElementById("mode-performer");
-  return Boolean(performer && performer.classList.contains("rail-open-drawing"));
+  if (performer) {
+    performer.dataset.activeContext = activePerformerContext;
+  }
+}
+
+function closePerformerMorePopover() {
+  document.getElementById("performerMorePopover")?.classList.add("hidden");
+  if (activePerformerContext === "more") {
+    activePerformerContext = "read";
+    syncPerformerContextButtonsUI();
+  }
+}
+
+function closePerformerListenPopover() {
+  document.getElementById("performerListenPopover")?.classList.add("hidden");
+  if (activePerformerContext === "listen") {
+    activePerformerContext = "read";
+    syncPerformerContextButtonsUI();
+  }
+}
+
+function openCurrentScoreInPdfWorkshop() {
+  closePerformerMorePopover();
+  const sId = activeScore ? activeScore.id : 1;
+  switchMode("library");
+  setTimeout(() => openPdfModalById(sId), 80);
+}
+
+function toggleAudioFollowFromContext() {
+  toggleAudioFollow();
+  const btn = document.getElementById("btnStudyAudioFollowToggle");
+  if (btn) {
+    btn.textContent = audioTimer ? "Detener Escucha Activa" : "Activar Escucha Activa";
+    btn.classList.toggle("active", Boolean(audioTimer));
+  }
+}
+
+function togglePerformerContext(ctxName, e) {
+  if (e) e.stopPropagation();
+
+  // Si toca el contexto ya activo, vuelve a Modo Lectura limpia
+  const isTogglingOff = activePerformerContext === ctxName;
+  const nextCtx = isTogglingOff ? "read" : ctxName;
+
+  // Cerrar paneles secundarios antes de abrir el nuevo contexto
+  document.getElementById("performerListenPopover")?.classList.add("hidden");
+  document.getElementById("performerMorePopover")?.classList.add("hidden");
+  document.getElementById("brushPopover")?.classList.add("hidden");
+  document.getElementById("stampPopover")?.classList.add("hidden");
+
+  if (nextCtx !== "annotate") {
+    const rail = document.getElementById("performerToolRail");
+    if (rail && !rail.classList.contains("rail-collapsed")) {
+      toggleToolRailCollapse(false);
+    }
+  }
+  if (nextCtx !== "rehearse") {
+    document.getElementById("metronomePopover")?.classList.add("hidden");
+    closeTunerPopoverAndStop();
+  }
+  if (nextCtx !== "ai") {
+    toggleBachGptChat(false);
+  }
+
+  activePerformerContext = nextCtx;
+  syncPerformerContextButtonsUI();
+
+  if (nextCtx === "annotate") {
+    toggleToolRailCollapse(true);
+  } else if (nextCtx === "rehearse") {
+    syncRehearsalContextBanner();
+    document.getElementById("metronomePopover")?.classList.remove("hidden");
+  } else if (nextCtx === "listen") {
+    const btn = document.getElementById("btnStudyAudioFollowToggle");
+    if (btn) {
+      btn.textContent = audioTimer ? "Detener Escucha Activa" : "Activar Escucha Activa";
+      btn.classList.toggle("active", Boolean(audioTimer));
+    }
+    document.getElementById("performerListenPopover")?.classList.remove("hidden");
+  } else if (nextCtx === "ai") {
+    const sId = activeScore ? activeScore.id : 1;
+    openBachGptSpecificWorkMode(sId);
+    toggleBachGptChat(true);
+  } else if (nextCtx === "more") {
+    document.getElementById("performerMorePopover")?.classList.remove("hidden");
+  }
+
+  const fl = document.getElementById("performerFooterLeft");
+  if (fl && performanceMode === "study") {
+    const ctxLabels = {
+      read: "Modo Lectura • Toca laterales o usa pedal para pasar página",
+      annotate: "Modo Anotar • Pluma y sellos activos",
+      rehearse: `Modo Ensayo • ♩ = ${metroBpm} BPM`,
+      listen: "Modo Escucha • Seguimiento de partitura",
+      ai: "Cadenza AI • Asistencia musical contextual",
+      more: "Opciones de partitura"
+    };
+    fl.textContent = ctxLabels[nextCtx] || ctxLabels.read;
+  }
+}
+
+function isWritingAllowed() {
+  const performer = document.getElementById("mode-performer");
+  const railOpen = Boolean(performer && performer.classList.contains("rail-open-drawing"));
+  if (performanceMode === "study") {
+    return railOpen || activePerformerContext === "annotate";
+  }
+  return railOpen;
 }
 
 let committedLayerCanvas = null;
@@ -4658,8 +4778,14 @@ function toggleToolRailCollapse(forceOpen) {
   if (performer) performer.classList.toggle("rail-open-drawing", shouldOpen);
 
   if (shouldOpen) {
+    activePerformerContext = "annotate";
+    syncPerformerContextButtonsUI();
     resetToolRailInactivityTimer();
   } else {
+    if (activePerformerContext === "annotate") {
+      activePerformerContext = "read";
+      syncPerformerContextButtonsUI();
+    }
     if (toolRailAutoCollapseTimer) {
       clearTimeout(toolRailAutoCollapseTimer);
       toolRailAutoCollapseTimer = null;
@@ -5659,13 +5785,13 @@ function scheduleConcertAutoHide() {
 }
 
 function handlePerformerStageTap(e) {
-  if (performanceMode !== "concert" || isWritingAllowed()) return;
-  if (e.target.closest("button, .floating-bottom-bar, .concert-exit-overlay, .concert-audio-satellite")) {
-    scheduleConcertAutoHide();
+  if (isWritingAllowed()) return;
+  if (e.target.closest("button, .floating-bottom-bar, .concert-exit-overlay, .concert-audio-satellite, .mold-item")) {
+    if (performanceMode === "concert") scheduleConcertAutoHide();
     return;
   }
 
-  // En modo concierto: Lateral izquierdo (<= 30%) retrocede, Centro (30% - 62%) revela/oculta HUD, Lateral derecho (> 62%) avanza
+  // En modo Lectura (Ensayo sin pluma abierta) o Concierto: Lateral izquierdo (<= 30%) retrocede, Lateral derecho (> 62%) avanza
   const xRatio = (e.clientX || 0) / Math.max(1, window.innerWidth);
   if (xRatio < 0.30) {
     turnPage(-1);
@@ -5675,6 +5801,8 @@ function handlePerformerStageTap(e) {
     turnPage(1);
     return;
   }
+
+  if (performanceMode !== "concert") return;
 
   const willShow = document.body.classList.contains("concert-immersion");
   document.body.classList.toggle("concert-immersion", !willShow);
@@ -5941,9 +6069,24 @@ function loadProgramsState() {
   } catch (_) {}
 }
 
+let setlistAutosaveFeedbackTimer = null;
+
+function flashSetlistAutosaveFeedback(msg = "Guardado automáticamente") {
+  const pill = document.getElementById("setlistAutosavePill");
+  const lbl = document.getElementById("setlistAutosaveLabel");
+  if (!pill) return;
+  if (lbl) lbl.textContent = msg;
+  pill.classList.add("is-flashing");
+  if (setlistAutosaveFeedbackTimer) clearTimeout(setlistAutosaveFeedbackTimer);
+  setlistAutosaveFeedbackTimer = setTimeout(() => {
+    pill.classList.remove("is-flashing");
+  }, 1800);
+}
+
 function saveProgramsState() {
   try {
     localStorage.setItem(PROGRAMS_STORAGE_KEY, JSON.stringify(programsState));
+    flashSetlistAutosaveFeedback();
   } catch (_) {}
 }
 
@@ -6282,7 +6425,10 @@ function renderSetlistDrawer() {
     .map((id) => scores.find((s) => s.id === id))
     .filter(Boolean);
 
-  if (sumEl) sumEl.textContent = `Obras (${validScores.length}):`;
+  const totalProgramPages = validScores.reduce((acc, sc) => acc + (sc.pageCount || 10), 0);
+  if (sumEl) {
+    sumEl.textContent = `Obras (${validScores.length}) · ${totalProgramPages} págs. en total`;
+  }
   if (launchBtn) launchBtn.disabled = false;
   if (startConcertBtn) startConcertBtn.disabled = validScores.length === 0;
 
@@ -6781,6 +6927,143 @@ let tunerOsc = null;
 let tunerHz = 440;
 
 const METRO_STORAGE_KEY = "cadenza_metronome_score_presets_v1";
+const REHEARSAL_PASSAGES_STORAGE_KEY = "cadenza_rehearsal_passages_v1";
+const REHEARSAL_SESSIONS_STORAGE_KEY = "cadenza_rehearsal_sessions_v1";
+
+let rehearsalPassagesByScore = {};
+let rehearsalSessionElapsedSeconds = 0;
+let rehearsalSessionInterval = null;
+let rehearsalSessionStartBpm = 76;
+
+function loadRehearsalPassagesState() {
+  try {
+    const raw = localStorage.getItem(REHEARSAL_PASSAGES_STORAGE_KEY);
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (parsed && typeof parsed === "object") rehearsalPassagesByScore = parsed;
+    }
+  } catch (_) {}
+}
+
+function saveRehearsalPassagesState() {
+  try {
+    localStorage.setItem(REHEARSAL_PASSAGES_STORAGE_KEY, JSON.stringify(rehearsalPassagesByScore));
+  } catch (_) {}
+}
+
+function formatRehearsalTimer(sec) {
+  const m = Math.floor(sec / 60);
+  const s = sec % 60;
+  return `${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`;
+}
+
+function syncRehearsalContextBanner() {
+  const titleEl = document.getElementById("rehearsalWorkTitle");
+  const pageEl = document.getElementById("rehearsalPageLabel");
+  const startLbl = document.getElementById("rehearsalStartBpmLbl");
+  const targetLbl = document.getElementById("rehearsalTargetBpmLbl");
+  if (titleEl && activeScore) {
+    const shortComp = (activeScore.composer || "").split("(")[0].trim();
+    const displayTitle = activeScore.clean || activeScore.title;
+    titleEl.textContent = shortComp ? `${shortComp} — ${displayTitle}` : displayTitle;
+  }
+  if (pageEl) {
+    pageEl.textContent = `Pág. ${pageNum || 1}`;
+  }
+  if (startLbl) {
+    startLbl.textContent = String(metroTrainerBaseBpm || metroBpm);
+  }
+  if (targetLbl) {
+    const goal = metroTrainerMode === "ladder" ? metroLadderTarget : metroBpm;
+    targetLbl.textContent = `${goal} BPM`;
+  }
+  renderRehearsalPassagesList();
+}
+
+function renderRehearsalPassagesList() {
+  const listEl = document.getElementById("rehearsalPassagesList");
+  if (!listEl) return;
+  const sId = activeScore ? String(activeScore.id) : "1";
+  const items = rehearsalPassagesByScore[sId] || [];
+  if (items.length === 0) {
+    listEl.innerHTML = `<span class="rp-empty">Guarda un pasaje difícil para practicar su progresión de BPM.</span>`;
+    return;
+  }
+  listEl.innerHTML = items
+    .map(
+      (p, idx) => `
+      <div class="rp-item" onclick="loadRehearsalPassage(${idx})" title="Cargar este pasaje (ir a Pág. ${p.page} a ${p.currentBpm} BPM)">
+        <div class="rp-item-main">
+          <strong>Pág. ${p.page}</strong>
+          <span>${p.startBpm} → ${p.targetBpm} BPM</span>
+        </div>
+        <button type="button" class="rp-del-btn" onclick="deleteRehearsalPassage(event, ${idx})" aria-label="Eliminar pasaje">✕</button>
+      </div>
+    `
+    )
+    .join("");
+}
+
+function addRehearsalPassageForCurrentPage() {
+  const sId = activeScore ? String(activeScore.id) : "1";
+  if (!rehearsalPassagesByScore[sId]) rehearsalPassagesByScore[sId] = [];
+  const startBpm = metroTrainerBaseBpm || metroBpm;
+  const targetBpm = metroTrainerMode === "ladder" ? metroLadderTarget : Math.min(240, metroBpm + 12);
+  rehearsalPassagesByScore[sId].unshift({
+    id: `rp-${Date.now()}`,
+    page: pageNum || 1,
+    startBpm,
+    currentBpm: metroBpm,
+    targetBpm,
+    updatedAt: Date.now()
+  });
+  saveRehearsalPassagesState();
+  renderRehearsalPassagesList();
+}
+
+async function loadRehearsalPassage(idx) {
+  const sId = activeScore ? String(activeScore.id) : "1";
+  const items = rehearsalPassagesByScore[sId] || [];
+  const p = items[idx];
+  if (!p) return;
+  metroTrainerBaseBpm = p.startBpm || p.currentBpm || 76;
+  metroLadderTarget = p.targetBpm || 108;
+  const targetInp = document.getElementById("metroLadderTarget");
+  if (targetInp) targetInp.value = String(metroLadderTarget);
+  setMetronomeBpm(p.currentBpm || p.startBpm || 76);
+  if (p.page && p.page !== pageNum) {
+    await jumpToPage(p.page);
+  }
+  syncRehearsalContextBanner();
+}
+
+function deleteRehearsalPassage(e, idx) {
+  if (e) e.stopPropagation();
+  const sId = activeScore ? String(activeScore.id) : "1";
+  if (!rehearsalPassagesByScore[sId]) return;
+  rehearsalPassagesByScore[sId].splice(idx, 1);
+  saveRehearsalPassagesState();
+  renderRehearsalPassagesList();
+}
+
+function recordCompletedRehearsalSession() {
+  if (rehearsalSessionElapsedSeconds < 5 || !activeScore) return;
+  try {
+    const raw = localStorage.getItem(REHEARSAL_SESSIONS_STORAGE_KEY);
+    const list = raw ? JSON.parse(raw) : [];
+    list.unshift({
+      scoreId: activeScore.id,
+      page: pageNum || 1,
+      durationSec: rehearsalSessionElapsedSeconds,
+      startBpm: rehearsalSessionStartBpm,
+      endBpm: metroBpm,
+      targetBpm: metroTrainerMode === "ladder" ? metroLadderTarget : metroBpm,
+      timestamp: Date.now()
+    });
+    if (list.length > 60) list.length = 60;
+    localStorage.setItem(REHEARSAL_SESSIONS_STORAGE_KEY, JSON.stringify(list));
+  } catch (_) {}
+}
 
 function getPerformerAudioCtx() {
   if (!performerAudioCtx) {
@@ -6866,7 +7149,17 @@ function renderMetronomeBeatsStrip() {
 function toggleMetronomePopover(e) {
   if (e) e.stopPropagation();
   closeTunerPopoverAndStop();
-  document.getElementById("metronomePopover")?.classList.toggle("hidden");
+  syncRehearsalContextBanner();
+  const pop = document.getElementById("metronomePopover");
+  if (!pop) return;
+  const willShow = pop.classList.contains("hidden");
+  pop.classList.toggle("hidden", !willShow);
+  if (willShow) {
+    activePerformerContext = "rehearse";
+  } else if (activePerformerContext === "rehearse") {
+    activePerformerContext = "read";
+  }
+  syncPerformerContextButtonsUI();
 }
 
 function setMetronomeBpm(val, { fromTrainer = false } = {}) {
@@ -6882,6 +7175,7 @@ function setMetronomeBpm(val, { fromTrainer = false } = {}) {
   if (chipLbl) chipLbl.textContent = `${metroBpm}`;
   if (rng) rng.value = String(metroBpm);
   if (agogicLbl) agogicLbl.textContent = getClassicalAgogicName(metroBpm);
+  syncRehearsalContextBanner();
   if (!fromTrainer) {
     saveMetronomePresetForCurrentScore();
     saveLastStudySessionState();
@@ -7001,6 +7295,7 @@ function updateMetronomeTrainerParams() {
       badge.classList.remove("active");
     }
   }
+  syncRehearsalContextBanner();
 }
 
 function setMetronomeCountIn(bars, btn) {
@@ -7228,6 +7523,7 @@ function runMetronomeScheduler() {
 function toggleMetronomePlay() {
   const btn = document.getElementById("btnMetroPlay");
   const chip = document.getElementById("metroLiveChip");
+  const timerPill = document.getElementById("metroSessionTimerPill");
 
   if (metroIsPlaying) {
     metroIsPlaying = false;
@@ -7235,8 +7531,14 @@ function toggleMetronomePlay() {
       clearInterval(metroLookaheadTimer);
       metroLookaheadTimer = null;
     }
-    if (btn) btn.textContent = "Iniciar";
+    if (rehearsalSessionInterval) {
+      clearInterval(rehearsalSessionInterval);
+      rehearsalSessionInterval = null;
+    }
+    recordCompletedRehearsalSession();
+    if (btn) btn.textContent = "▶ Iniciar ensayo";
     if (chip) chip.classList.remove("active");
+    if (timerPill) timerPill.classList.remove("is-running");
     return;
   }
 
@@ -7244,6 +7546,18 @@ function toggleMetronomePlay() {
   if (!ctx) return;
 
   metroIsPlaying = true;
+  rehearsalSessionStartBpm = metroBpm;
+  rehearsalSessionElapsedSeconds = 0;
+  if (timerPill) {
+    timerPill.textContent = "00:00";
+    timerPill.classList.add("is-running");
+  }
+  if (rehearsalSessionInterval) clearInterval(rehearsalSessionInterval);
+  rehearsalSessionInterval = setInterval(() => {
+    rehearsalSessionElapsedSeconds++;
+    if (timerPill) timerPill.textContent = formatRehearsalTimer(rehearsalSessionElapsedSeconds);
+  }, 1000);
+
   metroCurrentBeat = 0;
   metroCurrentSub = 0;
   metroBarCount = 0;
@@ -7253,7 +7567,7 @@ function toggleMetronomePlay() {
   runMetronomeScheduler();
   metroLookaheadTimer = setInterval(runMetronomeScheduler, 25);
 
-  if (btn) btn.textContent = "Detener";
+  if (btn) btn.textContent = "■ Detener ensayo";
   if (chip) chip.classList.add("active");
 }
 
@@ -7319,8 +7633,10 @@ function loadMetronomePresetForScore(scoreId) {
 }
 
 function initMetronomePopover() {
+  loadRehearsalPassagesState();
   renderMetronomeBeatsStrip();
   setMetronomeBpm(metroBpm, { fromTrainer: true });
+  syncRehearsalContextBanner();
 
   const pop = document.getElementById("metronomePopover");
   const header = document.getElementById("metroPopoverHeader");
@@ -8166,39 +8482,56 @@ function saveProgramQuickOrder(fromWorkMenu = false) {
   if (multiSelectMode) exitMultiSelectMode();
 }
 
-// Cierre global de todos los menús desplegables al tocar fuera (excepto barras y controles principales)
+// Gestor global unificado para cerrar menús y popovers al tocar fuera (Fase B - M2)
 document.addEventListener("pointerdown", (e) => {
   const isMainControl = e.target.closest(
-    ".floating-hud-top, .lib-unified-row, .lib-filter-bar, .bottom-nav-dock, #floatingImportFab, #bachGptFab, #btnSettingsDrawer, .work-more-btn"
+    ".floating-hud-top, .lib-unified-row, .lib-filter-bar, .bottom-nav-dock, #floatingImportFab, #bachGptFab, #btnSettingsDrawer, .work-more-btn, #perfContextToolbar"
   );
 
   const floatingMenus = [
-    { id: "workActionsMenu", close: () => closeWorkActionsMenu() },
-    { id: "setlistItemContextMenu", close: () => closeSetlistItemContextMenu() },
-    { id: "progQuickPopover", close: () => document.getElementById("progQuickPopover")?.classList.add("hidden") },
-    { id: "sharedFilterMenu", close: () => closeSharedFilterMenu() },
-    { id: "progScoreSuggestions", close: () => document.getElementById("progScoreSuggestions")?.classList.add("hidden") },
-    { id: "importPdfMenu", close: () => document.getElementById("importPdfMenu")?.classList.add("hidden") },
-    { id: "settingsDrawer", close: () => document.getElementById("settingsDrawer")?.classList.add("hidden") },
-    { id: "brushPopover", close: () => document.getElementById("brushPopover")?.classList.add("hidden") },
-    { id: "stampPopover", close: () => document.getElementById("stampPopover")?.classList.add("hidden") }
+    { id: "workActionsMenu", trigger: ".work-more-btn", close: () => closeWorkActionsMenu() },
+    { id: "setlistItemContextMenu", trigger: ".sl-item-more-btn", close: () => closeSetlistItemContextMenu() },
+    { id: "progQuickPopover", trigger: ".add-prog-btn", close: () => document.getElementById("progQuickPopover")?.classList.add("hidden") },
+    { id: "sharedFilterMenu", trigger: ".filter-dd-btn", close: () => closeSharedFilterMenu() },
+    { id: "progScoreSuggestions", trigger: "#progScoreSearchWrap", close: () => document.getElementById("progScoreSuggestions")?.classList.add("hidden") },
+    { id: "importPdfMenu", trigger: "#importPopoverWrap", close: () => document.getElementById("importPdfMenu")?.classList.add("hidden") },
+    { id: "settingsDrawer", trigger: "#btnSettingsDrawer", close: () => document.getElementById("settingsDrawer")?.classList.add("hidden") },
+    { id: "brushPopover", trigger: "#btnBrushStyle", close: () => document.getElementById("brushPopover")?.classList.add("hidden") },
+    { id: "stampPopover", trigger: "#btnStamps", close: () => { if (studyTool !== "stamp") document.getElementById("stampPopover")?.classList.add("hidden"); } },
+    { id: "metronomePopover", trigger: "#metroLiveChip, #btnCtxRehearse", close: () => { document.getElementById("metronomePopover")?.classList.add("hidden"); if (activePerformerContext === "rehearse") { activePerformerContext = "read"; syncPerformerContextButtonsUI(); } } },
+    { id: "tunerPopover", trigger: "#tunerLiveChip", close: () => closeTunerPopoverAndStop() },
+    { id: "performerListenPopover", trigger: "#btnCtxListen", close: () => closePerformerListenPopover() },
+    { id: "performerMorePopover", trigger: "#btnCtxMore", close: () => closePerformerMorePopover() }
   ];
 
   let closedAny = false;
   for (const m of floatingMenus) {
     const el = document.getElementById(m.id);
     if (el && !el.classList.contains("hidden") && !e.target.closest(`#${m.id}`)) {
-      // No cerrar si el toque fue en su propio botón disparador
-      if (m.id === "workActionsMenu" && e.target.closest(".work-more-btn")) continue;
-      if (m.id === "setlistItemContextMenu" && e.target.closest(".sl-item-more-btn")) continue;
-      if (m.id === "importPdfMenu" && e.target.closest("#importPopoverWrap")) continue;
-      if (m.id === "settingsDrawer" && e.target.closest("#btnSettingsDrawer")) continue;
-      if (m.id === "sharedFilterMenu" && e.target.closest(".filter-dd-btn")) continue;
-      if (m.id === "progScoreSuggestions" && e.target.closest("#progScoreSearchWrap")) continue;
-      if (m.id === "brushPopover" && e.target.closest("#btnBrushStyle")) continue;
-      if (m.id === "stampPopover" && e.target.closest("#btnStamps")) continue;
+      if (m.trigger && e.target.closest(m.trigger)) continue;
       m.close();
       closedAny = true;
+    }
+  }
+
+  const mobProgList = document.getElementById("programsMasterList");
+  if (mobProgList && mobProgList.classList.contains("mobile-dropdown-open") && !e.target.closest(".programs-sidebar-panel")) {
+    closeMobileProgramsDropdown();
+  }
+
+  const bachWin = document.getElementById("bachGptWindow");
+  if (
+    bachWin &&
+    !bachWin.classList.contains("hidden") &&
+    !e.target.closest("#bachWidgetRoot") &&
+    !e.target.closest("#bachGptFab") &&
+    !e.target.closest(".bach-card-btn") &&
+    !e.target.closest("#btnCtxAi")
+  ) {
+    toggleBachGptChat(false);
+    if (activePerformerContext === "ai") {
+      activePerformerContext = "read";
+      syncPerformerContextButtonsUI();
     }
   }
 
@@ -8213,79 +8546,6 @@ document.addEventListener("pointerdown", (e) => {
     setTimeout(() => document.removeEventListener("click", suppressNextClick, true), 300);
   }
 }, true);
-
-// Cerrar menús flotantes al tocar cualquier parte fuera de ellos
-document.addEventListener("click", (e) => {
-  const settingsDrw = document.getElementById("settingsDrawer");
-  if (settingsDrw && !settingsDrw.classList.contains("hidden") && !e.target.closest("#settingsDrawer") && !e.target.closest("#btnSettingsDrawer")) {
-    settingsDrw.classList.add("hidden");
-  }
-
-  const workMenu = document.getElementById("workActionsMenu");
-  if (workMenu && !workMenu.classList.contains("hidden") && !e.target.closest("#workActionsMenu") && !e.target.closest(".work-more-btn")) {
-    workMenu.classList.add("hidden");
-  }
-
-  const slCtxMenu = document.getElementById("setlistItemContextMenu");
-  if (slCtxMenu && !slCtxMenu.classList.contains("hidden") && !e.target.closest("#setlistItemContextMenu") && !e.target.closest(".sl-item-more-btn")) {
-    slCtxMenu.classList.add("hidden");
-  }
-
-  const sharedFilterMenu = document.getElementById("sharedFilterMenu");
-  if (sharedFilterMenu && !sharedFilterMenu.classList.contains("hidden") && !e.target.closest("#sharedFilterMenu") && !e.target.closest(".filter-dd-btn")) {
-    closeSharedFilterMenu();
-  }
-
-  const pqPop = document.getElementById("progQuickPopover");
-  if (pqPop && !pqPop.classList.contains("hidden") && !e.target.closest("#progQuickPopover") && !e.target.closest(".add-prog-btn")) {
-    pqPop.classList.add("hidden");
-  }
-  const impMenu = document.getElementById("importPdfMenu");
-  if (impMenu && !impMenu.classList.contains("hidden") && !e.target.closest("#importPopoverWrap")) {
-    impMenu.classList.add("hidden");
-  }
-
-  const mobProgList = document.getElementById("programsMasterList");
-  if (mobProgList && mobProgList.classList.contains("mobile-dropdown-open") && !e.target.closest(".programs-sidebar-panel")) {
-    closeMobileProgramsDropdown();
-  }
-
-  const bachWin = document.getElementById("bachGptWindow");
-  if (
-    bachWin &&
-    !bachWin.classList.contains("hidden") &&
-    !e.target.closest("#bachWidgetRoot") &&
-    !e.target.closest("#bachGptFab") &&
-    !e.target.closest(".bach-card-btn")
-  ) {
-    toggleBachGptChat(false);
-  }
-
-  const brushPop = document.getElementById("brushPopover");
-  if (brushPop && !brushPop.classList.contains("hidden") && !e.target.closest("#brushPopover") && !e.target.closest("#btnBrushStyle")) {
-    brushPop.classList.add("hidden");
-  }
-
-  const stampPop = document.getElementById("stampPopover");
-  if (
-    stampPop &&
-    !stampPop.classList.contains("hidden") &&
-    studyTool !== "stamp" &&
-    !e.target.closest("#stampPopover") &&
-    !e.target.closest("#btnStamps")
-  ) {
-    stampPop.classList.add("hidden");
-  }
-  const metroPop = document.getElementById("metronomePopover");
-  if (metroPop && !metroPop.classList.contains("hidden") && !e.target.closest("#metronomePopover") && !e.target.closest("#metroLiveChip")) {
-    metroPop.classList.add("hidden");
-  }
-
-  const tunerPop = document.getElementById("tunerPopover");
-  if (tunerPop && !tunerPop.classList.contains("hidden") && !e.target.closest("#tunerPopover") && !e.target.closest("#tunerLiveChip")) {
-    closeTunerPopoverAndStop();
-  }
-});
 
 window.addEventListener("DOMContentLoaded", async () => {
   await loadSavedPdfsFromDb();

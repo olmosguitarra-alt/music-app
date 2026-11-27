@@ -14591,3 +14591,297 @@ body.palette-cadenza {
     justify-content: center;
   }
 }
+
+/* ==========================================================================
+   V113 (FASE B) — BARRA CONTEXTUAL DE REVELACIÓN PROGRESIVA (← ✎ ▶ ♪ ✦ ⋮),
+   ESPACIO DE ENSAYO CONTEXTUAL, REGISTRO DE PASAJES Y AUTOGUARDADO PROGRAMAS
+   ========================================================================== */
+
+/* 1. A1 & A2 — Barra Contextual de Revelación Progresiva en el Visor */
+.perf-context-toolbar {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 3px 5px;
+  height: 36px;
+  border-radius: 999px;
+  pointer-events: auto;
+}
+
+.pctx-btn {
+  height: 28px;
+  padding: 0 11px;
+  border-radius: 999px;
+  border: none;
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: 12px;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.18s ease, color 0.18s ease, transform 0.15s ease;
+}
+
+.pctx-btn:hover {
+  color: var(--text-primary);
+  background: color-mix(in srgb, var(--accent) 12%, transparent);
+}
+
+.pctx-btn.active {
+  background: var(--accent);
+  color: var(--accent-ink);
+  font-weight: 700;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.16);
+}
+
+.pctx-sym {
+  font-size: 13.5px;
+  line-height: 1;
+}
+
+.pctx-more-btn {
+  padding: 0 9px;
+}
+
+/* En Modo Lectura limpia (cuando no está activo Anotar), desactivar eventos de puntero en canvas de dibujo
+   para que cualquier toque lateral o gesto pase página o haga zoom sin riesgo de rayar la partitura */
+#mode-performer.is-study-mode:not(.rail-open-drawing):not([data-active-context="annotate"]) #performerCanvas,
+#mode-performer.is-study-mode:not(.rail-open-drawing):not([data-active-context="annotate"]) #performerCanvasRight {
+  pointer-events: none;
+}
+
+/* 2. F1 & G1 — Espacio de Ensayo Contextual y Registro de Pasajes */
+.metro-session-timer-pill {
+  font-family: ui-monospace, "SF Mono", Consolas, monospace;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 99px;
+  background: color-mix(in srgb, var(--text-secondary) 14%, transparent);
+  color: var(--text-secondary);
+  letter-spacing: 0.04em;
+}
+
+.metro-session-timer-pill.is-running {
+  background: color-mix(in srgb, var(--accent) 22%, transparent);
+  color: var(--accent);
+}
+
+.rehearsal-context-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 8px 11px;
+  margin-bottom: 4px;
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--bg-canvas) 48%, transparent);
+  border: 1px solid var(--glass-border);
+}
+
+.rcb-work-info {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+}
+
+.rcb-work-info strong {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.rcb-work-info span {
+  font-size: 10.5px;
+  color: var(--text-secondary);
+}
+
+.rcb-tempo-goal {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 9px;
+  border-radius: 99px;
+  background: color-mix(in srgb, var(--accent) 16%, transparent);
+  color: var(--text-primary);
+  font-size: 11.5px;
+  font-weight: 600;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.rcb-tempo-goal strong {
+  color: var(--accent);
+  font-weight: 700;
+}
+
+.rcb-arrow {
+  opacity: 0.65;
+}
+
+.rehearsal-passages-box {
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px solid var(--glass-border);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.rp-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.rp-title {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+.rp-add-btn {
+  font-size: 11px;
+  font-weight: 700;
+  padding: 3px 8px;
+  border-radius: 8px;
+  border: 1px solid color-mix(in srgb, var(--accent) 35%, var(--glass-border));
+  background: color-mix(in srgb, var(--accent) 14%, transparent);
+  color: var(--text-primary);
+  cursor: pointer;
+}
+
+.rp-add-btn:hover {
+  background: var(--accent);
+  color: var(--accent-ink);
+}
+
+.rp-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  max-height: 112px;
+  overflow-y: auto;
+}
+
+.rp-empty {
+  font-size: 11px;
+  color: var(--text-secondary);
+  font-style: italic;
+  padding: 2px 0;
+}
+
+.rp-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 5px 8px;
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--bg-canvas) 45%, transparent);
+  border: 1px solid var(--glass-border);
+  cursor: pointer;
+  font-size: 11.5px;
+}
+
+.rp-item:hover {
+  border-color: var(--accent);
+}
+
+.rp-item-main {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.rp-del-btn {
+  border: none;
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: 11px;
+  cursor: pointer;
+  padding: 2px 5px;
+}
+
+.rp-del-btn:hover {
+  color: #e57373;
+}
+
+/* 3. Popovers Contextuales de Escuchar (♪) y Más (⋮) */
+.perf-listen-popover,
+.perf-more-popover {
+  top: calc(max(12px, env(safe-area-inset-top)) + 44px);
+  left: 50%;
+  right: auto;
+  transform: translateX(-50%);
+  width: 280px;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.perf-ctx-desc {
+  font-size: 12px;
+  line-height: 1.45;
+  color: var(--text-secondary);
+}
+
+.perf-more-item {
+  width: 100%;
+  text-align: left;
+  padding: 9px 11px;
+  border-radius: 10px;
+  border: none;
+  background: transparent;
+  color: var(--text-primary);
+  font-size: 12.5px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.perf-more-item:hover {
+  background: color-mix(in srgb, var(--accent) 15%, transparent);
+}
+
+/* 4. K1 — Indicador sutil de autoguardado en Programas */
+.setlist-autosave-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  padding: 6px 10px;
+  border-radius: 99px;
+  transition: color 0.25s ease, background 0.25s ease;
+}
+
+.setlist-autosave-pill .v-ico {
+  width: 14px;
+  height: 14px;
+  color: var(--accent);
+}
+
+.setlist-autosave-pill.is-flashing {
+  color: var(--text-primary);
+  background: color-mix(in srgb, var(--accent) 16%, transparent);
+}
+
+@media (max-width: 760px) {
+  .pctx-btn .pctx-lbl {
+    display: none;
+  }
+  .pctx-btn {
+    padding: 0 9px;
+  }
+}
