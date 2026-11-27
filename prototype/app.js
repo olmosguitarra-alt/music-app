@@ -640,6 +640,9 @@ async function renderActiveScorePage() {
     } else if (pdfCanvasRight) {
       pdfCanvasRight.classList.add("hidden");
     }
+
+    // Fase C (N1): Pre-renderizado en memoria de la página adyacente (currentPage + 1 / + 2) para cambio instantáneo (< 16ms)
+    preRenderAdjacentPdfPages(pageNum, hasSecondPage ? 2 : 1);
   } else {
     if (pdfCanvas) pdfCanvas.classList.add("hidden");
     if (pdfCanvasRight) pdfCanvasRight.classList.add("hidden");
@@ -662,12 +665,32 @@ async function renderActiveScorePage() {
   if (typeof renderStudyPageScrubber === "function") renderStudyPageScrubber();
 }
 
+// Caché en memoria de páginas PDF renderizadas (Fase C - N1)
+const pdfRenderedPageCache = new Map();
+
+function getPdfRenderCacheKey(scoreId, pNum, cw, ch, boost) {
+  return `${scoreId}:${pNum}:${Math.round(cw / 16)}x${Math.round(ch / 16)}:${boost.toFixed(1)}`;
+}
+
 async function renderPdfPageToCanvas(pdfPage, canvas, containerEl, zoomBoost = 1) {
   if (!pdfPage || !canvas || !containerEl) return;
   const cw = Math.max(320, containerEl.clientWidth || 760);
   const ch = Math.max(420, containerEl.clientHeight || 920);
-  const unscaled = pdfPage.getViewport({ scale: 1 });
   const boost = Math.max(1, Math.min(2.5, zoomBoost || 1));
+  const scoreId = activeScore ? activeScore.id : 0;
+  const cacheKey = getPdfRenderCacheKey(scoreId, pdfPage.pageNumber, cw, ch, boost);
+
+  const cachedBitmap = pdfRenderedPageCache.get(cacheKey);
+  if (cachedBitmap && cachedBitmap.width > 0 && cachedBitmap.height > 0) {
+    canvas.width = cachedBitmap.width;
+    canvas.height = cachedBitmap.height;
+    const ctx = canvas.getContext("2d");
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.drawImage(cachedBitmap, 0, 0);
+    return;
+  }
+
+  const unscaled = pdfPage.getViewport({ scale: 1 });
   const scale = Math.min(cw / unscaled.width, ch / unscaled.height) * (window.devicePixelRatio || 1.5) * boost;
   const viewport = pdfPage.getViewport({ scale });
 
@@ -676,6 +699,50 @@ async function renderPdfPageToCanvas(pdfPage, canvas, containerEl, zoomBoost = 1
   const ctx = canvas.getContext("2d");
   ctx.clearRect(0, 0, canvas.width, canvas.height);
   await pdfPage.render({ canvasContext: ctx, viewport }).promise;
+
+  try {
+    const off = document.createElement("canvas");
+    off.width = canvas.width;
+    off.height = canvas.height;
+    off.getContext("2d").drawImage(canvas, 0, 0);
+    if (pdfRenderedPageCache.size > 8) {
+      const oldestKey = pdfRenderedPageCache.keys().next().value;
+      pdfRenderedPageCache.delete(oldestKey);
+    }
+    pdfRenderedPageCache.set(cacheKey, off);
+  } catch (_) {}
+}
+
+function preRenderAdjacentPdfPages(basePage, step = 1) {
+  if (!activeScore?.isRealPdf || !currentPdfDocInstance) return;
+  const total = currentPdfDocInstance.numPages || 1;
+  const nextP = basePage + step;
+  if (nextP > total) return;
+
+  setTimeout(async () => {
+    try {
+      const wrap = document.getElementById("performerWrap");
+      if (!wrap) return;
+      const cw = Math.max(320, wrap.clientWidth || 760);
+      const ch = Math.max(420, wrap.clientHeight || 920);
+      const cacheKey = getPdfRenderCacheKey(activeScore.id, nextP, cw, ch, 1);
+      if (pdfRenderedPageCache.has(cacheKey)) return;
+
+      const page = await currentPdfDocInstance.getPage(nextP);
+      const unscaled = page.getViewport({ scale: 1 });
+      const scale = Math.min(cw / unscaled.width, ch / unscaled.height) * (window.devicePixelRatio || 1.5);
+      const viewport = page.getViewport({ scale });
+      const off = document.createElement("canvas");
+      off.width = viewport.width;
+      off.height = viewport.height;
+      await page.render({ canvasContext: off.getContext("2d"), viewport }).promise;
+      if (pdfRenderedPageCache.size > 8) {
+        const oldestKey = pdfRenderedPageCache.keys().next().value;
+        pdfRenderedPageCache.delete(oldestKey);
+      }
+      pdfRenderedPageCache.set(cacheKey, off);
+    } catch (_) {}
+  }, 90);
 }
 
 // ==========================================================================
@@ -987,7 +1054,8 @@ function saveScoreMetadataOverride(scoreObj) {
       composer: scoreObj.composer || "",
       period: scoreObj.period || "",
       group: scoreObj.group || "",
-      ensemble: scoreObj.ensemble || scoreObj.group || ""
+      ensemble: scoreObj.ensemble || scoreObj.group || "",
+      studyStatus: scoreObj.studyStatus || ""
     };
     localStorage.setItem(SCORES_META_STORAGE_KEY, JSON.stringify(map));
   } catch (_) {}
@@ -1010,6 +1078,9 @@ function loadScoreMetadataOverrides() {
         const ens = ov.ensemble || ov.group || "";
         s.group = ens;
         s.ensemble = ens;
+      }
+      if (typeof ov.studyStatus === "string") {
+        s.studyStatus = ov.studyStatus;
       }
       s.raw = false;
     });
@@ -1041,10 +1112,12 @@ function openPdfMetadataModal(e) {
   const wmComp = document.getElementById("wmComposerInput");
   const wmPer = document.getElementById("wmPeriodInput");
   const wmGrp = document.getElementById("wmGroupInput");
+  const wmStatus = document.getElementById("wmStudyStatusSelect");
   if (wmTitle) wmTitle.value = pdfWorkshopDraft.title || "";
   if (wmComp) wmComp.value = pdfWorkshopDraft.composer || "";
   if (wmPer) wmPer.value = pdfWorkshopDraft.period || "";
   if (wmGrp) wmGrp.value = pdfWorkshopDraft.group || pdfWorkshopDraft.ensemble || "";
+  if (wmStatus) wmStatus.value = pdfWorkshopDraft.studyStatus || "";
   backdrop.classList.remove("hidden");
   setTimeout(() => {
     if (wmTitle) {
@@ -1077,12 +1150,14 @@ async function applyPdfMetadataChanges() {
   const compositor = (document.getElementById("wmComposerInput")?.value || "").trim();
   const periodo = (document.getElementById("wmPeriodInput")?.value || "").trim();
   const dotacion = (document.getElementById("wmGroupInput")?.value || "").trim();
+  const studyStatus = (document.getElementById("wmStudyStatusSelect")?.value || "").trim();
 
   draft.title = titulo;
   draft.composer = compositor;
   draft.period = periodo;
   draft.group = dotacion;
   draft.ensemble = dotacion;
+  draft.studyStatus = studyStatus;
 
   const modalTitleEl = document.getElementById("modalScoreTitle");
   if (modalTitleEl) {
@@ -1116,6 +1191,7 @@ async function applyPdfMetadataChanges() {
     s.period = periodo;
     s.group = dotacion;
     s.ensemble = dotacion;
+    s.studyStatus = studyStatus;
     s.raw = false;
     if (draft.pdfBytes) {
       s.pdfBytes = draft.pdfBytes.slice(0);
@@ -2584,6 +2660,9 @@ function buildFolioCardHtml(s) {
   const chkHtml = multiSelectMode
     ? `<span class="multi-select-chk ${isSelected ? "checked" : ""}">${isSelected ? '<svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>' : ""}</span>`
     : "";
+  const statusBadge = s.studyStatus
+    ? `<span class="study-status-badge" data-status="${s.studyStatus}">${s.studyStatus}</span>`
+    : "";
 
   return `
     <article class="folio-card ${isSelected ? "is-selected" : ""}"
@@ -2600,6 +2679,7 @@ function buildFolioCardHtml(s) {
       <div class="folio-card-body">
         <div class="folio-card-title">
           <span>${s.title}</span>
+          ${statusBadge}
           ${s.raw && !s.isRealPdf ? `<span class="raw-badge">PDF Crudo</span>` : ""}
         </div>
         <span class="folio-card-sub">${s.composer}</span>
@@ -2624,6 +2704,9 @@ function buildListRowHtml(s) {
   const chkHtml = multiSelectMode
     ? `<span class="multi-select-chk ${isSelected ? "checked" : ""}">${isSelected ? '<svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>' : ""}</span>`
     : "";
+  const statusBadge = s.studyStatus
+    ? `<span class="study-status-badge" data-status="${s.studyStatus}">${s.studyStatus}</span>`
+    : "";
 
   return `
     <div class="list-detail-row ${isSelected ? "is-selected" : ""}"
@@ -2636,6 +2719,7 @@ function buildListRowHtml(s) {
       <div class="list-col-main">
         <div class="list-title-line">
           <strong class="list-work-title">${s.title}</strong>
+          ${statusBadge}
           ${s.raw && !s.isRealPdf ? `<span class="raw-badge">PDF Crudo</span>` : ""}
         </div>
         <span class="list-work-subtitle">${s.composer}${showSub ? ` — <em>${s.subtitle}</em>` : ""}</span>
@@ -3314,6 +3398,7 @@ function openBachGptGeneralMode(forceReset = false) {
 
   document.getElementById("bachWorkSelectRow").classList.add("hidden");
   document.getElementById("bachNotebookBar").classList.add("hidden");
+  document.getElementById("cadenzaAiLiveBanner")?.classList.add("hidden");
 
   document.getElementById("bachModeTag").textContent = "MODO GENERAL";
   document.getElementById("bachCurrentWorkLabel").textContent = "Consultas de todo tipo: Teoría, Historia, Técnica y Guía de la App";
@@ -3396,6 +3481,8 @@ function openBachGptSpecificWorkMode(scoreId) {
 
   document.getElementById("bachWorkSelectRow").classList.remove("hidden");
   document.getElementById("bachNotebookBar").classList.add("hidden");
+  document.getElementById("cadenzaAiLiveBanner")?.classList.remove("hidden");
+  syncCadenzaAiLiveBanner(targetId);
 
   populateBachWorkSelect();
   const sel = document.getElementById("bachWorkSelect");
@@ -3443,6 +3530,67 @@ function changeBachConversationWork(scoreId) {
   openBachGptSpecificWorkMode(Number(scoreId));
 }
 
+function syncCadenzaAiLiveBanner(scoreId) {
+  const summaryEl = document.getElementById("cadenzaAiLiveSummary");
+  if (!summaryEl) return;
+  const work = scores.find((s) => s.id === Number(scoreId)) || activeScore || scores[0];
+  const isCurrentActive = activeScore && work && activeScore.id === work.id;
+  const p = isCurrentActive ? pageNum || 1 : 1;
+  const totalP = work?.pageCount || 10;
+  const bpmVal = typeof metroBpm === "number" ? metroBpm : 76;
+  const passages = (typeof rehearsalPassagesByScore === "object" && rehearsalPassagesByScore[String(work.id)]) || [];
+  const statusStr = work?.studyStatus ? ` • ${work.studyStatus}` : "";
+  const passageStr = passages.length > 0 ? ` • ${passages.length} pasaje(s)` : "";
+  summaryEl.textContent = `Atril: Pág. ${p}/${totalP} • ♩ = ${bpmVal} BPM${statusStr}${passageStr}`;
+}
+
+function runCadenzaAiQuickAction(actionKey) {
+  const work = scores.find((s) => s.id === Number(bachSelectedWorkId)) || activeScore || scores[0];
+  const title = work.clean || work.title;
+  const p = activeScore && activeScore.id === work.id ? pageNum || 1 : 1;
+  const bpmVal = typeof metroBpm === "number" ? metroBpm : 76;
+  const targetVal = typeof metroLadderTarget === "number" ? metroLadderTarget : bpmVal + 12;
+
+  if (actionKey === "harmony") {
+    appendUserMessage(`Analiza la armonía, estructura y forma de "${title}" (Pág. ${p}).`);
+    setTimeout(() => {
+      appendBachMessage(
+        `<strong>🎼 Análisis Armónico y Formal — ${title} (Pág. ${p}):</strong><br>
+        ${work.aiData?.theory || "Esta sección articula la tensión tonal entre el centro principal y las modulaciones intermedias."}<br>
+        • <strong>Foco en Pág. ${p}:</strong> Identifica los puntos de cadencia y el movimiento del bajo antes de acelerar el tempo por encima de ♩ = ${bpmVal}.`
+      );
+    }, 200);
+  } else if (actionKey === "studyplan") {
+    appendUserMessage(`Crea un plan de estudio para hoy en "${title}" partiendo de ${bpmVal} BPM.`);
+    setTimeout(() => {
+      appendBachMessage(
+        `<strong>📋 Plan de Estudio Contextual — ${title} (Pág. ${p}):</strong><br>
+        1. <strong>Lectura consciente (5 min):</strong> Toca la Pág. ${p} a <strong>${Math.max(40, bpmVal - 12)} BPM</strong> cuidando relajación y balance de voces.<br>
+        2. <strong>Escalera en Entrenador (10 min):</strong> Configura el Entrenador en modo <em>Escalera</em> de <strong>${bpmVal} → ${targetVal} BPM</strong> (+2 BPM cada 4 compases).<br>
+        3. <strong>Pulso interno (5 min):</strong> Activa <em>Compás Mudo</em> (3 compases sonando / 1 en silencio) para afianzar la memoria rítmica.`
+      );
+    }, 200);
+  } else if (actionKey === "fingering") {
+    appendUserMessage(`Dame recomendaciones de digitación y articulación para "${title}" (${work.group}).`);
+    setTimeout(() => {
+      appendBachMessage(
+        `<strong>🎸 Digitación y Articulación — ${title} (${work.group}):</strong><br>
+        ${work.aiData?.performance || "Prioriza digitaciones que mantengan la resonancia de las voces extremas y eviten saltos bruscos de posición en cambios de compás."}<br>
+        <em>Sugerencia:</em> Activa <strong>✎ Anotar → Sellos</strong> en la barra superior para estampar tus digitaciones definitivas sobre la Pág. ${p}.`
+      );
+    }, 200);
+  } else if (actionKey === "exercise") {
+    appendUserMessage(`Diseña un ejercicio técnico específico para dominar los pasajes de la Pág. ${p} en "${title}".`);
+    setTimeout(() => {
+      appendBachMessage(
+        `<strong>⚡ Ejercicio Técnico Aplicado — ${title} (Pág. ${p}):</strong><br>
+        • <strong>Variante rítmica con puntillo:</strong> En el panel <em>▶ Ensayar</em>, selecciona la subdivisión <strong>♩.♪ (Puntillo)</strong> a <strong>${Math.max(44, bpmVal - 8)} BPM</strong> y practica el pasaje invirtiendo el patrón largo-corto.<br>
+        • <strong>Registro:</strong> Pulsa <em>"＋ Guardar pasaje"</em> en el panel de Ensayo para registrar la Pág. ${p} y medir tu evolución mañana.`
+      );
+    }, 200);
+  }
+}
+
 // ==========================================================================
 // MODO 3 DE BACHGPT: MODO NOTEBOOK DE TEORÍA (Tipo Gemini NotebookLM)
 // Exclusivo para libros de texto, tratados e historia en PDF
@@ -3457,6 +3605,7 @@ function openBachGptNotebookMode() {
 
   document.getElementById("bachWorkSelectRow").classList.add("hidden");
   document.getElementById("bachNotebookBar").classList.remove("hidden");
+  document.getElementById("cadenzaAiLiveBanner")?.classList.add("hidden");
 
   document.getElementById("bachModeTag").textContent = "NOTEBOOK TEORÍA";
   document.getElementById("bachCurrentWorkLabel").textContent = "Estudio y Comprensión de Libros de Texto y Teoría";
@@ -3680,8 +3829,11 @@ async function sendUserMessageToBach() {
   } else if (bachContextMode === "work") {
     const work = scores.find((s) => s.id === Number(bachSelectedWorkId)) || scores[0];
     const title = work.clean || work.title;
+    const activeP = activeScore && activeScore.id === work.id ? pageNum || 1 : 1;
+    const passages = (typeof rehearsalPassagesByScore === "object" && rehearsalPassagesByScore[String(work.id)]) || [];
     ctxInstruction =
-      `Estás en el Modo de Obra PDF Específica. Debes hablar ÚNICA Y EXCLUSIVAMENTE sobre la obra "${title}" del compositor ${work.composer} (Periodo ${work.period}, dotación: ${work.group}). ` +
+      `Estás en Cadenza AI (personalidad Maestro BachGPT), enfocado en la obra "${title}" del compositor ${work.composer} (Periodo ${work.period}, dotación: ${work.group}). ` +
+      `Contexto vivo del atril del músico: Página actual ${activeP} de ${work.pageCount || 10}, tempo de ensayo actual ♩ = ${metroBpm} BPM, estado de estudio: "${work.studyStatus || "En estudio"}", pasajes difíciles guardados: ${passages.length}. ` +
       `Datos de referencia de esta partitura: Historia: ${work.aiData.history} | Teoría: ${work.aiData.theory} | Interpretación: ${work.aiData.performance}.`;
     const searchUrl = `https://www.youtube.com/results?search_query=${encodeURIComponent(work.composer.split("(")[0] + " " + title + " " + text)}`;
     extraLinksHtml = `<div class="bach-links-stack"><a href="${searchUrl}" target="_blank" rel="noopener noreferrer" class="bach-chat-link">▶ Buscar "${text}" sobre ${title} en YouTube ↗</a></div>`;
@@ -5765,13 +5917,28 @@ function updateLayoutButtonIcon() {
   }
 }
 
+let userManuallyChangedLayout = false;
+
 async function cyclePageLayout() {
+  userManuallyChangedLayout = true;
   saveStudyAnnotationsForCurrentPage();
   layoutIdx = (layoutIdx + 1) % layouts.length;
   halfPagePhase = 0;
   syncHalfPageVisual();
   updateLayoutButtonIcon();
   await renderActiveScorePage();
+}
+
+function autoAdaptLayoutForTabletOrientation() {
+  if (userManuallyChangedLayout) return;
+  const isWideLandscape = window.innerWidth >= 960 && window.innerWidth / Math.max(1, window.innerHeight) > 1.18;
+  const desiredIdx = isWideLandscape ? 2 : 0; // 2 = '2 Págs', 0 = '1 Pág'
+  if (layoutIdx !== desiredIdx) {
+    layoutIdx = desiredIdx;
+    halfPagePhase = 0;
+    syncHalfPageVisual();
+    updateLayoutButtonIcon();
+  }
 }
 
 function scheduleConcertAutoHide() {
@@ -5849,6 +6016,230 @@ function toggleAudioFollow() {
       }, 1000);
     }
   }, 2000);
+}
+
+// ==========================================================================
+// REPRODUCTOR DE AUDIO DE REFERENCIA CON BUCLE A-B Y CONTROL DE VELOCIDAD (FASE C - H1)
+// ==========================================================================
+let refAudioElement = null;
+let refAudioObjectUrl = null;
+let refAudioLoopA = null;
+let refAudioLoopB = null;
+let refAudioSpeed = 1.0;
+let refSynthTimer = null;
+let refSynthPositionSec = 0;
+const REF_SYNTH_DURATION_SEC = 32;
+
+function formatAudioSeconds(sec) {
+  const s = Math.max(0, Math.floor(sec || 0));
+  const mins = Math.floor(s / 60);
+  const rem = s % 60;
+  return `${String(mins).padStart(2, "0")}:${String(rem).padStart(2, "0")}`;
+}
+
+function updateReferenceAudioTimeUI(curSec, totalSec) {
+  const lbl = document.getElementById("refAudioTimeLabel");
+  const rng = document.getElementById("refAudioSeekRange");
+  if (lbl) lbl.textContent = `${formatAudioSeconds(curSec)} / ${formatAudioSeconds(totalSec)}`;
+  if (rng && totalSec > 0) {
+    rng.value = String(Math.min(100, (curSec / totalSec) * 100));
+  }
+}
+
+function handleReferenceAudioUpload(fileList) {
+  if (!fileList || fileList.length === 0) return;
+  const file = fileList[0];
+  stopReferenceAudioPlayback();
+
+  if (refAudioObjectUrl) {
+    try { URL.revokeObjectURL(refAudioObjectUrl); } catch (_) {}
+  }
+  refAudioObjectUrl = URL.createObjectURL(file);
+  if (!refAudioElement) {
+    refAudioElement = new Audio();
+    refAudioElement.preservesPitch = true;
+    refAudioElement.mozPreservesPitch = true;
+    refAudioElement.webkitPreservesPitch = true;
+    refAudioElement.addEventListener("timeupdate", () => {
+      if (!refAudioElement) return;
+      const cur = refAudioElement.currentTime || 0;
+      const dur = refAudioElement.duration || 0;
+      if (refAudioLoopB !== null && cur >= refAudioLoopB) {
+        refAudioElement.currentTime = refAudioLoopA !== null ? refAudioLoopA : 0;
+      }
+      updateReferenceAudioTimeUI(refAudioElement.currentTime, dur);
+    });
+    refAudioElement.addEventListener("ended", () => {
+      if (refAudioLoopA !== null) {
+        refAudioElement.currentTime = refAudioLoopA;
+        refAudioElement.play();
+      } else {
+        const btn = document.getElementById("btnRefAudioPlay");
+        if (btn) btn.textContent = "▶ Escuchar";
+      }
+    });
+    refAudioElement.addEventListener("loadedmetadata", () => {
+      updateReferenceAudioTimeUI(0, refAudioElement.duration || 0);
+    });
+  }
+
+  refAudioElement.src = refAudioObjectUrl;
+  refAudioElement.playbackRate = refAudioSpeed;
+  clearReferenceAudioLoop();
+
+  const fnLbl = document.getElementById("refAudioFilenameLabel");
+  if (fnLbl) fnLbl.textContent = `🎵 ${file.name}`;
+}
+
+function stopReferenceAudioPlayback() {
+  if (refAudioElement && !refAudioElement.paused) {
+    refAudioElement.pause();
+  }
+  if (refSynthTimer) {
+    clearInterval(refSynthTimer);
+    refSynthTimer = null;
+  }
+  const btn = document.getElementById("btnRefAudioPlay");
+  if (btn) btn.textContent = "▶ Escuchar";
+}
+
+function playSynthReferenceNote(noteIdx) {
+  const ctx = getPerformerAudioCtx();
+  if (!ctx) return;
+  // Motivo barroco de referencia (Adagio BWV 1034 en Mi menor)
+  const motifFreqs = [329.63, 392.0, 493.88, 659.25, 587.33, 493.88, 440.0, 392.0, 369.99, 493.88, 329.63, 246.94];
+  const freq = motifFreqs[noteIdx % motifFreqs.length];
+  const osc = ctx.createOscillator();
+  const gain = ctx.createGain();
+  osc.type = "triangle";
+  osc.frequency.setValueAtTime(freq, ctx.currentTime);
+  gain.gain.setValueAtTime(0.001, ctx.currentTime);
+  gain.gain.linearRampToValueAtTime(0.14, ctx.currentTime + 0.02);
+  gain.gain.exponentialRampToValueAtTime(0.0008, ctx.currentTime + 0.45);
+  osc.connect(gain);
+  gain.connect(ctx.destination);
+  osc.start();
+  osc.stop(ctx.currentTime + 0.48);
+}
+
+function toggleReferenceAudioPlay() {
+  const btn = document.getElementById("btnRefAudioPlay");
+  if (refAudioElement && refAudioElement.src) {
+    if (refAudioElement.paused) {
+      refAudioElement.playbackRate = refAudioSpeed;
+      refAudioElement.play();
+      if (btn) btn.textContent = "❚❚ Pausar";
+    } else {
+      refAudioElement.pause();
+      if (btn) btn.textContent = "▶ Escuchar";
+    }
+    return;
+  }
+
+  // Modo síntesis de referencia integrada cuando no se ha cargado un MP3 externo
+  if (refSynthTimer) {
+    stopReferenceAudioPlayback();
+    return;
+  }
+
+  let stepCount = Math.floor(refSynthPositionSec * 2);
+  if (btn) btn.textContent = "❚❚ Pausar";
+  playSynthReferenceNote(stepCount);
+
+  refSynthTimer = setInterval(() => {
+    refSynthPositionSec += 0.5 * refAudioSpeed;
+    if (refAudioLoopB !== null && refSynthPositionSec >= refAudioLoopB) {
+      refSynthPositionSec = refAudioLoopA !== null ? refAudioLoopA : 0;
+    } else if (refSynthPositionSec >= REF_SYNTH_DURATION_SEC) {
+      refSynthPositionSec = refAudioLoopA !== null ? refAudioLoopA : 0;
+    }
+    stepCount++;
+    playSynthReferenceNote(stepCount);
+    updateReferenceAudioTimeUI(refSynthPositionSec, REF_SYNTH_DURATION_SEC);
+  }, Math.max(180, Math.round(500 / refAudioSpeed)));
+}
+
+function seekReferenceAudio(pctVal) {
+  const pct = Math.max(0, Math.min(100, parseFloat(pctVal) || 0)) / 100;
+  if (refAudioElement && refAudioElement.src && refAudioElement.duration) {
+    refAudioElement.currentTime = pct * refAudioElement.duration;
+    updateReferenceAudioTimeUI(refAudioElement.currentTime, refAudioElement.duration);
+  } else {
+    refSynthPositionSec = pct * REF_SYNTH_DURATION_SEC;
+    updateReferenceAudioTimeUI(refSynthPositionSec, REF_SYNTH_DURATION_SEC);
+  }
+}
+
+function getCurrentReferenceAudioTime() {
+  if (refAudioElement && refAudioElement.src) {
+    return refAudioElement.currentTime || 0;
+  }
+  return refSynthPositionSec || 0;
+}
+
+function setReferenceAudioLoopPoint(point) {
+  const cur = getCurrentReferenceAudioTime();
+  const btnA = document.getElementById("btnRefLoopA");
+  const btnB = document.getElementById("btnRefLoopB");
+
+  if (point === "A") {
+    refAudioLoopA = cur;
+    if (refAudioLoopB !== null && refAudioLoopB <= refAudioLoopA) {
+      refAudioLoopB = null;
+      if (btnB) {
+        btnB.classList.remove("active");
+        btnB.textContent = "B";
+      }
+    }
+    if (btnA) {
+      btnA.classList.add("active");
+      btnA.textContent = `A ${formatAudioSeconds(cur)}`;
+    }
+  } else if (point === "B") {
+    if (refAudioLoopA === null) {
+      refAudioLoopA = Math.max(0, cur - 4);
+      if (btnA) {
+        btnA.classList.add("active");
+        btnA.textContent = `A ${formatAudioSeconds(refAudioLoopA)}`;
+      }
+    }
+    if (cur > refAudioLoopA + 0.5) {
+      refAudioLoopB = cur;
+      if (btnB) {
+        btnB.classList.add("active");
+        btnB.textContent = `B ${formatAudioSeconds(cur)}`;
+      }
+    }
+  }
+}
+
+function clearReferenceAudioLoop() {
+  refAudioLoopA = null;
+  refAudioLoopB = null;
+  const btnA = document.getElementById("btnRefLoopA");
+  const btnB = document.getElementById("btnRefLoopB");
+  if (btnA) {
+    btnA.classList.remove("active");
+    btnA.textContent = "A";
+  }
+  if (btnB) {
+    btnB.classList.remove("active");
+    btnB.textContent = "B";
+  }
+}
+
+function setReferenceAudioSpeed(speed, btn) {
+  refAudioSpeed = parseFloat(speed) || 1.0;
+  document.querySelectorAll("#refAudioSpeedGroup .metro-pill-btn").forEach((b) => {
+    b.classList.toggle("active", b === btn);
+  });
+  if (refAudioElement) {
+    refAudioElement.playbackRate = refAudioSpeed;
+  }
+  if (refSynthTimer) {
+    stopReferenceAudioPlayback();
+    toggleReferenceAudioPlay();
+  }
 }
 
 // ==========================================================================
@@ -8570,6 +8961,7 @@ window.addEventListener("DOMContentLoaded", async () => {
   setupEditorCanvas();
   renderStudyPageScrubber();
   updateBookmarkButton();
+  autoAdaptLayoutForTabletOrientation();
   updateLayoutButtonIcon();
 
   ["performerToolRail", "brushPopover", "stampPopover"].forEach((id) => {
@@ -8630,6 +9022,7 @@ window.addEventListener("keydown", (e) => {
 
 window.addEventListener("resize", () => {
   saveStudyAnnotationsForCurrentPage();
+  autoAdaptLayoutForTabletOrientation();
   setupStudyCanvas();
   restoreStudyAnnotationsForCurrentPage();
   setupEditorCanvas();

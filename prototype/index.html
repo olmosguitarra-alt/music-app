@@ -11,7 +11,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:wght@600;700&display=swap" />
-  <link rel="stylesheet" href="styles.css?v=113" />
+  <link rel="stylesheet" href="styles.css?v=114" />
   <!-- Motores Oficiales para Renderizar (PDF.js) y Particionar/Editar PDFs Reales (pdf-lib) -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf-lib/1.17.1/pdf-lib.min.js"></script>
@@ -42,11 +42,12 @@
     </svg>
   </div>
 
-  <!-- Inputs ocultos para importar PDFs reales desde la Tablet o Celular -->
+  <!-- Inputs ocultos para importar PDFs reales y Audio de Referencia desde la Tablet o Celular -->
   <input type="file" id="realPdfFileInput" accept="application/pdf,.pdf" multiple style="display:none" onchange="handleRealPdfUpload(this.files)" />
   <input type="file" id="realPdfFolderInput" webkitdirectory directory multiple style="display:none" onchange="handleRealPdfFolderUpload(this.files)" />
   <input type="file" id="appendPdfFileInput" accept="application/pdf,.pdf" style="display:none" onchange="handleAppendPdfPages(this.files)" />
   <input type="file" id="theoryBookPdfInput" accept="application/pdf,.pdf" style="display:none" onchange="handleTheoryBookUpload(this.files)" />
+  <input type="file" id="referenceAudioFileInput" accept="audio/*,.mp3,.wav,.m4a,.ogg,.flac" style="display:none" onchange="handleReferenceAudioUpload(this.files)" />
 
   <!-- =================================================================== -->
   <!-- CABECERA SUPERIOR: LOGO CADENZA + ENGRANAJE MINIMALISTA             -->
@@ -352,6 +353,16 @@
               <div class="pdf-meta-field">
                 <label for="wmGroupInput">DOTACIÓN</label>
                 <input type="text" id="wmGroupInput" class="pdf-submodal-input" placeholder="Ej. Guitarra Sola, Trío con Clarinete..." autocomplete="off" />
+              </div>
+              <div class="pdf-meta-field">
+                <label for="wmStudyStatusSelect">ESTADO DE ESTUDIO</label>
+                <select id="wmStudyStatusSelect" class="pdf-submodal-input">
+                  <option value="">Sin clasificar</option>
+                  <option value="En lectura">En lectura</option>
+                  <option value="En montaje">En montaje</option>
+                  <option value="En memoria">En memoria</option>
+                  <option value="Listo para concierto">Listo para concierto</option>
+                </select>
               </div>
             </div>
 
@@ -868,14 +879,50 @@
       <button type="button" class="perf-pop-primary-btn" id="btnMetroPlay" onclick="toggleMetronomePlay()">▶ Iniciar ensayo</button>
     </div>
 
-    <!-- POPOVER CONTEXTUAL: MODO ESCUCHAR (♪) Y MENÚ MÁS (⋮) (FASE B - A1) -->
+    <!-- POPOVER CONTEXTUAL: MODO ESCUCHAR (♪ — REPRODUCTOR DE REFERENCIA CON BUCLE A-B + VELOCIDAD + ESCUCHA ACTIVA) (FASE C - H1) -->
     <div class="perf-utility-popover perf-listen-popover study-tools hidden" id="performerListenPopover" onclick="event.stopPropagation()">
       <div class="perf-pop-head">
-        <span>♪ Escucha y Seguimiento</span>
+        <span>♪ Audio de Referencia &amp; Escucha</span>
+        <button type="button" class="ref-audio-load-btn" onclick="document.getElementById('referenceAudioFileInput').click()" title="Cargar grabación de referencia (.mp3, .wav, .m4a)">
+          ＋ Cargar audio
+        </button>
       </div>
-      <p class="perf-ctx-desc">Activa el seguimiento de compases o prepara el paso de página asistido para esta obra.</p>
+
+      <!-- Reproductor Local con Bucle A-B y Velocidad con preservación de tono -->
+      <div class="ref-audio-player-box" id="refAudioPlayerBox">
+        <div class="ref-audio-track-info">
+          <span class="ref-audio-filename" id="refAudioFilenameLabel">Síntesis de referencia / Sin archivo externo</span>
+          <span class="ref-audio-time" id="refAudioTimeLabel">00:00 / 00:00</span>
+        </div>
+
+        <input type="range" id="refAudioSeekRange" class="ref-audio-seek" min="0" max="100" step="0.1" value="0" oninput="seekReferenceAudio(this.value)" aria-label="Posición de audio" />
+
+        <div class="ref-audio-transport-row">
+          <button type="button" class="ref-audio-play-btn" id="btnRefAudioPlay" onclick="toggleReferenceAudioPlay()">
+            ▶ Escuchar
+          </button>
+          <div class="ref-ab-loop-group" title="Repetir fragmento entre punto A y punto B">
+            <button type="button" class="ref-ab-btn" id="btnRefLoopA" onclick="setReferenceAudioLoopPoint('A')">A</button>
+            <button type="button" class="ref-ab-btn" id="btnRefLoopB" onclick="setReferenceAudioLoopPoint('B')">B</button>
+            <button type="button" class="ref-ab-btn subtle" id="btnRefLoopClear" onclick="clearReferenceAudioLoop()" title="Limpiar bucle A-B">↺</button>
+          </div>
+        </div>
+
+        <div class="ref-audio-speed-row">
+          <span class="ref-speed-lbl">Velocidad:</span>
+          <div class="metro-pills-group" id="refAudioSpeedGroup">
+            <button type="button" class="metro-pill-btn" onclick="setReferenceAudioSpeed(0.5, this)">0.5×</button>
+            <button type="button" class="metro-pill-btn" onclick="setReferenceAudioSpeed(0.75, this)">0.75×</button>
+            <button type="button" class="metro-pill-btn active" onclick="setReferenceAudioSpeed(1.0, this)">1.0×</button>
+            <button type="button" class="metro-pill-btn" onclick="setReferenceAudioSpeed(1.25, this)">1.25×</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="ref-audio-divider"></div>
+
       <button type="button" class="perf-pop-primary-btn" id="btnStudyAudioFollowToggle" onclick="toggleAudioFollowFromContext()">
-        Activar Escucha Activa
+        Activar Seguimiento de Compases
       </button>
     </div>
 
@@ -1091,6 +1138,17 @@
       <div class="bach-work-context-bar hidden" id="bachWorkSelectRow">
         <label for="bachWorkSelect">Obra:</label>
         <select id="bachWorkSelect" onchange="changeBachConversationWork(this.value)"></select>
+      </div>
+
+      <!-- Cadenza AI: Estado Vivo del Atril + Acciones Musicales de 1 Toque (Fase C - J1) -->
+      <div class="cadenza-ai-live-banner hidden" id="cadenzaAiLiveBanner">
+        <span class="cai-live-badge" id="cadenzaAiLiveSummary">Atril: Pág. 1 • ♩ = 76 BPM</span>
+        <div class="cai-actions-strip">
+          <button type="button" class="cai-action-pill" onclick="runCadenzaAiQuickAction('harmony')">🎼 Armonía y Forma</button>
+          <button type="button" class="cai-action-pill" onclick="runCadenzaAiQuickAction('studyplan')">📋 Plan de Estudio</button>
+          <button type="button" class="cai-action-pill" onclick="runCadenzaAiQuickAction('fingering')">🎸 Digitación</button>
+          <button type="button" class="cai-action-pill" onclick="runCadenzaAiQuickAction('exercise')">⚡ Crear Ejercicio</button>
+        </div>
       </div>
 
       <div class="bach-notebook-bar hidden" id="bachNotebookBar">
@@ -1324,6 +1382,6 @@
     <span class="pdf-loading-text">Cargando...</span>
   </div>
 
-  <script src="app.js?v=113"></script>
+  <script src="app.js?v=114"></script>
 </body>
 </html>
